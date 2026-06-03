@@ -1,0 +1,47 @@
+[
+  {
+    "assetId": "M-1001",
+    "CumulativeOperatingHours": { "Hour": 343.5 },
+    "CumulativeIdleHours": { "Hour": 92.4 },
+    "FuelRemaining": { "Percent": 55.0 },
+    "EngineStatus": { "Running": false },
+    "Location": { "Latitude": 34.211763, "Longitude": -95.360427 },
+    "recordedAt": "2026-06-02T14:45:53Z"
+  },
+  {
+    "assetId": "M-1002",
+    "CumulativeOperatingHours": { "Hour": 3761.6 },
+    "CumulativeIdleHours": { "Hour": 2104.0 },
+    "FuelRemaining": { "Percent": 94.8 },
+    "EngineStatus": { "Running": true },
+    "Location": { "Latitude": 29.749423, "Longitude": -95.191249 },
+    "recordedAt": "2026-06-02T14:47:48Z"
+  },
+  {
+    "assetId": "M-1003",
+    "CumulativeOperatingHours": { "Hour": 12.7 },
+    "CumulativeIdleHours": { "Hour": 8.1 },
+    "FuelRemaining": { "Percent": 18.0 },
+    "EngineStatus": { "Running": false },
+    "Location": { "Latitude": 39.099724, "Longitude": -94.578331 },
+    "recordedAt": "2026-05-28T09:10:00Z"
+  },
+  {
+    "assetId": "M-1004",
+    "CumulativeOperatingHours": { "Hour": 70.8 },
+    "CumulativeIdleHours": { "Hour": 5.2 },
+    "FuelRemaining": { "Percent": null },
+    "EngineStatus": { "Running": false },
+    "Location": { "Latitude": 33.624403, "Longitude": -85.98528 },
+    "recordedAt": "2026-06-02T14:40:57Z"
+  },
+  {
+    "assetId": "M-1005",
+    "CumulativeOperatingHours": { "Hour": 4.3 },
+    "CumulativeIdleHours": { "Hour": 3.6 },
+    "FuelRemaining": { "Percent": 61.0 },
+    "EngineStatus": { "Running": false },
+    "Location": { "Latitude": 35.227087, "Longitude": -80.843127 },
+    "recordedAt": "2026-06-02T13:02:19Z"
+  }
+]

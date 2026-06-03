@@ -1,0 +1,52 @@
+[
+  {
+    "assetId": "M-1001",
+    "SPN": 102,
+    "FMI": 3,
+    "code": "ENG-BOOST-102-3",
+    "text": "Engine boost pressure voltage above normal",
+    "severity": "medium",
+    "occurredAt": "2026-06-01T11:20:00Z",
+    "status": "resolved"
+  },
+  {
+    "assetId": "M-1002",
+    "SPN": 157,
+    "FMI": 17,
+    "code": "FUEL-RAIL-157-17",
+    "text": "Fuel rail pressure below normal",
+    "severity": "high",
+    "occurredAt": "2026-05-30T15:12:00Z",
+    "status": "open"
+  },
+  {
+    "assetId": "M-1002",
+    "SPN": 157,
+    "FMI": 17,
+    "code": "FUEL-RAIL-157-17",
+    "text": "Fuel rail pressure below normal",
+    "severity": "high",
+    "occurredAt": "2026-06-01T18:44:00Z",
+    "status": "open"
+  },
+  {
+    "assetId": "M-1002",
+    "SPN": 157,
+    "FMI": 17,
+    "code": "FUEL-RAIL-157-17",
+    "text": "Fuel rail pressure below normal",
+    "severity": "high",
+    "occurredAt": "2026-06-02T09:06:00Z",
+    "status": "acknowledged"
+  },
+  {
+    "assetId": "M-1004",
+    "SPN": 168,
+    "FMI": 1,
+    "code": "BAT-VOLT-168-1",
+    "text": "Battery voltage below normal",
+    "severity": "medium",
+    "occurredAt": "2026-06-02T08:30:00Z",
+    "status": "open"
+  }
+]

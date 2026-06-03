@@ -1,0 +1,47 @@
+[
+  {
+    "id": "M-1001",
+    "serialNumber": "XUGA1355PPKA00006",
+    "model": "XE135U",
+    "type": "excavator",
+    "customer": "Gulf Coast Rental",
+    "location": "Houston, TX",
+    "lastSeenAt": "2026-06-02T14:45:53Z"
+  },
+  {
+    "id": "M-1002",
+    "serialNumber": "XUG00958JSCB00267",
+    "model": "XC958",
+    "type": "wheel loader",
+    "customer": "Lone Star Aggregates",
+    "location": "Dallas, TX",
+    "lastSeenAt": "2026-06-02T14:47:48Z"
+  },
+  {
+    "id": "M-1003",
+    "serialNumber": "XUG0ROLLER000123",
+    "model": "XS123",
+    "type": "roller",
+    "customer": "Midwest Paving",
+    "location": "Kansas City, MO",
+    "lastSeenAt": "2026-05-28T09:10:00Z"
+  },
+  {
+    "id": "M-1004",
+    "serialNumber": "XUG0164STRRL09632",
+    "model": "XGA46J",
+    "type": "boom lift",
+    "customer": "Oxford Equipment Rental",
+    "location": "Oxford, AL",
+    "lastSeenAt": "2026-06-02T14:40:57Z"
+  },
+  {
+    "id": "M-1005",
+    "serialNumber": "XUG0THDLR000789",
+    "model": "XC6-3514K",
+    "type": "telehandler",
+    "customer": "Carolina Site Services",
+    "location": "Charlotte, NC",
+    "lastSeenAt": "2026-06-02T13:02:19Z"
+  }
+]
