@@ -1,10 +1,9 @@
 from collections import Counter
-import asyncio
 from datetime import datetime, timezone
-import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.ai_provider import generate_fleet_ai_report, generate_machine_ai_report
@@ -12,6 +11,7 @@ from app.data_store import cache_status, get_data_source, load_sync_logs
 from app.data_store import load_faults as store_load_faults
 from app.data_store import load_machines as store_load_machines
 from app.data_store import load_telemetry as store_load_telemetry
+from app.database import get_database_status, init_database
 from app.models import FleetAnalysisPrompt, MachineAnalysisPrompt
 from app.nl_query import answer_question
 from app.normalizer import (
@@ -22,11 +22,13 @@ from app.normalizer import (
 from app.prompt_builder import (
     build_fleet_prompt,
     build_machine_prompt,
-    hours_since,
     is_low_utilization,
     is_offline,
 )
+from app.report_exporter import build_fleet_excel_report, build_fleet_pdf_report
+from app.scheduler import auto_sync_status, start_auto_sync, stop_auto_sync
 from app.trackunit_sync import sync_faults, sync_fleet_snapshot, sync_time_series
+from app.trend_analysis import get_fleet_trends
 
 
 app = FastAPI(
@@ -42,9 +44,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-_auto_sync_task: asyncio.Task | None = None
-
 
 class DateRangeRequest(BaseModel):
     start_date: str
@@ -73,27 +72,15 @@ def load_fault_codes():
     return store_load_faults()
 
 
-async def _auto_sync_loop() -> None:
-    interval_seconds = int(os.getenv("TRACKUNIT_SYNC_INTERVAL_SECONDS", "300"))
-    while True:
-        await asyncio.sleep(interval_seconds)
-        await asyncio.to_thread(sync_fleet_snapshot)
-
-
 @app.on_event("startup")
 async def start_optional_auto_sync() -> None:
-    global _auto_sync_task
-    enabled = os.getenv("TRACKUNIT_AUTO_SYNC_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
-    if enabled and _auto_sync_task is None:
-        _auto_sync_task = asyncio.create_task(_auto_sync_loop())
+    init_database()
+    start_auto_sync(sync_fleet_snapshot)
 
 
 @app.on_event("shutdown")
 async def stop_optional_auto_sync() -> None:
-    global _auto_sync_task
-    if _auto_sync_task is not None:
-        _auto_sync_task.cancel()
-        _auto_sync_task = None
+    stop_auto_sync()
 
 
 def find_machine(machine_id: str):
@@ -160,6 +147,16 @@ def get_cache_status():
     return cache_status()
 
 
+@app.get("/database/status")
+def get_db_status():
+    return get_database_status()
+
+
+@app.get("/sync/auto/status")
+def get_auto_sync_status():
+    return auto_sync_status()
+
+
 @app.post("/sync/trackunit/fleet")
 def sync_trackunit_fleet():
     return sync_fleet_snapshot()
@@ -178,6 +175,27 @@ def sync_trackunit_faults(request: DateRangeRequest):
 @app.get("/sync/logs")
 def get_sync_logs():
     return load_sync_logs()
+
+
+@app.get("/analytics/trends")
+def get_analytics_trends(days: int = 30):
+    return get_fleet_trends(days)
+
+
+@app.get("/reports/fleet/excel")
+def download_fleet_excel_report(days: int = 30):
+    path = build_fleet_excel_report(days)
+    return FileResponse(
+        path,
+        filename=path.name,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@app.get("/reports/fleet/pdf")
+def download_fleet_pdf_report(days: int = 30):
+    path = build_fleet_pdf_report(days)
+    return FileResponse(path, filename=path.name, media_type="application/pdf")
 
 
 @app.get("/machines")

@@ -2,6 +2,13 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.data_store import append_sync_log, save_faults, save_machines, save_telemetry
+from app.database import (
+    insert_fault_codes,
+    insert_fleet_history,
+    insert_sync_log,
+    insert_telemetry_snapshots,
+    upsert_machines,
+)
 from app.normalizer import (
     normalize_trackunit_fault,
     normalize_trackunit_machine,
@@ -62,6 +69,7 @@ def _log(sync_type: str, status: str, records: int = 0, error: str | None = None
         "finished_at": datetime.now(timezone.utc).isoformat(),
     }
     append_sync_log(log)
+    insert_sync_log(log)
     return log
 
 
@@ -74,6 +82,9 @@ def sync_fleet_snapshot() -> dict:
         telemetry = [normalize_trackunit_telemetry(item) for item in items]
         save_machines(machines)
         save_telemetry(telemetry)
+        upsert_machines(machines)
+        insert_telemetry_snapshots(telemetry)
+        insert_fleet_history(machines, telemetry, source="trackunit_api")
         return _log("fleet_snapshot", "success", len(items))
     except TrackunitError as exc:
         return _log("fleet_snapshot", "error", 0, str(exc))
@@ -90,6 +101,9 @@ def sync_single_asset(asset_id: str) -> dict:
         telemetry = [normalize_trackunit_telemetry(item) for item in items]
         save_machines(machines)
         save_telemetry(telemetry)
+        upsert_machines(machines)
+        insert_telemetry_snapshots(telemetry)
+        insert_fleet_history(machines, telemetry, source="trackunit_api")
         return _log("single_asset", "success", len(items))
     except TrackunitError as exc:
         return _log("single_asset", "error", 0, str(exc))
@@ -103,6 +117,7 @@ def sync_time_series(start_date: str, end_date: str) -> dict:
         items = _paged_get(client, endpoint)
         telemetry = [normalize_trackunit_telemetry(item) for item in items]
         save_telemetry(telemetry)
+        insert_telemetry_snapshots(telemetry)
         return _log("time_series", "success", len(items))
     except TrackunitError as exc:
         return _log("time_series", "error", 0, str(exc))
@@ -116,6 +131,7 @@ def sync_faults(start_date: str, end_date: str) -> dict:
         items = _paged_get(client, endpoint)
         faults = [normalize_trackunit_fault(item) for item in items]
         save_faults(faults)
+        insert_fault_codes(faults)
         return _log("faults", "success", len(items))
     except TrackunitError as exc:
         return _log("faults", "error", 0, str(exc))

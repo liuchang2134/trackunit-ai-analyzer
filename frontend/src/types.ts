@@ -17,6 +17,48 @@ export type CacheStatus = {
   latest_successful_sync: SyncLog | null;
 };
 
+export type DatabaseStatus = {
+  provider: string;
+  path: string;
+  exists: boolean;
+  tables: Record<string, number>;
+  postgresql_ready: boolean;
+  note: string;
+};
+
+export type AutoSyncStatus = {
+  enabled: boolean;
+  running: boolean;
+  interval_seconds: number;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  last_result: SyncLog | null;
+  error: string | null;
+};
+
+export type FleetTrendPoint = {
+  captured_at: string;
+  total_machines: number;
+  online_machines: number;
+  offline_machines: number;
+  low_fuel_machines: number;
+  low_utilization_machines: number;
+  fault_records: number;
+  average_fuel_percent: number | null;
+  average_operating_hours: number | null;
+  source: string;
+};
+
+export type FleetTrends = {
+  days: number;
+  points: FleetTrendPoint[];
+  point_count: number;
+  latest: FleetTrendPoint | null;
+  deltas: Record<string, number | null>;
+  has_history: boolean;
+  summary: string[];
+};
+
 export type SyncLog = {
   created_at?: string;
   sync_type: string;

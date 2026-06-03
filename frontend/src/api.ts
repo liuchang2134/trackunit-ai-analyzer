@@ -2,9 +2,12 @@ import type {
   AiReportResponse,
   AiProvider,
   AskResponse,
+  AutoSyncStatus,
   CacheStatus,
   DashboardSummary,
+  DatabaseStatus,
   FaultCode,
+  FleetTrends,
   Machine,
   MachinePromptResponse,
   SyncFleetResponse,
@@ -32,6 +35,26 @@ export function fetchCacheStatus(): Promise<CacheStatus> {
 
 export function fetchSyncLogs(): Promise<SyncLog[]> {
   return request<SyncLog[]>("/sync/logs");
+}
+
+export function fetchAutoSyncStatus(): Promise<AutoSyncStatus> {
+  return request<AutoSyncStatus>("/sync/auto/status");
+}
+
+export function fetchDatabaseStatus(): Promise<DatabaseStatus> {
+  return request<DatabaseStatus>("/database/status");
+}
+
+export function fetchFleetTrends(days = 30): Promise<FleetTrends> {
+  return request<FleetTrends>(`/analytics/trends?days=${days}`);
+}
+
+export function fleetExcelReportUrl(days = 30): string {
+  return `${API_BASE}/reports/fleet/excel?days=${days}`;
+}
+
+export function fleetPdfReportUrl(days = 30): string {
+  return `${API_BASE}/reports/fleet/pdf?days=${days}`;
 }
 
 export function syncTrackunitFleet(): Promise<SyncFleetResponse> {

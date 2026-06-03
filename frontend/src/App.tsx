@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   fetchCacheStatus,
+  fetchAutoSyncStatus,
+  fetchDatabaseStatus,
+  fetchFleetTrends,
   fetchFaults,
   fetchMachines,
   fetchSummary,
   fetchSyncLogs,
   fetchTelemetry,
+  fleetExcelReportUrl,
+  fleetPdfReportUrl,
   generateFleetAiReport,
   generateMachineAiReport,
   generateMachinePrompt,
@@ -23,13 +28,17 @@ import PartsDemandCard, { type PartsDemand } from "./components/PartsDemandCard"
 import ServiceCaseCard, { type ServiceCase } from "./components/ServiceCaseCard";
 import StatusBadge from "./components/StatusBadge";
 import SyncLogsPanel from "./components/SyncLogsPanel";
+import TrendSummaryPanel from "./components/TrendSummaryPanel";
 import UtilizationChart from "./components/UtilizationChart";
 import type {
   AiProvider,
   AiReportResponse,
+  AutoSyncStatus,
   CacheStatus,
   DashboardSummary,
+  DatabaseStatus,
   FaultCode,
+  FleetTrends,
   Machine,
   SyncLog,
   TelemetrySnapshot,
@@ -42,6 +51,9 @@ export default function App() {
   const [aiProvider, setAiProvider] = useState<AiProvider>("ollama_local");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null);
+  const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(null);
+  const [autoSyncStatus, setAutoSyncStatus] = useState<AutoSyncStatus | null>(null);
+  const [fleetTrends, setFleetTrends] = useState<FleetTrends | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
@@ -89,16 +101,22 @@ export default function App() {
   async function loadDashboardData() {
     try {
       setLoading(true);
-      const [summaryData, machineData, cacheData, logsData] = await Promise.all([
+      const [summaryData, machineData, cacheData, logsData, trendsData, dbData, autoSyncData] = await Promise.all([
         fetchSummary(),
         fetchMachines(),
         fetchCacheStatus(),
-        fetchSyncLogs()
+        fetchSyncLogs(),
+        fetchFleetTrends(),
+        fetchDatabaseStatus(),
+        fetchAutoSyncStatus()
       ]);
       setSummary(summaryData);
       setMachines(machineData);
       setCacheStatus(cacheData);
       setSyncLogs(logsData);
+      setFleetTrends(trendsData);
+      setDatabaseStatus(dbData);
+      setAutoSyncStatus(autoSyncData);
       setSelectedMachineId((current) => current || machineData[0]?.machine_id || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard data.");
@@ -108,16 +126,22 @@ export default function App() {
   }
 
   async function refreshCacheAndLogs() {
-    const [cacheData, logsData, summaryData, machineData] = await Promise.all([
+    const [cacheData, logsData, summaryData, machineData, trendsData, dbData, autoSyncData] = await Promise.all([
       fetchCacheStatus(),
       fetchSyncLogs(),
       fetchSummary(),
-      fetchMachines()
+      fetchMachines(),
+      fetchFleetTrends(),
+      fetchDatabaseStatus(),
+      fetchAutoSyncStatus()
     ]);
     setCacheStatus(cacheData);
     setSyncLogs(logsData);
     setSummary(summaryData);
     setMachines(machineData);
+    setFleetTrends(trendsData);
+    setDatabaseStatus(dbData);
+    setAutoSyncStatus(autoSyncData);
   }
 
   async function handleSyncFleet() {
@@ -222,10 +246,11 @@ export default function App() {
     if (activeView === "sync-cache") return (
       <div className="view-stack">
         <CacheStatusPanel cacheStatus={cacheStatus} language={language} />
+        <SystemStoragePanel language={language} databaseStatus={databaseStatus} autoSyncStatus={autoSyncStatus} />
         <SyncLogsPanel logs={syncLogs} language={language} syncing={syncing} syncMessage={syncMessage} onSync={handleSyncFleet} />
       </div>
     );
-    if (activeView === "reports") return <ReportsView language={language} loadingAction={loadingAction} report={fleetAiReport} onGenerate={handleGenerateFleetAiReport} />;
+    if (activeView === "reports") return <ReportsView language={language} loadingAction={loadingAction} report={fleetAiReport} trends={fleetTrends} onGenerate={handleGenerateFleetAiReport} />;
     if (activeView === "settings") return <SettingsView language={language} />;
     return (
       <DashboardView
@@ -234,6 +259,7 @@ export default function App() {
         machines={machines}
         issues={healthIssues}
         cacheStatus={cacheStatus}
+        trends={fleetTrends}
         onOpenView={setActiveView}
       />
     );
@@ -246,6 +272,7 @@ function DashboardView({
   machines,
   issues,
   cacheStatus,
+  trends,
   onOpenView
 }: {
   language: "zh" | "en";
@@ -253,6 +280,7 @@ function DashboardView({
   machines: Machine[];
   issues: HealthIssue[];
   cacheStatus: CacheStatus | null;
+  trends: FleetTrends | null;
   onOpenView: (view: ViewKey) => void;
 }) {
   return (
@@ -282,6 +310,7 @@ function DashboardView({
         <UtilizationChart machines={machines.slice(0, 40)} language={language} />
         <FaultChart machines={machines.slice(0, 40)} language={language} />
       </div>
+      <TrendSummaryPanel trends={trends} language={language} />
       <section className="panel">
         <div className="panel-header">
           <h2>{language === "zh" ? "Recent Alerts / Service Priority" : "Recent Alerts / Service Priority"}</h2>
@@ -345,25 +374,54 @@ function ServicePartsView({ cases, parts, language }: { cases: ServiceCase[]; pa
   );
 }
 
-function ReportsView({ language, loadingAction, report, onGenerate }: { language: "zh" | "en"; loadingAction: string | null; report: AiReportResponse | null; onGenerate: () => void }) {
+function ReportsView({ language, loadingAction, report, trends, onGenerate }: { language: "zh" | "en"; loadingAction: string | null; report: AiReportResponse | null; trends: FleetTrends | null; onGenerate: () => void }) {
+  return (
+    <div className="view-stack">
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>{language === "zh" ? "报告中心" : "Report Center"}</h2>
+            <span>{language === "zh" ? "支持车队 AI 报告、Excel、PDF" : "Fleet AI, Excel, and PDF reports are available"}</span>
+          </div>
+          <div className="button-row">
+            <a className="secondary-button link-button" href={fleetExcelReportUrl()} target="_blank" rel="noreferrer">Excel</a>
+            <a className="secondary-button link-button" href={fleetPdfReportUrl()} target="_blank" rel="noreferrer">PDF</a>
+            <button disabled={Boolean(loadingAction)} onClick={onGenerate}>
+              {loadingAction === "fleet-ai-report" ? (language === "zh" ? "生成中..." : "Generating...") : (language === "zh" ? "生成车队 AI 报告" : "Generate Fleet AI Report")}
+            </button>
+          </div>
+        </div>
+        {report && (
+          <div className="output-box">
+            <p><strong>Provider:</strong> {report.provider}</p>
+            <p><strong>{language === "zh" ? "模型" : "Model"}:</strong> {report.model}</p>
+            {report.error ? <div className="inline-error">{report.error}</div> : <pre>{report.ai_report_markdown}</pre>}
+          </div>
+        )}
+      </section>
+      <TrendSummaryPanel trends={trends} language={language} />
+    </div>
+  );
+}
+
+function SystemStoragePanel({ language, databaseStatus, autoSyncStatus }: { language: "zh" | "en"; databaseStatus: DatabaseStatus | null; autoSyncStatus: AutoSyncStatus | null }) {
   return (
     <section className="panel">
       <div className="panel-header">
         <div>
-          <h2>{language === "zh" ? "报告中心" : "Report Center"}</h2>
-          <span>{language === "zh" ? "当前支持车队 AI 报告" : "Fleet AI report is available in this phase"}</span>
+          <h2>{language === "zh" ? "数据库 / 自动同步" : "Database / Auto Sync"}</h2>
+          <span>{language === "zh" ? "SQLite 本地库，PostgreSQL 架构预留" : "Local SQLite with PostgreSQL-ready adapter"}</span>
         </div>
-        <button disabled={Boolean(loadingAction)} onClick={onGenerate}>
-          {loadingAction === "fleet-ai-report" ? (language === "zh" ? "生成中..." : "Generating...") : (language === "zh" ? "生成车队 AI 报告" : "Generate Fleet AI Report")}
-        </button>
+        <StatusBadge label={autoSyncStatus?.enabled ? "auto sync on" : "auto sync off"} tone={autoSyncStatus?.enabled ? "good" : "neutral"} />
       </div>
-      {report && (
-        <div className="output-box">
-          <p><strong>Provider:</strong> {report.provider}</p>
-          <p><strong>{language === "zh" ? "模型" : "Model"}:</strong> {report.model}</p>
-          {report.error ? <div className="inline-error">{report.error}</div> : <pre>{report.ai_report_markdown}</pre>}
-        </div>
-      )}
+      <div className="settings-list">
+        <div><strong>Database</strong><span>{databaseStatus?.provider ?? "-"} · {databaseStatus?.exists ? "ready" : "not created"}</span></div>
+        <div><strong>Machines</strong><span>{databaseStatus?.tables?.machines ?? 0}</span></div>
+        <div><strong>Telemetry</strong><span>{databaseStatus?.tables?.telemetry_snapshots ?? 0}</span></div>
+        <div><strong>Fleet History</strong><span>{databaseStatus?.tables?.fleet_snapshot_history ?? 0}</span></div>
+        <div><strong>Sync Interval</strong><span>{autoSyncStatus?.interval_seconds ?? "-"}s</span></div>
+        <div><strong>Next Run</strong><span>{autoSyncStatus?.next_run_at ?? "disabled"}</span></div>
+      </div>
     </section>
   );
 }

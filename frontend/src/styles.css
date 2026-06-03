@@ -57,6 +57,25 @@ button:disabled {
   color: var(--blue);
 }
 
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid var(--blue);
+  border-radius: 6px;
+  padding: 0 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .enterprise-shell {
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
@@ -499,6 +518,46 @@ textarea {
 .status-grid span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.mini-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 10px;
+  padding: 14px 16px 0;
+}
+
+.mini-kpi-grid div {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.mini-kpi-grid span,
+.trend-notes {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mini-kpi-grid strong {
+  font-size: 22px;
+}
+
+.trend-notes {
+  padding: 10px 16px 16px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: var(--amber-soft);
+  color: var(--amber) !important;
+  font-weight: 800;
 }
 
 .assistant-panel {

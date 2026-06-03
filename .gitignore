@@ -5,6 +5,7 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.tmp/
 .ruff_cache/
 .mypy_cache/
 
@@ -14,6 +15,10 @@ node_modules/
 dist/
 
 data/cache/
+data/reports/
+data/*.db
+data/*.sqlite
+data/*.sqlite3
 *.log
 backend-*.out.log
 backend-*.err.log

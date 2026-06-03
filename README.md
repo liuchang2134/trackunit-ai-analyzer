@@ -717,7 +717,7 @@ Qwen 本地运行，不产生云 API token 费用。
 ```text
 Trackunit endpoint 需要根据正式文档或账号权限配置。
 真实 payload 字段 mapping 可能需要根据实际返回调整。
-当前使用 JSON cache，后续 Phase 3 再接 PostgreSQL。
+当前默认使用 JSON cache + SQLite，本地历史趋势已接入；PostgreSQL 通过数据库 adapter 预留。
 自然语言 intent 先用规则识别，后续可升级为 LLM tool calling。
 ```
 
@@ -728,3 +728,97 @@ Trackunit endpoint 需要根据正式文档或账号权限配置。
 2. used_data 是否检索到了正确 records；
 3. nl_query.py prompt 是否把数据清楚交给 Qwen。
 ```
+
+## 数据库、自动同步、趋势和报表
+
+### 1. 数据库
+
+当前默认使用 SQLite：
+
+```text
+data/trackunit_ai.db
+```
+
+相关环境变量：
+
+```text
+SQLITE_DB_PATH=data/trackunit_ai.db
+DATABASE_URL=sqlite:///data/trackunit_ai.db
+```
+
+当前核心表：
+
+```text
+machines
+telemetry_snapshots
+fault_codes
+sync_logs
+fleet_snapshot_history
+```
+
+PostgreSQL 目前是架构预留，后续可以把 `app/database.py` 替换为 PostgreSQL adapter。
+
+### 2. 自动同步
+
+自动同步默认关闭。开启方式是在 `.env` 中设置：
+
+```text
+TRACKUNIT_AUTO_SYNC_ENABLED=true
+TRACKUNIT_SYNC_INTERVAL_SECONDS=300
+TRACKUNIT_AUTO_SYNC_RUN_ON_START=false
+```
+
+状态接口：
+
+```text
+GET /sync/auto/status
+```
+
+### 3. 历史趋势分析
+
+每次 fleet sync 成功后，会写入一条 `fleet_snapshot_history`，用于后续趋势分析。
+
+接口：
+
+```text
+GET /analytics/trends?days=30
+```
+
+返回：
+
+```text
+points
+latest
+deltas
+summary
+```
+
+### 4. PDF / Excel 报告导出
+
+接口：
+
+```text
+GET /reports/fleet/excel
+GET /reports/fleet/pdf
+```
+
+前端 Report Center 页面提供 Excel / PDF 下载按钮。
+
+### 5. GitHub Actions
+
+已增加 CI workflow：
+
+```text
+.github/workflows/ci.yml
+```
+
+CI 会运行：
+
+```text
+pytest
+cd frontend && npm ci
+cd frontend && npm run typecheck
+cd frontend && npm run build
+```
+
+部署步骤目前是 placeholder。后续确定部署目标后，可以接 Azure App Service、Render、内部 Windows Server 或 Docker。
