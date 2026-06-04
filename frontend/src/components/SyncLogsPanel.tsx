@@ -11,8 +11,8 @@ type Props = {
 
 export default function SyncLogsPanel({ logs, language, syncing, syncMessage, onSync }: Props) {
   const t = language === "zh"
-    ? { title: "同步日志", sync: "手动同步 Fleet Snapshot", syncing: "同步中...", empty: "暂无同步日志", records: "记录数" }
-    : { title: "Sync Logs", sync: "Sync Fleet Snapshot", syncing: "Syncing...", empty: "No sync logs", records: "Records" };
+    ? { title: "同步日志", sync: "手动同步车队快照", syncing: "同步中...", empty: "暂无同步日志", records: "记录数", type: "类型", status: "状态", finished: "完成时间", error: "错误", success: "成功", failed: "失败" }
+    : { title: "Sync Logs", sync: "Sync Fleet Snapshot", syncing: "Syncing...", empty: "No sync logs", records: "Records", type: "Type", status: "Status", finished: "Finished", error: "Error", success: "success", failed: "error" };
 
   return (
     <section className="panel">
@@ -28,11 +28,11 @@ export default function SyncLogsPanel({ logs, language, syncing, syncMessage, on
         <table className="data-table">
           <thead>
             <tr>
-              <th>Type</th>
-              <th>Status</th>
+              <th>{t.type}</th>
+              <th>{t.status}</th>
               <th>{t.records}</th>
-              <th>Finished</th>
-              <th>Error</th>
+              <th>{t.finished}</th>
+              <th>{t.error}</th>
             </tr>
           </thead>
           <tbody>
@@ -41,7 +41,7 @@ export default function SyncLogsPanel({ logs, language, syncing, syncMessage, on
             ) : logs.slice(-12).reverse().map((log, index) => (
               <tr key={`${log.finished_at || log.created_at || "log"}-${index}`}>
                 <td>{log.sync_type}</td>
-                <td><StatusBadge label={log.status} tone={log.status === "success" ? "good" : "danger"} /></td>
+                <td><StatusBadge label={log.status === "success" ? t.success : t.failed} tone={log.status === "success" ? "good" : "danger"} /></td>
                 <td>{log.records ?? "-"}</td>
                 <td>{log.finished_at || log.created_at || "-"}</td>
                 <td>{log.error || "-"}</td>

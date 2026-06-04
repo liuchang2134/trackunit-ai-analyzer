@@ -8,10 +8,14 @@ type Props = {
   evidence: string;
   action: string;
   missingFields?: string[];
+  language?: "zh" | "en";
 };
 
-export default function HealthIssueCard({ machine, issueType, severity, evidence, action, missingFields = [] }: Props) {
+export default function HealthIssueCard({ machine, issueType, severity, evidence, action, missingFields = [], language = "en" }: Props) {
   const tone = severity === "Critical" ? "danger" : severity === "Warning" ? "warning" : "info";
+  const severityLabel = language === "zh"
+    ? severity === "Critical" ? "高" : severity === "Warning" ? "中" : "关注"
+    : severity;
   return (
     <article className="issue-card">
       <div className="issue-card-header">
@@ -19,18 +23,18 @@ export default function HealthIssueCard({ machine, issueType, severity, evidence
           <strong>{machine.serial_number || machine.machine_id}</strong>
           <span>{machine.model}</span>
         </div>
-        <StatusBadge label={severity} tone={tone} />
+        <StatusBadge label={severityLabel} tone={tone} />
       </div>
       <dl>
-        <dt>Issue</dt>
+        <dt>{language === "zh" ? "问题" : "Issue"}</dt>
         <dd>{issueType}</dd>
-        <dt>Evidence</dt>
+        <dt>{language === "zh" ? "依据" : "Evidence"}</dt>
         <dd>{evidence}</dd>
-        <dt>Recommended action</dt>
+        <dt>{language === "zh" ? "建议动作" : "Recommended action"}</dt>
         <dd>{action}</dd>
         {missingFields.length > 0 && (
           <>
-            <dt>Missing fields</dt>
+            <dt>{language === "zh" ? "缺失字段" : "Missing fields"}</dt>
             <dd>{missingFields.join(", ")}</dd>
           </>
         )}

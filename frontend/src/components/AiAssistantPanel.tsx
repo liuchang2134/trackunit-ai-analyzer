@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { askFleetAssistant } from "../api";
-import type { AiProvider, AskResponse } from "../types";
+import type { AiProvider, AskResponse, Machine } from "../types";
 import DataSourceBadge from "./DataSourceBadge";
+import MarkdownRenderer from "./MarkdownRenderer";
+import { fieldLabel, getMissingFields, missingFieldReason } from "../utils/display";
 
 const chips = {
   zh: [
@@ -28,6 +30,7 @@ const chips = {
 type Props = {
   language: "zh" | "en";
   aiProvider: AiProvider;
+  machines: Machine[];
 };
 
 type RecordRow = {
@@ -40,11 +43,12 @@ type RecordRow = {
   fault_count?: number;
 };
 
-export default function AiAssistantPanel({ language, aiProvider }: Props) {
+export default function AiAssistantPanel({ language, aiProvider, machines }: Props) {
   const [question, setQuestion] = useState(chips[language][0]);
   const [result, setResult] = useState<AskResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showMissingMachines, setShowMissingMachines] = useState(false);
 
   useEffect(() => {
     setQuestion(chips[language][0]);
@@ -53,6 +57,12 @@ export default function AiAssistantPanel({ language, aiProvider }: Props) {
   }, [language]);
 
   const records = useMemo(() => extractRows(result?.used_data), [result]);
+  const missingMachines = useMemo(() => {
+    return machines
+      .map((machine) => ({ machine, missingFields: getMissingFields(machine) }))
+      .filter((item) => item.missingFields.length > 0)
+      .slice(0, 80);
+  }, [machines]);
 
   async function ask() {
     if (!question.trim()) {
@@ -76,7 +86,7 @@ export default function AiAssistantPanel({ language, aiProvider }: Props) {
       <div className="panel-header">
         <div>
           <h2>{language === "zh" ? "AI 车队助手" : "AI Fleet Assistant"}</h2>
-          <span>{language === "zh" ? "意图理解 + 规则查询 + AI 润色" : "Intent planning + rule query + AI wording"}</span>
+          <span>{language === "zh" ? "意图理解 + 数据检索 + AI 分析" : "Intent planning + data retrieval + AI analysis"}</span>
         </div>
       </div>
       <div className="assistant-body">
@@ -94,16 +104,24 @@ export default function AiAssistantPanel({ language, aiProvider }: Props) {
         {error && <div className="inline-error">{error}</div>}
         {result && (
           <div className="assistant-result">
-            <div className="result-meta">
-              <span>{language === "zh" ? "意图" : "Intent"}: {result.intent}</span>
-              <span>Provider: {result.provider}</span>
-              <span>{language === "zh" ? "模型" : "Model"}: {result.model}</span>
-              <DataSourceBadge source={result.data_summary?.source || result.data_source} fresh={result.data_summary?.cache_fresh} />
-              <span>{language === "zh" ? "分析模式" : "Analysis mode"}: {result.analysis_mode || "-"}</span>
-              <span>{language === "zh" ? "扫描设备" : "Machines scanned"}: {result.data_summary?.machines_scanned ?? "-"}</span>
-              <span>{language === "zh" ? "使用记录" : "Records used"}: {result.data_summary?.records_used ?? "-"}</span>
-              <span>{language === "zh" ? "风险分析" : "Risk analysis"}: enabled</span>
-              <span>{language === "zh" ? "质量校验" : "Quality"}: {result.quality_validation?.valid === false ? "failed" : "passed"}</span>
+            <div className="analysis-layout">
+              <div className="answer-box">
+                <MarkdownRenderer content={result.answer || result.answer_markdown} />
+              </div>
+              <aside className="analysis-info">
+                <h3>{language === "zh" ? "本次分析信息" : "Analysis Info"}</h3>
+                <div className="analysis-info-grid">
+                  <span>{language === "zh" ? "意图" : "Intent"}</span><strong>{result.intent}</strong>
+                  <span>{language === "zh" ? "数据源" : "Data Source"}</span><strong>{result.data_summary?.source || result.data_source}</strong>
+                  <span>{language === "zh" ? "缓存状态" : "Cache"}</span><DataSourceBadge source={result.data_summary?.source || result.data_source} fresh={result.data_summary?.cache_fresh} language={language} />
+                  <span>Provider</span><strong>{result.provider}</strong>
+                  <span>{language === "zh" ? "模型" : "Model"}</span><strong>{result.model}</strong>
+                  <span>{language === "zh" ? "扫描设备" : "Machines scanned"}</span><strong>{result.data_summary?.machines_scanned ?? "-"}</strong>
+                  <span>{language === "zh" ? "使用记录" : "Records used"}</span><strong>{result.data_summary?.records_used ?? "-"}</strong>
+                  <span>{language === "zh" ? "风险分析" : "Risk analysis"}</span><strong>{language === "zh" ? "已启用" : "enabled"}</strong>
+                  <span>{language === "zh" ? "质量验证" : "Quality"}</span><strong>{result.quality_validation?.valid === false ? (language === "zh" ? "未通过" : "failed") : (language === "zh" ? "通过" : "passed")}</strong>
+                </div>
+              </aside>
             </div>
             {result.fallback_used && (
               <div className="warning-banner">
@@ -115,10 +133,20 @@ export default function AiAssistantPanel({ language, aiProvider }: Props) {
             {result.api_error && <div className="inline-error">{result.api_error}</div>}
             {result.missing_fields && result.missing_fields.length > 0 && (
               <div className="missing-fields">
-                <strong>{language === "zh" ? "缺失字段" : "Missing fields"}:</strong> {result.missing_fields.join(", ")}
+                <strong>{language === "zh" ? "缺失字段" : "Missing fields"}:</strong>
+                <ul>
+                  {result.missing_fields.map((field) => (
+                    <li key={field}>{missingFieldReason(field, language)}</li>
+                  ))}
+                </ul>
+                <button className="secondary-button" onClick={() => setShowMissingMachines((value) => !value)}>
+                  {showMissingMachines
+                    ? (language === "zh" ? "收起缺失数据设备" : "Hide machines with missing data")
+                    : (language === "zh" ? "查看哪些设备缺数据" : "Show machines with missing data")}
+                </button>
               </div>
             )}
-            <pre className="answer-box">{result.answer || result.answer_markdown}</pre>
+            {showMissingMachines && <MissingMachineTable rows={missingMachines} language={language} />}
             {records.length > 0 && <ResultRecordsTable rows={records} language={language} />}
             {result.risk_ranking && result.risk_ranking.length > 0 && (
               <details open>
@@ -129,7 +157,7 @@ export default function AiAssistantPanel({ language, aiProvider }: Props) {
             {result.service_recommendations && result.service_recommendations.length > 0 && (
               <details open>
                 <summary>{language === "zh" ? "服务建议" : "Service Recommendations"}</summary>
-                <ServiceRecommendationList rows={result.service_recommendations.slice(0, 8)} />
+                <ServiceRecommendationList rows={result.service_recommendations.slice(0, 8)} language={language} />
               </details>
             )}
             <details>
@@ -144,6 +172,35 @@ export default function AiAssistantPanel({ language, aiProvider }: Props) {
         )}
       </div>
     </section>
+  );
+}
+
+function MissingMachineTable({ rows, language }: { rows: Array<{ machine: Machine; missingFields: string[] }>; language: "zh" | "en" }) {
+  return (
+    <div className="table-wrap compact-result-table">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>{language === "zh" ? "设备编号" : "Machine ID"}</th>
+            <th>{language === "zh" ? "型号" : "Model"}</th>
+            <th>{language === "zh" ? "序列号" : "Serial"}</th>
+            <th>{language === "zh" ? "缺失字段" : "Missing fields"}</th>
+            <th>{language === "zh" ? "最后上线时间" : "Last seen"}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ machine, missingFields }) => (
+            <tr key={machine.machine_id}>
+              <td>{machine.machine_id}</td>
+              <td>{machine.model}</td>
+              <td>{machine.serial_number}</td>
+              <td>{missingFields.map((field) => fieldLabel(field, language)).join(", ")}</td>
+              <td>{machine.last_seen_at || "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -176,7 +233,7 @@ function RiskRankingTable({ rows, language }: { rows: Array<Record<string, unkno
   );
 }
 
-function ServiceRecommendationList({ rows }: { rows: Array<Record<string, unknown>> }) {
+function ServiceRecommendationList({ rows, language }: { rows: Array<Record<string, unknown>>; language: "zh" | "en" }) {
   return (
     <div className="issue-list">
       {rows.map((row, index) => (
@@ -187,8 +244,8 @@ function ServiceRecommendationList({ rows }: { rows: Array<Record<string, unknow
               <span>{String(row.priority || "-")}</span>
             </div>
           </div>
-          <p>{String(row.recommended_action || "-")}</p>
-          <p className="muted">{String(row.parts_recommendation || "-")}</p>
+          <p><strong>{language === "zh" ? "建议动作" : "Recommended action"}:</strong> {String(row.recommended_action || "-")}</p>
+          <p className="muted"><strong>{language === "zh" ? "备件建议" : "Parts recommendation"}:</strong> {String(row.parts_recommendation || "-")}</p>
         </article>
       ))}
     </div>
@@ -216,7 +273,7 @@ function ResultRecordsTable({ rows, language }: { rows: RecordRow[]; language: "
               <td>{row.machine_id || "-"}</td>
               <td>{row.serial_number || "-"}</td>
               <td>{row.model || "-"}</td>
-              <td>{row.fuel_remaining_percent === null || row.fuel_remaining_percent === undefined ? "Missing" : `${row.fuel_remaining_percent}%`}</td>
+              <td>{row.fuel_remaining_percent === null || row.fuel_remaining_percent === undefined ? (language === "zh" ? "数据缺失" : "Missing") : `${row.fuel_remaining_percent}%`}</td>
               <td>{row.operating_hours ?? "-"}</td>
               <td>{row.fault_count ?? 0}</td>
               <td>{row.last_seen_at || "-"}</td>

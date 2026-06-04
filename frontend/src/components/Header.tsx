@@ -40,7 +40,7 @@ export default function Header({
         </p>
       </div>
       <div className="header-actions">
-        <DataSourceBadge source={cacheStatus?.data_source} fresh={cacheStatus?.fresh} />
+        <DataSourceBadge source={cacheStatus?.data_source} fresh={cacheStatus?.fresh} language={language} />
         <div className="provider-toggle" role="group" aria-label="AI provider">
           <button
             className={aiProvider === "ollama_local" ? "toggle-active" : "secondary-button"}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Machine } from "../types";
 import StatusBadge from "./StatusBadge";
+import { isLowFuel, isLowUtilization, isOffline, recommendedAction, riskLevel, riskReasons, riskScore, riskTone } from "../utils/display";
 
 type Props = {
   machines: Machine[];
@@ -9,17 +10,17 @@ type Props = {
   onSelectMachine?: (machine: Machine) => void;
 };
 
-type SortKey = "last_seen_at" | "operating_hours" | "fuel_remaining_percent";
+type SortKey = "last_seen_at" | "operating_hours" | "fuel_remaining_percent" | "fault_count";
+type FleetFilter = "all" | "offline" | "highRisk" | "lowFuel" | "lowUtilization" | "faults";
 
 export default function MachineTable({ machines, language, selectedMachineId, onSelectMachine }: Props) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [fleetFilter, setFleetFilter] = useState<FleetFilter>("all");
   const [modelFilter, setModelFilter] = useState("all");
-  const [issueFilter, setIssueFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("last_seen_at");
 
   const models = useMemo(() => {
-    return Array.from(new Set(machines.map((machine) => safe(machine.model)).filter(Boolean))).slice(0, 80);
+    return Array.from(new Set(machines.map((machine) => safe(machine.model, "Not available")).filter(Boolean))).slice(0, 80);
   }, [machines]);
 
   const filtered = useMemo(() => {
@@ -35,68 +36,85 @@ export default function MachineTable({ machines, language, selectedMachineId, on
           machine.location
         ].join(" ").toLowerCase();
         if (searchText && !values.includes(searchText)) return false;
-        if (statusFilter === "offline" && !isOffline(machine)) return false;
-        if (statusFilter === "online" && isOffline(machine)) return false;
+        if (fleetFilter === "offline" && !isOffline(machine)) return false;
+        if (fleetFilter === "highRisk" && riskScore(machine) < 70) return false;
+        if (fleetFilter === "lowFuel" && !isLowFuel(machine)) return false;
+        if (fleetFilter === "lowUtilization" && !isLowUtilization(machine)) return false;
+        if (fleetFilter === "faults" && (machine.fault_count ?? 0) <= 0) return false;
         if (modelFilter !== "all" && machine.model !== modelFilter) return false;
-        if (issueFilter === "faults" && (machine.fault_count ?? 0) <= 0) return false;
-        if (issueFilter === "lowFuel" && !isLowFuel(machine)) return false;
-        if (issueFilter === "lowUtilization" && !isLowUtilization(machine)) return false;
         return true;
       })
       .sort((a, b) => compareBySortKey(a, b, sortKey));
-  }, [issueFilter, machines, modelFilter, search, sortKey, statusFilter]);
+  }, [fleetFilter, machines, modelFilter, search, sortKey]);
 
   const t = language === "zh"
     ? {
         title: "设备列表",
         count: "台",
         search: "搜索设备、序列号、型号、客户、位置",
-        status: "状态",
         all: "全部",
-        online: "在线",
         offline: "离线",
+        highRisk: "高风险",
         model: "型号",
-        issue: "问题",
         faults: "有故障",
         lowFuel: "低油量",
         lowUtilization: "低利用率",
-        sort: "排序",
+        sort: "点击列标题排序",
         machine: "设备",
         serial: "序列号",
         type: "类型",
         customer: "客户",
         location: "位置",
+        status: "状态",
         fuel: "油量",
         hours: "运行小时",
         lastSeen: "最近通信",
         fault: "故障",
-        source: "数据源"
+        risk: "风险等级",
+        reason: "风险原因",
+        action: "建议动作",
+        online: "在线",
+        dataSource: "数据源",
+        missing: "数据缺失"
       }
     : {
         title: "Fleet List",
         count: "machines",
         search: "Search asset, serial, model, customer, location",
-        status: "Status",
         all: "All",
-        online: "Online",
         offline: "Offline",
+        highRisk: "High risk",
         model: "Model",
-        issue: "Issue",
         faults: "Faults",
         lowFuel: "Low fuel",
         lowUtilization: "Low utilization",
-        sort: "Sort",
+        sort: "Click column headers to sort",
         machine: "Machine",
         serial: "Serial",
         type: "Type",
         customer: "Customer",
         location: "Location",
+        status: "Status",
         fuel: "Fuel",
         hours: "Hours",
         lastSeen: "Last update",
         fault: "Faults",
-        source: "Source"
+        risk: "Risk",
+        reason: "Reason",
+        action: "Action",
+        online: "Online",
+        dataSource: "Source",
+        missing: "Missing"
       };
+
+  const filterItems: Array<{ key: FleetFilter; label: string }> = [
+    { key: "all", label: t.all },
+    { key: "offline", label: t.offline },
+    { key: "highRisk", label: t.highRisk },
+    { key: "lowFuel", label: t.lowFuel },
+    { key: "lowUtilization", label: t.lowUtilization },
+    { key: "faults", label: t.faults },
+  ];
 
   return (
     <section className="panel">
@@ -108,26 +126,22 @@ export default function MachineTable({ machines, language, selectedMachineId, on
       </div>
       <div className="filter-bar">
         <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.search} />
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-          <option value="all">{t.status}: {t.all}</option>
-          <option value="online">{t.online}</option>
-          <option value="offline">{t.offline}</option>
-        </select>
+        <div className="filter-segment">
+          {filterItems.map((item) => (
+            <button
+              key={item.key}
+              className={fleetFilter === item.key ? "toggle-active" : "secondary-button"}
+              onClick={() => setFleetFilter(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
         <select value={modelFilter} onChange={(event) => setModelFilter(event.target.value)}>
           <option value="all">{t.model}: {t.all}</option>
           {models.map((model) => <option key={model} value={model}>{model}</option>)}
         </select>
-        <select value={issueFilter} onChange={(event) => setIssueFilter(event.target.value)}>
-          <option value="all">{t.issue}: {t.all}</option>
-          <option value="faults">{t.faults}</option>
-          <option value="lowFuel">{t.lowFuel}</option>
-          <option value="lowUtilization">{t.lowUtilization}</option>
-        </select>
-        <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
-          <option value="last_seen_at">{t.sort}: {t.lastSeen}</option>
-          <option value="operating_hours">{t.hours}</option>
-          <option value="fuel_remaining_percent">{t.fuel}</option>
-        </select>
+        <span className="table-hint">{t.sort}</span>
       </div>
       <div className="table-wrap">
         <table className="data-table">
@@ -140,11 +154,14 @@ export default function MachineTable({ machines, language, selectedMachineId, on
               <th>{t.customer}</th>
               <th>{t.location}</th>
               <th>{t.status}</th>
-              <th>{t.fuel}</th>
-              <th>{t.hours}</th>
-              <th>{t.fault}</th>
-              <th>{t.lastSeen}</th>
-              <th>{t.source}</th>
+              <th><SortableButton label={t.fuel} active={sortKey === "fuel_remaining_percent"} onClick={() => setSortKey("fuel_remaining_percent")} /></th>
+              <th><SortableButton label={t.hours} active={sortKey === "operating_hours"} onClick={() => setSortKey("operating_hours")} /></th>
+              <th><SortableButton label={t.fault} active={sortKey === "fault_count"} onClick={() => setSortKey("fault_count")} /></th>
+              <th><SortableButton label={t.lastSeen} active={sortKey === "last_seen_at"} onClick={() => setSortKey("last_seen_at")} /></th>
+              <th>{t.risk}</th>
+              <th>{t.reason}</th>
+              <th>{t.action}</th>
+              <th>{t.dataSource}</th>
             </tr>
           </thead>
           <tbody>
@@ -154,17 +171,20 @@ export default function MachineTable({ machines, language, selectedMachineId, on
                 className={machine.machine_id === selectedMachineId ? "selected" : ""}
                 onClick={() => onSelectMachine?.(machine)}
               >
-                <td>{safe(machine.machine_id)}</td>
-                <td>{safe(machine.model)}</td>
-                <td>{safe(machine.serial_number)}</td>
-                <td>{safe(machine.machine_type)}</td>
-                <td>{safe(machine.customer)}</td>
-                <td>{safe(machine.location)}</td>
+                <td>{safe(machine.machine_id, t.missing)}</td>
+                <td>{safe(machine.model, t.missing)}</td>
+                <td>{safe(machine.serial_number, t.missing)}</td>
+                <td>{safe(machine.machine_type, t.missing)}</td>
+                <td>{safe(machine.customer, t.missing)}</td>
+                <td>{safe(machine.location, t.missing)}</td>
                 <td><StatusBadge label={isOffline(machine) ? t.offline : t.online} tone={isOffline(machine) ? "danger" : "good"} /></td>
-                <td>{formatPercent(machine.fuel_remaining_percent)}</td>
-                <td>{formatNumber(machine.operating_hours)}</td>
+                <td>{formatPercent(machine.fuel_remaining_percent, t.missing)}</td>
+                <td>{formatNumber(machine.operating_hours, t.missing)}</td>
                 <td>{machine.fault_count ?? 0}</td>
-                <td>{safe(machine.last_seen_at)}</td>
+                <td>{safe(machine.last_seen_at, t.missing)}</td>
+                <td><StatusBadge label={`${riskLevel(machine, language)} ${riskScore(machine)}`} tone={riskTone(machine)} /></td>
+                <td>{riskReasons(machine, language).join("; ")}</td>
+                <td>{recommendedAction(machine, language)}</td>
                 <td>trackunit_cache</td>
               </tr>
             ))}
@@ -175,34 +195,25 @@ export default function MachineTable({ machines, language, selectedMachineId, on
   );
 }
 
-function safe(value: string | null | undefined): string {
-  return value && value !== "Data not available" ? value : "Not available";
+function SortableButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return <button className={`table-sort ${active ? "active" : ""}`} onClick={onClick}>{label}</button>;
 }
 
-function formatNumber(value: number | null | undefined): string {
-  return value === null || value === undefined ? "Not available" : value.toLocaleString();
+function safe(value: string | null | undefined, fallback: string): string {
+  return value && value !== "Data not available" ? value : fallback;
 }
 
-function formatPercent(value: number | null | undefined): string {
-  return value === null || value === undefined ? "Missing field" : `${value}%`;
+function formatNumber(value: number | null | undefined, fallback: string): string {
+  return value === null || value === undefined ? fallback : value.toLocaleString();
 }
 
-function isLowFuel(machine: Machine): boolean {
-  return machine.fuel_remaining_percent !== null && machine.fuel_remaining_percent !== undefined && machine.fuel_remaining_percent <= 10;
-}
-
-function isLowUtilization(machine: Machine): boolean {
-  return machine.risk_level === "Low Utilization" || (machine.operating_hours !== null && machine.operating_hours !== undefined && machine.operating_hours < 50);
-}
-
-function isOffline(machine: Machine): boolean {
-  const timestamp = Date.parse(machine.last_seen_at);
-  if (Number.isNaN(timestamp)) return false;
-  return Date.now() - timestamp > 72 * 60 * 60 * 1000;
+function formatPercent(value: number | null | undefined, fallback: string): string {
+  return value === null || value === undefined ? fallback : `${value}%`;
 }
 
 function compareBySortKey(a: Machine, b: Machine, sortKey: SortKey): number {
   if (sortKey === "last_seen_at") return Date.parse(b.last_seen_at) - Date.parse(a.last_seen_at);
+  if (sortKey === "fault_count") return (b.fault_count ?? 0) - (a.fault_count ?? 0);
   const left = a[sortKey] ?? Number.NEGATIVE_INFINITY;
   const right = b[sortKey] ?? Number.NEGATIVE_INFINITY;
   return Number(right) - Number(left);

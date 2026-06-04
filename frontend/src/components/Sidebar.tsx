@@ -7,14 +7,14 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { key: "dashboard", zh: "Dashboard", en: "Dashboard" },
-  { key: "fleet", zh: "Fleet", en: "Fleet" },
-  { key: "machine-health", zh: "Machine Health", en: "Machine Health" },
-  { key: "service-parts", zh: "Service & Parts", en: "Service & Parts" },
-  { key: "ai-assistant", zh: "AI Assistant", en: "AI Assistant" },
-  { key: "sync-cache", zh: "Sync & Cache", en: "Sync & Cache" },
-  { key: "reports", zh: "Reports", en: "Reports" },
-  { key: "settings", zh: "Settings", en: "Settings" }
+  { key: "dashboard", zh: "车队总览", en: "Dashboard" },
+  { key: "fleet", zh: "设备列表", en: "Fleet" },
+  { key: "machine-health", zh: "设备健康", en: "Machine Health" },
+  { key: "service-parts", zh: "服务与备件", en: "Service & Parts" },
+  { key: "ai-assistant", zh: "AI 助手", en: "AI Assistant" },
+  { key: "sync-cache", zh: "同步与缓存", en: "Sync & Cache" },
+  { key: "reports", zh: "报告中心", en: "Reports" },
+  { key: "settings", zh: "系统设置", en: "Settings" }
 ];
 
 type Props = {

@@ -75,6 +75,8 @@ export type Machine = {
   machine_type: string;
   customer: string;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   last_seen_at: string;
   engine_status?: string;
   fuel_remaining_percent?: number | null;
