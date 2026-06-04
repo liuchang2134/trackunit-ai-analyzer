@@ -1,21 +1,16 @@
 import json
-import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-from dotenv import load_dotenv
-
+from app.core.config import settings
 from app.models import FaultCode, Machine, TelemetrySnapshot
 from app.prompt_builder import is_low_utilization, is_offline
 
 
-ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(ROOT / ".env", override=True)
-
-DB_PATH = Path(os.getenv("SQLITE_DB_PATH", str(ROOT / "data" / "trackunit_ai.db")))
+DB_PATH = settings.sqlite_db_path
 
 
 def _utc_now() -> str:

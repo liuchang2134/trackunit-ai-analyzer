@@ -822,3 +822,77 @@ cd frontend && npm run build
 ```
 
 部署步骤目前是 placeholder。后续确定部署目标后，可以接 Azure App Service、Render、内部 Windows Server 或 Docker。
+
+## 后端结构
+
+当前后端已经拆成路由层、服务层、配置层和业务模块。
+
+### 1. FastAPI 入口
+
+```text
+app/main.py
+```
+
+现在只负责：
+
+```text
+创建 FastAPI app
+配置 CORS
+注册 API routers
+startup 时初始化 SQLite 和自动同步任务
+shutdown 时停止自动同步任务
+```
+
+### 2. API 路由
+
+```text
+app/api/routes_health.py
+app/api/routes_machines.py
+app/api/routes_sync.py
+app/api/routes_ai.py
+app/api/routes_reports.py
+app/api/routes_analytics.py
+```
+
+所有现有 API path 保持不变，例如：
+
+```text
+GET /health
+GET /machines
+GET /dashboard/summary
+POST /ask
+POST /sync/trackunit/fleet
+GET /reports/fleet/pdf
+```
+
+### 3. 配置层
+
+```text
+app/core/config.py
+```
+
+集中读取非敏感环境变量，例如：
+
+```text
+DATA_SOURCE
+TRACKUNIT_CACHE_TTL_SECONDS
+TRACKUNIT_AUTO_SYNC_ENABLED
+TRACKUNIT_SYNC_INTERVAL_SECONDS
+SQLITE_DB_PATH
+AI_PROVIDER
+OLLAMA_BASE_URL
+OLLAMA_MODEL
+GEMINI_MODEL
+GEMINI_BASE_URL
+```
+
+密钥、token、password、client secret 仍然只从 `.env` 读取，不会返回到前端，也不会写入 README 或日志。
+
+### 4. 服务层
+
+```text
+app/services/machine_service.py
+app/services/dashboard_service.py
+```
+
+服务层负责设备查询、遥测查询、故障查询、风险解释、Dashboard summary 等 helper 逻辑。路由层只负责 HTTP request / response。

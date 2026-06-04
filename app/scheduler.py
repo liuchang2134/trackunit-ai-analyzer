@@ -1,7 +1,8 @@
 import asyncio
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
+
+from app.core.config import settings
 
 
 AutoSyncCallable = Callable[[], dict[str, Any]]
@@ -27,8 +28,8 @@ def auto_sync_status() -> dict[str, Any]:
 
 
 async def _loop(sync_func: AutoSyncCallable) -> None:
-    interval = int(os.getenv("TRACKUNIT_SYNC_INTERVAL_SECONDS", "300"))
-    run_on_start = os.getenv("TRACKUNIT_AUTO_SYNC_RUN_ON_START", "false").lower() in {"1", "true", "yes", "on"}
+    interval = settings.trackunit_sync_interval_seconds
+    run_on_start = settings.trackunit_auto_sync_run_on_start
     _state.update({
         "enabled": True,
         "interval_seconds": interval,
@@ -60,8 +61,8 @@ async def _loop(sync_func: AutoSyncCallable) -> None:
 
 def start_auto_sync(sync_func: AutoSyncCallable) -> None:
     global _task
-    enabled = os.getenv("TRACKUNIT_AUTO_SYNC_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
-    interval = int(os.getenv("TRACKUNIT_SYNC_INTERVAL_SECONDS", "300"))
+    enabled = settings.trackunit_auto_sync_enabled
+    interval = settings.trackunit_sync_interval_seconds
     _state.update({"enabled": enabled, "interval_seconds": interval})
     if enabled and _task is None:
         _task = asyncio.create_task(_loop(sync_func))
