@@ -95,6 +95,21 @@ def test_readiness_does_not_expose_identity_or_call_network(configured):
     assert not configured[2]
 
 
+def test_vin_not_found_has_actionable_message_without_echoing_upstream(configured, monkeypatch):
+    class ResponseClient:
+        def __init__(self, **kwargs): pass
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        def post(self, *args, **kwargs):
+            return httpx.Response(200, json={'success': False, 'message': 'vin 不存在 private-value', 'data': None})
+    monkeypatch.setattr(xgss.httpx, 'Client', ResponseClient)
+    with pytest.raises(xgss.XGSSUpstreamError) as error:
+        xgss.request_page(VIN)
+    assert 'VIN/PIN 不存在' in str(error.value)
+    assert '仍可继续' in str(error.value)
+    assert 'private-value' not in str(error.value)
+
+
 def test_unconfigured_status_is_actionable_and_contains_no_url(monkeypatch,tmp_path):
     monkeypatch.delenv('XGSS_CONFIG_PATH',raising=False)
     monkeypatch.setattr(xgss,'CONFIG_PATH',tmp_path/'absent.json')

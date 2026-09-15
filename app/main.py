@@ -8,7 +8,7 @@ from app.database import init_database
 from app.nl_query import answer_question
 from app.scheduler import start_auto_sync, stop_auto_sync
 from app.trackunit_sync import sync_fleet_snapshot
-from app.api import routes_assistant, routes_drafts, routes_cases, routes_xgss, routes_fault_reference, routes_demo
+from app.api import routes_assistant, routes_drafts, routes_cases, routes_xgss, routes_fault_reference, routes_demo, routes_xgss_context
 
 
 app = FastAPI(
@@ -31,6 +31,7 @@ for router in (
     routes_demo.router,
     routes_fault_reference.router,
     routes_xgss.router,
+    routes_xgss_context.router,
     routes_cases.router,
     routes_drafts.router,
     routes_assistant.router,

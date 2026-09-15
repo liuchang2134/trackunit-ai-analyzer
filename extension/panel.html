@@ -5,6 +5,7 @@
   <div class="brand-row"><span class="brand-mark" aria-hidden="true">JL</span><div class="brand"><strong>机联智检</strong><small>工程机械辅助排查</small></div><span id="connection" class="connection-badge" data-state="connecting" role="status">连接中</span></div>
   <div class="toolbar"><button id="open-demo" class="primary" type="button">演示案例 <span aria-hidden="true">→</span></button><button id="identify" type="button">读取当前设备</button></div>
   <p id="context" class="context-note" role="status">打开 Trackunit 设备详情页后自动读取；也可先查看演示案例。</p>
+  <div class="catalog-toolbar"><button id="capture-catalog" type="button">读取当前 XGSS 图册</button><p id="catalog-status" role="status">在 XGSS 选中分类并显示零件明细后读取。</p></div>
   <div class="secondary-toolbar"><button id="follow" class="follow-toggle" type="button" aria-pressed="true">自动跟随：开</button><a id="standalone" target="_blank" rel="noopener noreferrer" aria-disabled="true">独立窗口 ↗</a><details id="connection-options"><summary>连接设置</summary><div class="settings-panel">
     <p id="connection-detail" role="status"></p><p id="runtime"></p>
     <form id="service-form"><label for="service-port">优先连接端口</label><div class="settings-row"><select id="service-port"><option value="8892">8892 · 项目预览</option><option value="8890">8890 · 标准启动</option></select><button type="submit">应用</button></div></form>
@@ -16,5 +17,5 @@
   <section id="connection-cover" aria-live="polite"><div class="connection-card"><span class="connection-icon" aria-hidden="true"><i></i><i></i><i></i></span><p class="eyebrow">LOCAL WORKSPACE</p><h1 id="cover-title">正在连接本机助手</h1><p id="cover-detail">正在检查可用端口…</p><div id="help" hidden><p>在项目目录的 CMD 启动：</p><code id="start-command">start_local.cmd --port 8892</code><p>保持服务窗口运行，再点击下方按钮。</p></div><button id="cover-retry" class="primary" type="button" hidden>重新连接</button><p class="card-note">连接就绪后，工作区会显示在这里。</p></div></section>
 </main>
 <footer>独立辅助工具 · 非徐工官方产品</footer>
-<script src="context.js"></script><script src="panel.js"></script>
+<script src="context.js"></script><script src="xgss-catalog.js"></script><script src="panel.js"></script>
 </body></html>

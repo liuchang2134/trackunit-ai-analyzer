@@ -29,8 +29,8 @@ def build_service_recommendations(risk_records: list[dict[str, Any]], limit: int
             "reason": "; ".join(str(item) for item in reasons),
             "recommended_action": action,
             "parts_recommendation": (
-                "Current system does not yet contain fault-code-to-parts mapping. "
-                "Real part recommendations are unavailable."
+                "Open a device investigation to infer possible components using applicable manuals and inspection feedback. "
+                "Specific part numbers require real captured catalog entries; fleet risk rules alone do not identify replacement parts."
             ),
             "source": "rule_based_service_intelligence",
         })

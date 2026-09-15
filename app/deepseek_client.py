@@ -75,7 +75,8 @@ def generate_structured_with_deepseek(messages: list[dict], schema: dict,
     wire_messages.insert(0, {'role': 'system', 'content': instruction})
     if not any(message['role'] == 'user' for message in wire_messages):
         wire_messages.append({'role': 'user', 'content': 'Choose the next decision from the supplied JSON Schema.'})
-    return _generate({'messages': wire_messages, 'max_tokens': 2048,
+    output_tokens = 4096 if 'component_hypotheses' in schema.get('properties', {}) else 2048
+    return _generate({'messages': wire_messages, 'max_tokens': output_tokens,
                       'response_format': {'type': 'json_object'}}, timeout_seconds)
 
 

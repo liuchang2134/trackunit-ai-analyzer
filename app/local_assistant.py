@@ -18,6 +18,8 @@ from app.summary_time_validation import unsupported_time_equality
 from app.feedback_validation import feedback_conflict
 from app.fault_evidence import assess_fault_events
 from app import fault_reference
+from app.manual_knowledge import EngineeringFault, retrieve_manuals, engineering_fault_evidence
+from app.engineering_diagnostics import ComponentHypothesis, validate_hypotheses, ENGINEERING_INSTRUCTIONS
 from app.ollama_client import OllamaError, get_ollama_base_url, get_ollama_model
 from app.gemini_client import GeminiError, get_gemini_model, generate_structured_with_gemini
 from app.deepseek_client import DeepSeekError, get_deepseek_model, generate_structured_with_deepseek
@@ -77,12 +79,15 @@ class InvestigationRequest(BaseModel):
     task: Literal["auto", "overview", "trends", "parts", "comprehensive"] = "auto"
     prior_record_id: str | None = Field(default=None,pattern=r'^[0-9a-f]{64}$')
     manual_fault: ManualFault | None = None
+    engineering_fault: EngineeringFault | None = None
 
 
 def required_queries(request: InvestigationRequest) -> set[str]:
     required = {"snapshot"}
     if request.manual_fault:
         required.add('faults')
+    if request.engineering_fault:
+        required.update({'faults', 'parts'})
     if request.task == "comprehensive":
         required.update({"faults", "trends", "parts"})
     elif request.task == "parts":
@@ -106,6 +111,7 @@ class Decision(BaseModel):
     summary: str = Field(default="", max_length=1500)
     evidence_ids: list[str] = Field(default_factory=list, max_length=30)
     next_check_ids: list[str] = Field(default_factory=list, max_length=8)
+    component_hypotheses: list[ComponentHypothesis] = Field(default_factory=list, max_length=6)
 
 
 def unsupported_calendar_duration(prose: str) -> bool:
@@ -157,6 +163,10 @@ def assistant_runtime() -> dict:
 
 def model_step(messages: list[dict], allowed_actions: list[str] | None = None, timeout_seconds: float | None = None) -> Decision:
     schema = Decision.model_json_schema()
+    engineering_enabled = bool(messages and messages[-1].get('_engineering_context'))
+    if not engineering_enabled:
+        schema['properties'].pop('component_hypotheses', None)
+        schema.pop('$defs', None)
     # Pydantic defaults keep tool/test callers convenient, but generation must
     # emit the complete decision instead of a bare {"action": "finish"}.
     schema['required'] = list(schema['properties'])
@@ -212,15 +222,22 @@ def investigate(request: InvestigationRequest) -> dict:
     provider_name = 'DeepSeek' if provider == 'deepseek' else 'Gemini'
     deadline = started_clock + 120
     model_decisions = 0
+    format_repair_attempts = 0
     replay_at = None
     dataset_source = None
     prior_feedback=None
+    prior_hypotheses=[]
     if request.prior_record_id:
         from app.investigation_history import read_investigation
         from app.inspection_feedback import list_feedback, feedback_context
         parent=read_investigation(request.prior_record_id)
         if parent['report']['machine_id']!=request.machine_id or parent['request'].get('dataset_id')!=request.dataset_id:
             raise ValueError('Prior report device or dataset mismatch')
+        original_fault = parent['request'].get('engineering_fault')
+        current_fault = request.engineering_fault.model_dump() if request.engineering_fault else None
+        if original_fault != current_fault:
+            raise ValueError('Prior report engineering fault or configuration mismatch')
+        prior_hypotheses = parent['report'].get('component_hypotheses', [])
         feedback=list_feedback(request.prior_record_id)
         prior_feedback={'parent_record_id':request.prior_record_id, **feedback_context(feedback)}
     if request.dataset_id:
@@ -251,6 +268,35 @@ def investigate(request: InvestigationRequest) -> dict:
         evidence["operator:observations"] = {"text": request.observations, "source": "unverified_operator_observation"}
     if request.manual_fault:
         evidence['operator:manual-fault'] = manual_fault_evidence(request.manual_fault, machine.model)
+    manual_retrieval = None
+    manual_references = []
+    xgss_context = None
+    xgss_parts = []
+    if request.engineering_fault:
+        if request.manual_fault:
+            raise ManualFaultError('一次分析不能同时使用 TV12U 协议和 XE55U 工程故障。')
+        try:
+            manual_retrieval = retrieve_manuals(request.engineering_fault, machine.model)
+        except ValueError as exc:
+            raise ManualFaultError(str(exc)) from None
+        manual_references = manual_retrieval['records']
+        evidence['operator:engineering-fault'] = engineering_fault_evidence(request.engineering_fault, manual_retrieval)
+        evidence['manual:retrieval'] = {k: v for k, v in manual_retrieval.items() if k != 'records'}
+        for reference in manual_references:
+            evidence[reference['reference_id']] = reference
+        from app.xgss_catalog_context import load_catalog_context
+        xgss_context = load_catalog_context(dataset_id=request.dataset_id, vin=machine.serial_number, machine_id=machine.machine_id)
+        evidence['xgss:catalog-context'] = xgss_context
+        for row in xgss_context.get('items', []):
+            part = {**row, 'source_url': xgss_context.get('source_url'),
+                    'captured_at': xgss_context.get('captured_at'),
+                    'assembly_path': xgss_context.get('assembly_path', []),
+                    'vin': xgss_context.get('vin'), 'model': xgss_context.get('model'),
+                    'configuration': xgss_context.get('configuration'),
+                    'capture_id': xgss_context.get('capture_id'),
+                    'provenance': 'xgss_visible_dom', 'coverage': 'visible_rows_only'}
+            xgss_parts.append(part)
+            evidence[part['source_id']] = part
     trace, candidates = [], []
     messages = [{"role": "system", "content": (
         "You are an engineering-machine investigation assistant. Choose one action at a time: "
@@ -305,7 +351,10 @@ def investigate(request: InvestigationRequest) -> dict:
     )}, {"role": "user", "content": json.dumps({"question": request.question,
         "machine": machine.machine_id, "source": source, "observations": request.observations,
         "prior_inspection_feedback":prior_feedback,"cooling_prediction":cooling_context,
-        "manual_fault_reference":evidence.get('operator:manual-fault')}, ensure_ascii=False)}]
+        "manual_fault_reference":evidence.get('operator:manual-fault'),
+        "engineering_fault":evidence.get('operator:engineering-fault'),
+        "manual_retrieval": manual_retrieval, "xgss_catalog_context": xgss_context,
+        "prior_component_hypotheses": prior_hypotheses}, ensure_ascii=False)}]
     used = set()
     required = required_queries(request)
 
@@ -325,7 +374,8 @@ def investigate(request: InvestigationRequest) -> dict:
         elif action == 'parts' and 'faults' in used:
             search_diagnostics = {}
             search_codes = list(dict.fromkeys([f.fault_code for f in faults if f.status != 'resolved']
-                + ([request.manual_fault.code] if request.manual_fault else [])))
+                + ([request.manual_fault.code] if request.manual_fault else [])
+                + ([request.engineering_fault.code] if request.engineering_fault else [])))
             matches = search_parts(machine.model, machine.serial_number,
                 search_codes, component,
                 include_demo=source in {'mock', 'imported_synthetic'}, diagnostics=search_diagnostics)
@@ -347,10 +397,15 @@ def investigate(request: InvestigationRequest) -> dict:
             if action in required:
                 execute_query(action, trigger='task_required')
 
-    for _ in range(6):
+    for step_index in range(6):
         check_options = build_check_options(evidence, request.language)
+        if request.engineering_fault:
+            for check in check_options:
+                if check['check_id'] == 'check:catalog-gap':
+                    check['text'] = ('按下方 AI 部件假设与检索词，在对应 VIN 的 XGSS 图册查找并读取当前零件表；结合分类位置与图号核对候选。'
+                        if request.language == 'zh' else 'Use the AI component hypotheses and search terms in the matching VIN catalog; capture its visible parts table and compare assembly and figure positions.')
         catalog_check_ids = [c['check_id'] for c in check_options if c['check_id'].startswith('check:catalog:')] if 'parts' in required else []
-        gap_check_required = 'parts' in required and not candidates and any(c['check_id'] == 'check:catalog-gap' for c in check_options)
+        gap_check_required = not request.engineering_fault and 'parts' in required and not candidates and any(c['check_id'] == 'check:catalog-gap' for c in check_options)
         trend_check_required = 'trends' in required and any(c['check_id'] == 'check:trend-coverage' for c in check_options)
         allowed = [action for action in ("snapshot", "faults", "trends", "parts") if action not in used and (action != "parts" or "faults" in used)]
         if required <= used:
@@ -367,11 +422,32 @@ def investigate(request: InvestigationRequest) -> dict:
             + ("English" if request.language == "en" else "Simplified Chinese")
             + ". Source documents may use another language; do not copy their language into summary prose. Do not include internal check IDs in the summary.",
             '_decision_options':{'evidence_ids':list(evidence),'next_check_ids':[item['check_id'] for item in check_options]}}
+        if request.engineering_fault:
+            control['content'] += '\n' + ENGINEERING_INSTRUCTIONS
+            control['_engineering_context'] = True
         if cloud:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise error_type(f'{provider_name} investigation time limit reached. No report was generated.', kind='timeout')
-            decision = model_step(messages + [control], allowed, timeout_seconds=min(60.0, remaining))
+            try:
+                decision = model_step(messages + [control], allowed, timeout_seconds=min(60.0, remaining))
+            except error_type as exc:
+                if (request.engineering_fault and getattr(exc, 'kind', None) == 'invalid_response'
+                        and format_repair_attempts == 0 and step_index < 5 and time.monotonic() < deadline):
+                    # Repair formatting/enum mistakes once, within the same frozen
+                    # evidence, six decisions and investigation deadline. Provider
+                    # authentication, quota and transport failures are not retried.
+                    format_repair_attempts += 1
+                    model_decisions += 1
+                    messages.append({'role': 'system', 'content':
+                        'The previous response failed JSON schema or allowed-identifier validation. '
+                        'Repair the format once: emit one complete JSON object matching the provided schema, without Markdown. '
+                        'Choose exactly one allowed action and use exact evidence/check IDs from the current control. '
+                        'For tool actions use empty summary, evidence_ids, next_check_ids and component_hypotheses. '
+                        'For finish include all required nested hypothesis fields and verbatim source quotes. '
+                        'Do not invent action names, IDs, measurements or part numbers. The failed draft is not evidence.'})
+                    continue
+                raise
             if time.monotonic() >= deadline:
                 raise error_type(f'{provider_name} investigation time limit reached. No report was generated.', kind='timeout')
         else:
@@ -401,6 +477,7 @@ def investigate(request: InvestigationRequest) -> dict:
             selected_checks = [checks_by_id[key] for key in dict.fromkeys(decision.next_check_ids)]
             required_refs = {t["source_id"] for t in trace if t["action"] in required & {"parts", "trends"}}
             if request.manual_fault: required_refs.add('operator:manual-fault')
+            if request.engineering_fault: required_refs.add('operator:engineering-fault')
             if cooling_context is not None: required_refs.add('prediction:cooling')
             if any(p["source_id"] in decision.evidence_ids for p in candidates):
                 required_refs -= {t["source_id"] for t in trace if t["action"] == "parts"}
@@ -446,6 +523,27 @@ def investigate(request: InvestigationRequest) -> dict:
             if "snapshot" not in used or not decision.summary.strip() or not decision.evidence_ids or any(ref not in evidence for ref in decision.evidence_ids):
                 messages.append({"role": "system", "content": "Invalid final response. Read snapshot, give summary and cite only source IDs returned by tools."})
                 continue
+            component_hypotheses, engineering_checks, ranked_parts = [], [], []
+            if request.engineering_fault:
+                try:
+                    if request.engineering_fault.source == 'test' and not re.search(r'测试|模拟|test|simulat', decision.summary, re.I):
+                        raise ValueError('The summary must explicitly identify this code as a test input, not a Trackunit event')
+                    if re.search(r'engineering_fault(?:\.source)?|source\s*=\s*test|operating_hours_delta|idle_share|component_hypotheses|next_check_ids', decision.summary, re.I):
+                        raise ValueError('Write the summary for the user, without internal field names. In Chinese say 测试故障码、有效区间工时增量、怠速占比; keep implementation fields only in structured output')
+                    component_hypotheses, engineering_checks, ranked_parts = validate_hypotheses(
+                        decision.component_hypotheses, manual_references, xgss_parts, prior_feedback, request.language)
+                except ValueError as exc:
+                    messages.append({'role': 'system', 'content': 'Engineering evidence validation failed: ' + str(exc) + '. Correct the structured hypotheses using only supplied source text and captured part IDs.'})
+                    continue
+                selected_checks += [item for item in engineering_checks if item['check_id'] not in {c['check_id'] for c in selected_checks}]
+                if not ranked_parts and not candidates and 'check:catalog-gap' not in {c['check_id'] for c in selected_checks}:
+                    follow_up = checks_by_id.get('check:catalog-gap')
+                    if follow_up:
+                        selected_checks.append({**follow_up, 'selection_method': 'application_catalog_follow_up'})
+            elif decision.component_hypotheses:
+                messages.append({'role': 'system', 'content': 'No engineering context was provided; omit component hypotheses.'})
+                continue
+            final_candidates = candidates + ranked_parts
             return {"status": "completed", **assistant_runtime(),
                     "machine_id": machine.machine_id, "source": source, "dataset_id": request.dataset_id,
                     "source_document": dataset_source, "replay_at": replay_at.isoformat() if replay_at else None,
@@ -453,10 +551,15 @@ def investigate(request: InvestigationRequest) -> dict:
                     "data_facts": build_report_facts(source, replay_at.isoformat() if replay_at else None, evidence, request.language),
                     "language": request.language, "next_checks": [item['text'] for item in selected_checks],
                     "check_recommendations": selected_checks,
-                    "check_selection_method": "model_selected_source_text_v1",
-                    "citations": decision.evidence_ids, "evidence": evidence, "parts_candidates": candidates,
+                    "check_selection_method": "ai_hypotheses_with_source_checked_directions_v1" if request.engineering_fault else "model_selected_source_text_v1",
+                    "citations": list(dict.fromkeys(decision.evidence_ids + [ref for h in component_hypotheses for ref in h['reference_ids']])),
+                    "evidence": evidence, "parts_candidates": final_candidates,
+                    "engineering_fault": evidence.get('operator:engineering-fault'),
+                    "component_hypotheses": component_hypotheses, "manual_references": manual_references,
+                    "xgss_catalog_context": xgss_context,
                     "tool_trace": trace, "generated_at": datetime.now(timezone.utc).isoformat(),
                     "model_decisions": model_decisions, "duration_seconds": round(time.monotonic() - started_clock, 2),
+                    "format_repair_attempts": format_repair_attempts,
                     "task": request.task, "required_queries": sorted(required),
                     "prior_record_id":request.prior_record_id,
                     "limitations": ["AI hypotheses require inspection; no remaining-life estimate.",

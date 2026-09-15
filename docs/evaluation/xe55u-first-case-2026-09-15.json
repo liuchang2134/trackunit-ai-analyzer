@@ -1,0 +1,34 @@
+{
+  "build": "20260915.8-xe55u-components",
+  "extension_version": "0.6.0",
+  "scenario": "XE55U / E4030 test input / unknown configuration",
+  "data": "Imported historical Trackunit hours; no real E4030 event asserted",
+  "manual_scope": "Two verified local excerpts, XE55U.00III EWMEN55U-A02, PDF pages 286 and 287",
+  "cloud_calls": "Real DeepSeek requests",
+  "browser": {
+    "initial_report_seconds_displayed": 13,
+    "feedback_report_seconds_displayed": 6,
+    "saved_test_feedback": true,
+    "feedback_effect_visible": true,
+    "history_reopened": true,
+    "markdown_download_verified": true,
+    "report_horizontal_overflow_at_390px": false
+  },
+  "latest_report": {
+    "generated_at": "2026-09-15T17:29:16.762007+00:00",
+    "hypotheses": 4,
+    "manual_references": 2,
+    "actual_parts": 0,
+    "format_repair_attempts": 0
+  },
+  "tests": {
+    "python_passed": 632,
+    "node_passed": 119
+  },
+  "limitations": [
+    "Current XE55U VIN rejected by XGSS as not found",
+    "No real XE55U XGSS rows or part applicability verified",
+    "Chrome 0.6.0 actual reload and production DOM capture not verified",
+    "Test input and simulated inspection do not validate real diagnosis"
+  ]
+}

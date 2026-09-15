@@ -6,7 +6,7 @@ import re
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
-FILES=('manifest.json','background.js','context.js','panel.js','panel.html','panel.css','README.md')
+FILES=('manifest.json','background.js','context.js','xgss-catalog.js','panel.js','panel.html','panel.css','README.md')
 
 
 def build():
@@ -16,8 +16,8 @@ def build():
     version=manifest['version']
     assert re.fullmatch(r'\d+\.\d+\.\d+',version)
     assert manifest['manifest_version']==3
-    assert manifest['permissions']==['sidePanel','activeTab']
-    assert 'host_permissions' not in manifest
+    assert manifest['permissions']==['sidePanel','activeTab','scripting']
+    assert manifest['host_permissions']==['https://manager.trackunit.com/*','https://new.manager.trackunit.com/*','https://xgss.xcmg.com/*']
     assert manifest['side_panel']['default_path']=='panel.html'
     assert manifest['background']['service_worker']=='background.js'
     assert manifest['content_security_policy']['extension_pages']=="script-src 'self'; object-src 'self'; frame-src http://127.0.0.1:8890 http://127.0.0.1:8892"

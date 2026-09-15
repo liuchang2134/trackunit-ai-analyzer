@@ -13,7 +13,7 @@ def save_investigation(report: dict, request: dict) -> dict:
     if report.get("status") != "completed" or report.get("machine_id") != request.get("machine_id"):
         raise ValueError("Only completed matching-machine reports can be saved")
     # Allowlisted user inputs, not arbitrary request/environment serialization.
-    inputs = {k: request.get(k) for k in ("machine_id", "dataset_id", "question", "observations", "language", "task", "prior_record_id", "manual_fault")}
+    inputs = {k: request.get(k) for k in ("machine_id", "dataset_id", "question", "observations", "language", "task", "prior_record_id", "manual_fault", "engineering_fault")}
     record = {"schema_version": 1, "request": inputs, "report": report}
     content = json.dumps(record, ensure_ascii=False, sort_keys=True)
     record_id = hashlib.sha256(content.encode()).hexdigest()

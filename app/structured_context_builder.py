@@ -40,8 +40,9 @@ def build_structured_context(question: str, query_plan: dict[str, Any], analysis
         "risk_ranking": [_compact_machine_record(item) for item in risk_ranking],
         "service_recommendations": service_recommendations,
         "service_parts_limitations": (
-            "Current system does not yet contain fault-code-to-parts mapping. "
-            "Real XCMG part-number recommendations are unavailable."
+            "This fleet context does not include retrieved manuals or captured catalog rows. "
+            "Use the device investigation workflow to infer possible components from applicable manuals "
+            "and compare real catalog entries. Part numbers require a cited catalog source."
         ),
     }
 
@@ -72,7 +73,7 @@ Non-negotiable rules:
 - Only use provided structured data.
 - If data is unavailable, state that clearly.
 - Risk scores are calculated by rules. Explain them, do not recalculate different scores.
-- Service parts recommendations are unavailable unless a mapping table is provided.
+- A pre-existing fault-to-part mapping is not required: infer possible components only from supplied manual evidence and inspection observations. Specific part numbers require supplied catalog rows; if absent, explain how to investigate the device and retrieve its catalog.
 - {language_rule}
 
 Output requirements:

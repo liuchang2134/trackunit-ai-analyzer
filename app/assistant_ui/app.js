@@ -162,6 +162,7 @@ async function refresh(focusPlatformSelection=false) {
 function selectMachine() {
   const m=selected();
   if(typeof faultReferenceDeviceChanged==='function')faultReferenceDeviceChanged(m,defaultSource);
+  if(typeof engineeringDeviceChanged==='function')engineeringDeviceChanged();
   $('case-open').disabled=!m || $('machine').disabled;
   $('xgss-device-open').disabled=!m || $('machine').disabled;
   const draft=investigationDrafts.switchTo(m?JSON.stringify([m.selection_id,m.dataset_id?m.provenance:defaultSource]):null,
@@ -219,6 +220,8 @@ $('form').onsubmit=async e=>{
   const question=$('question').value.trim() || taskQuestions[$('task').value];
   if(!question){$('question-details').open=true;$('status').textContent='请填写要分析的问题。';$('question').focus();return;}
   const manualFault=typeof getManualFaultReference==='function'?getManualFaultReference():null;
+  const engineeringFault=typeof getEngineeringFault==='function'?getEngineeringFault():null;
+  if(manualFault&&engineeringFault){$('status').textContent='一次排查只能使用一套故障资料，请移除不适用的故障码关联。';return;}
   if(!manualFault&&typeof getManualFaultDraftReference==='function'&&getManualFaultDraftReference()){
     $('status').textContent='草稿中的故障码尚未重新确认。请先核对并带入，或移除该代码后再开始分析。';
     $('status').dataset.state='error';$('fault-reference-panel').open=true;
@@ -227,6 +230,7 @@ $('form').onsubmit=async e=>{
   const locked=['sync-history','run','machine','refresh','finder-open','case-open','xgss-device-open','dataset-file','catalog','task','question','observations','language'];
   locked.forEach(id=>$(id).disabled=true);
   if(typeof setFaultReferenceBusy==='function')setFaultReferenceBusy(true);
+  if(typeof setEngineeringBusy==='function')setEngineeringBusy(true);
   if(typeof refreshLocalDraftControls==='function')refreshLocalDraftControls();
   if(typeof setFaultContextBusy==='function')setFaultContextBusy(true);
   $('run').textContent='分析中…';$('form').setAttribute('aria-busy','true');
@@ -235,12 +239,15 @@ $('form').onsubmit=async e=>{
   const started=Date.now();$('elapsed').hidden=false;
   const tick=()=>{$('elapsed').textContent=`已等待 ${Math.floor((Date.now()-started)/1000)} 秒${Date.now()-started>60000?' · 服务仍在处理，请勿重复提交':''}`;};tick();
   const timer=setInterval(tick,1000);
+  const analysisMachine=selected(),analysisSelection=analysisMachine.selection_id,analysisHash=location.hash;
   try {
-    const completed=await api('/assistant/investigate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({machine_id:selected().machine_id,dataset_id:selected().dataset_id || null,question,observations:$('observations').value,language:$('language').value,task:$('task').value,prior_record_id:priorRecordId,...(manualFault?{manual_fault:manualFault}:{})})});
+    const completed=await api('/assistant/investigate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({machine_id:analysisMachine.machine_id,dataset_id:analysisMachine.dataset_id || null,question,observations:$('observations').value,language:$('language').value,task:$('task').value,prior_record_id:priorRecordId,...(manualFault?{manual_fault:manualFault}:{}),...(engineeringFault?{engineering_fault:engineeringFault}:{})})});
+    if(selected()?.selection_id!==analysisSelection||location.hash!==analysisHash){$('status').textContent='原设备分析已完成并保留在其诊断记录中；正在切换当前设备。';return;}
     report=completed;
     $('current-feedback')?.remove();
     $('summary').textContent=report.summary;
     $('summary').previousElementSibling.textContent='AI解释 · 待核实';
+    if(typeof renderEngineeringReport==='function')renderEngineeringReport(report);
     let factsRoot=$('data-facts');
     if(!factsRoot){factsRoot=document.createElement('div');factsRoot.id='data-facts';$('result-evidence').insertBefore(factsRoot,$('metrics'));}
     factsRoot.replaceChildren();
@@ -258,7 +265,7 @@ $('form').onsubmit=async e=>{
       const li=document.createElement('li');li.textContent=s;
       const evidence=report.check_recommendations?.[index];
       if(evidence){const note=document.createElement('small');note.className='check-source';
-        note.textContent=`${{application_rule:'数据核验规则',demo:'演示资料',user_supplied:'用户提供资料'}[evidence.provenance] || '待核实资料'} · ${evidence.source_document} · 依据：${evidence.evidence_ids.join('、')}`;
+        note.textContent=`${{application_rule:'数据核验规则',demo:'演示资料',user_supplied:'用户提供资料',ai_inference_from_manual:'AI依据手册推断'}[evidence.provenance] || '待核实资料'} · ${evidence.source_document} · 依据：${evidence.evidence_ids.join('、')}`;
         li.append(note);}
       return li;
     }));
@@ -270,9 +277,10 @@ $('form').onsubmit=async e=>{
       const body=table.createTBody();
       for(const p of report.parts_candidates) {
         const row=body.insertRow();
+        const fromXGSS=p.provenance==='xgss_visible_dom'||p.source==='xgss_visible_dom'||String(p.source_id||'').startsWith('xgss:');
         [p.name+'\n'+p.part_number,
-         (p.models||[]).join('、')+'\n'+(p.match_reason==='fault_code'?'故障码匹配':'部件匹配')+' · '+(p.serial_verified?'序列号在适用清单':'序列号适用性待确认'),
-         (p.provenance==='demo'?'演示资料':'用户提供资料')+' · 候选待核查\n'+p.source_document+' / '+p.source_page+' / '+p.revision+'\n'+p.checks.join('；')
+         (p.models||[]).join('、')+'\n'+(p.ranking_reason||(p.match_reason==='fault_code'?'故障码匹配':'部件匹配'))+' · '+(p.serial_verified?'序列号在适用清单':'整机适用性待确认'),
+         (fromXGSS?'XGSS 可见图册条目':p.provenance==='demo'?'演示资料':'用户提供资料')+' · 候选待核查\n'+(p.source_document||'')+' / '+(p.source_page||p.figure_ref||'位置待核对')+' / '+(p.revision||'版本待核对')+'\n'+(p.checks||[]).join('；')
         ].forEach(value=>{row.insertCell().textContent=value;});
       }
       $('parts').append(table);
@@ -283,14 +291,14 @@ $('form').onsubmit=async e=>{
         model_not_in_catalog:'当前可用目录没有精确匹配此设备机型的条目。',
         serial_not_applicable:'目录有此机型，但设备序列号不在条目的适用范围内。',
         fault_or_component_not_matched:'目录条目通过了机型及序列号限制筛选，但未匹配本次故障码或部件查询。通过筛选不代表已核验整机配置。'};
-      $('parts').textContent=search ? (reasons[search.reason_code]||'本次没有可展示的匹配候选。')+' 检索仅覆盖当前本地目录。'
+      $('parts').textContent=engineeringFault?'本次尚未关联具体料号。可先查看可疑部件和检索词，读取对应 VIN 的 XGSS 图册后继续分析。':search ? (reasons[search.reason_code]||'本次没有可展示的匹配候选。')+' 检索仅覆盖当前本地目录。'
         : '尚无匹配候选。请补充故障证据或对应型号的备件目录。';
     }
     $('evidence').textContent=JSON.stringify({citations:report.citations,tools:report.tool_trace,evidence:report.evidence},null,2);
     $('result-xgss-controls').replaceChildren();
     if(typeof createXGSSControls==='function') {
       const machine=selected();
-      $('result-xgss-controls').append(createXGSSControls({...machine,source:machine.dataset_id?'imported_'+machine.provenance:defaultSource},manualFault?.code||null));
+      $('result-xgss-controls').append(createXGSSControls({...machine,source:machine.dataset_id?'imported_'+machine.provenance:defaultSource},engineeringFault?.code||manualFault?.code||null));
     }
     $('result').hidden=false; $('empty-result').hidden=true;
     $('result-feedback').disabled=!report.record_id;
@@ -298,7 +306,7 @@ $('form').onsubmit=async e=>{
     $('status').dataset.state='complete';
     setView('work');$('result').focus();$('result').scrollIntoView({block:'start'});
   } catch(e){$('status').setAttribute('role','alert');$('status').dataset.state='error';$('status').textContent=`分析未完成：${e.message}${report?' 下方保留上次成功报告，本次未更新。':''}`;$('status').scrollIntoView({block:'nearest'});}
-  finally{clearInterval(timer);$('elapsed').hidden=true;locked.forEach(id=>$(id).disabled=false);if(typeof setFaultReferenceBusy==='function')setFaultReferenceBusy(false);if(typeof setFaultContextBusy==='function')setFaultContextBusy(false);if(typeof refreshLocalDraftControls==='function')refreshLocalDraftControls();$('sync-history').disabled=!$('sync-source').value;$('run').textContent='开始分析';$('form').setAttribute('aria-busy','false');if(pendingPlatformContext){pendingPlatformContext=false;await refresh(true);}}
+  finally{clearInterval(timer);$('elapsed').hidden=true;locked.forEach(id=>$(id).disabled=false);if(typeof setFaultReferenceBusy==='function')setFaultReferenceBusy(false);if(typeof setEngineeringBusy==='function')setEngineeringBusy(false);if(typeof setFaultContextBusy==='function')setFaultContextBusy(false);if(typeof refreshLocalDraftControls==='function')refreshLocalDraftControls();$('sync-history').disabled=!$('sync-source').value;$('run').textContent='开始分析';$('form').setAttribute('aria-busy','false');if(pendingPlatformContext){pendingPlatformContext=false;await refresh(true);}}
 };
 $('catalog').onchange=async()=>{
   const file=$('catalog').files[0];if(!file)return;
@@ -401,6 +409,7 @@ async function refreshHistory() {
           addSection('数据依据与人工记录',(saved.data_facts||[]).map(f=>f.text));
           if(!saved.data_facts?.length){const old=document.createElement('p');old.textContent='此旧报告未保存独立的数据事实条目，请查看下方完整证据。';fullPanel.append(old);}
           addSection('AI解释（待核实）',[saved.summary]);
+          if(typeof renderEngineeringReportInto==='function'){const engineering=document.createElement('div');renderEngineeringReportInto(engineering,saved);fullPanel.append(engineering);}
           addSection('建议检查',saved.next_checks||[]);
           addSection('备件候选（需核实）',(saved.parts_candidates||[]).map(p=>`${p.name} / ${p.part_number}\n整机适用型号：${(p.models||[]).join('、')}\n资料：${p.source_document} / ${p.source_page} / ${p.revision}`));
           const raw=document.createElement('details'),label=document.createElement('summary'),pre=document.createElement('pre');
@@ -472,6 +481,7 @@ async function renderFeedbackPanel(recordId,panel) {
     if(typeof refreshLocalDraftControls==='function')refreshLocalDraftControls();
     setView('work');$('status').textContent='已关联原诊断记录和已保存的检查反馈。点击开始分析生成新记录。';$('question').focus();
     if(typeof restoreManualFaultReference==='function')await restoreManualFaultReference(parent.request.manual_fault);
+    if(selected()?.selection_id===selection&&typeof restoreEngineeringFault==='function')restoreEngineeringFault(parent.request.engineering_fault);
   };
   panel.append(note,list,form,resume);
 }

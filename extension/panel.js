@@ -11,6 +11,14 @@ let deadline, contextDeadline, assetId = null, localOrigin, connectionId, sequen
 let dataReady = false, runtime = null, state = 'connecting', mode = 'work', remaining = [], failures = [];
 let pageChanged = false, pageGeneration = 0, currentTabId = null, currentWindowId = null;
 let followEnabled = true, followTimer, lookupTicket = 0, lastContextLabel = '';
+let matchedSelection = null, catalogRequest = null, catalogDeadline;
+
+function resetCatalogRequest(message) {
+  clearTimeout(catalogDeadline); catalogRequest = null;
+  if (get('capture-catalog')) get('capture-catalog').disabled = false;
+  if (message && get('catalog-status')) get('catalog-status').textContent = message;
+}
+function catalogError(message) { const error = new Error(message); error.catalogMessage = message; return error; }
 
 function contextText(message) {
   get('context').dataset.stale = String(pageChanged);
@@ -93,6 +101,7 @@ function failConnection() {
 }
 function attemptNext() {
   clearTimeout(deadline); clearTimeout(contextDeadline);
+  matchedSelection = null; resetCatalogRequest();
   if (!remaining.length) { failConnection(); return; }
   const port = remaining.shift();
   localOrigin = 'http://127.0.0.1:' + port;
@@ -139,7 +148,14 @@ window.addEventListener('message', event => {
   if (data.type === 'jilian:context') {
     if (state !== 'connected' || pageChanged || mode !== 'work') return;
     const label = trackunitContextLabel(data, assetId); if (label === null) return;
+    matchedSelection = data.state === 'matched' ? {machine_id:data.machine_id,dataset_id:data.dataset_id} : null;
     clearTimeout(contextDeadline); lastContextLabel = label; contextText(label + ' 设备 ID：' + assetId); return;
+  }
+  if (data.type === 'jilian:xgss-catalog-result') {
+    if (!catalogRequest || data.request_id !== catalogRequest.request_id || catalogRequest.asset_id !== assetId ||
+        !matchedSelection || catalogRequest.dataset_id !== matchedSelection.dataset_id) return;
+    const message = typeof data.message === 'string' ? data.message.slice(0,400) : data.success ? '已读取，查看下方备件候选。' : '图册读取未完成。';
+    resetCatalogRequest(message); return;
   }
   if (data.type === 'jilian:ready') dataReady = true;
   else if (data.type === 'jilian:runtime' && ['provider', 'model', 'backend_build'].every(key => typeof data[key] === 'string' && data[key].length > 0 && data[key].length <= 160)) runtime = data;
@@ -161,6 +177,7 @@ get('open-demo').onclick = () => {
   if (mode === 'demo' && state === 'connected') return;
   if (mode === 'work' && state === 'connected' && !window.confirm('打开演示案例会重新载入工作区，未保存的输入可能丢失。请先保存本机草稿。继续打开演示吗？')) return;
   setFollow(false); mode = 'demo'; assetId = null; pageChanged = false; lastContextLabel = '';
+  matchedSelection = null; resetCatalogRequest();
   contextText('正在打开模拟案例…');
   connect(localOrigin ? new URL(localOrigin).port : preferredPort);
 };
@@ -181,6 +198,11 @@ async function readCurrent(manual = false) {
       if (mode === 'demo') setFollow(false);
       return;
     }
+    if (typeof XGSSCatalog !== 'undefined' && XGSSCatalog.isXGSS(tab?.url)) {
+      pageChanged = false;
+      contextText(assetId ? '正在查看 XGSS，保留当前设备调查。读取图册时将核对 VIN。设备 ID：' + assetId : '请先在 Trackunit 选择设备，再读取对应 VIN 的 XGSS 图册。');
+      return;
+    }
     const found = trackunitAssetId(tab?.url);
     if (!found) throw new Error('当前页面无法识别设备，请打开 Trackunit 设备详情页。');
     const sameDocument = mode === 'work' && state !== 'failed';
@@ -195,6 +217,7 @@ async function readCurrent(manual = false) {
       return;
     }
     lastContextLabel = '';
+    matchedSelection = null; resetCatalogRequest('设备已切换，请读取对应 VIN 的 XGSS 图册。');
     if (sameDocument) {
       // A hash-only change preserves drafts/in-flight analysis. Device acknowledgement is renewed.
       frame.src = assistantUrl();
@@ -218,6 +241,38 @@ async function readCurrent(manual = false) {
   } finally { if (manual) button.disabled = false; }
 }
 get('identify').onclick = () => readCurrent(true);
+if (get('capture-catalog')) get('capture-catalog').onclick = async () => {
+  const note = get('catalog-status'), button = get('capture-catalog');
+  if (state !== 'connected' || mode !== 'work' || !assetId || !matchedSelection) {
+    note.textContent = '请先在 Trackunit 打开设备，并等待助手确认实测数据。'; return;
+  }
+  const selection = {...matchedSelection}, expectedAsset = assetId, expectedConnection = connectionId;
+  button.disabled = true; note.textContent = '正在读取当前可见图册…';
+  try {
+    const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
+    if (!Number.isInteger(tab?.id) || tab.status === 'loading' || !XGSSCatalog.isXGSS(tab.url))
+      throw catalogError('请打开 XGSS 页面，选中分类并显示零件明细后再读取。');
+    await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},files:['xgss-catalog.js']});
+    const frames = await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},func:() => XGSSCatalog.capture()});
+    if (assetId !== expectedAsset || connectionId !== expectedConnection || !matchedSelection || matchedSelection.dataset_id !== selection.dataset_id)
+      throw catalogError('设备或数据版本已切换，本次图册未导入，请重新读取。');
+    const captures = frames.map(item => item.result).filter(Boolean);
+    const valid = captures.filter(item => item.capture_status === 'visible_rows');
+    if (valid.length > 1) throw catalogError('页面存在多个图册区域，无法确认唯一来源。请独立打开所需图册再读取。');
+    if (!valid.length) {
+      const statuses = captures.map(item => item.capture_status);
+      throw catalogError(statuses.includes('ambiguous_vin') ? '页面出现多个 VIN，未导入。请打开单台设备图册。' : statuses.includes('vin_missing') ? '页面未显示可识别的 VIN/PIN，未导入。请先显示设备信息。' : '未读取到有效零件行。请选中分类、打开零件明细，并让名称和物料编码同时显示。');
+    }
+    const request_id = 'catalog-' + Date.now() + '-' + (++sequence);
+    catalogRequest = {request_id,asset_id:expectedAsset,dataset_id:selection.dataset_id};
+    frame.contentWindow.postMessage({type:'jilian:xgss-catalog-capture',protocol:1,connection_id:connectionId,
+      ...catalogRequest,capture:valid[0]},localOrigin);
+    note.textContent = '已读取 ' + valid[0].items.length + ' 行，正在核对设备并保存到本机…';
+    catalogDeadline = setTimeout(() => resetCatalogRequest('助手未确认图册导入。请检查工作区是否已更新，并重新读取。'),15000);
+  } catch (error) {
+    resetCatalogRequest(error?.catalogMessage || '无法读取此图册，请核对扩展的 XGSS 站点访问权限并重新加载页面。');
+  }
+};
 get('follow').onclick = () => {
   if (!followEnabled && mode === 'demo') return readCurrent(true);
   setFollow(!followEnabled);

@@ -32,7 +32,11 @@ REPORT_INSTRUCTIONS = (
     "Use actual document provenance; an artificial demo catalog is not a manufacturer manual. Explain no-match using "
     "search_diagnostics. A referenced manual has not necessarily been retrieved. "
     "Do not put repair procedures in summary or invent checks; select original next_check_ids only. "
+    "When an engineering context is explicitly supplied, component_hypotheses is a separate structured field: "
+    "its proposed inspection directions must carry exact source_quote excerpts from retrieved manuals. "
+    "Their manual references are checked locally; do not present hypotheses as measured failures. "
     "Keep fault/part codes unchanged, omit internal tool/check IDs from prose, and avoid headings or lists. "
+    "Use human-readable metric names in the requested language; never copy JSON field names into summary prose. "
     "Prefer under 300 Chinese characters or 150 English words."
 )
 

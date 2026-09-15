@@ -5,7 +5,7 @@ const asset='00000000-0000-0000-0000-000000000001';
 const cloud={provider:'gemini',model:'gemini-flash-latest',backend_build:'build-test'};
 function setup(url='https://example.com',savedPort,auto=false){
  const outgoing=[],tabHandlers={},confirmations=[];
- const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','open-demo','follow'];
+ const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','open-demo','follow','capture-catalog','catalog-status'];
  const elements=Object.fromEntries(ids.map(id=>[id,{textContent:'',hidden:false,dataset:{},attributes:{},
   setAttribute(key,value){this.attributes[key]=value;},removeAttribute(key){delete this.attributes[key];delete this[key];},
   contentWindow:{postMessage:(data,origin)=>outgoing.push({data,origin})}}]));
@@ -18,7 +18,7 @@ function setup(url='https://example.com',savedPort,auto=false){
   fetch:()=>{throw new Error('Connection probing must not use fetch');},
   setTimeout:(fn,ms)=>{timers.set(++counter,{fn,ms});return counter;},clearTimeout:id=>timers.delete(id)};
  vm.createContext(box);
- for(const file of ['context.js','panel.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension',file),'utf8'),box);
+ for(const file of ['context.js','xgss-catalog.js','panel.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension',file),'utf8'),box);
  // Legacy connection tests isolate startup detection; explicit automatic-follow tests retain it below.
  if(!auto)for(const [id,timer] of timers)if(timer.ms===150)timers.delete(id);
  return {elements,handlers,timers,storage,outgoing,tabHandlers,box,confirmations,
@@ -181,10 +181,10 @@ test('navigation during asynchronous tab lookup cannot commit a stale device',as
  assert.equal(p.elements.assistant.src,before);assert.equal(p.elements.identify.disabled,false);
 });
 
-test('manifest only permits exact Trackunit sites and two loopback frames',()=>{
+test('manifest only permits exact Trackunit and XGSS sites and two loopback frames',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../extension/manifest.json'),'utf8'));
- assert.equal(manifest.version,'0.5.0');assert.deepEqual(manifest.permissions,['sidePanel','activeTab']);
- assert.deepEqual(manifest.host_permissions,['https://manager.trackunit.com/*','https://new.manager.trackunit.com/*']);
+ assert.equal(manifest.version,'0.6.0');assert.deepEqual(manifest.permissions,['sidePanel','activeTab','scripting']);
+ assert.deepEqual(manifest.host_permissions,['https://manager.trackunit.com/*','https://new.manager.trackunit.com/*','https://xgss.xcmg.com/*']);
  assert.equal(manifest.content_scripts,undefined);
  assert.match(manifest.content_security_policy.extension_pages,/frame-src http:\/\/127\.0\.0\.1:8890 http:\/\/127\.0\.0\.1:8892$/);
  assert.equal(manifest.content_security_policy.extension_pages.includes('*'),false);
@@ -325,4 +325,58 @@ test('browser lookup errors do not expose raw URLs or secret-bearing browser mes
  p.tabHandlers.updated(10,{status:'complete'});await p.follow();
  assert.match(p.elements.context.textContent,/站点访问权限/);assert.equal(p.elements.context.dataset.stale,'true');
  assert.equal(p.elements.context.textContent.includes('do-not-display'),false);assert.equal(p.elements.context.textContent.includes('private.example'),false);
+});
+
+test('switching to XGSS retains matched device and does not reload its investigation',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);
+ const before=p.elements.assistant.src;
+ p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog?token=SECRET',id:11,windowId:1,status:'complete'}];
+ p.tabHandlers.activated({windowId:1,tabId:11});await p.follow();
+ assert.equal(p.elements.assistant.src,before);assert.match(p.elements.context.textContent,/保留当前设备调查/);
+ assert.equal(p.elements.context.textContent.includes('SECRET'),false);
+});
+
+test('catalog capture forwards only rows and matched dataset through the current iframe',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();
+ reply(p,'jilian:context',{asset_id:asset,machine_id:asset,state:'matched',source:'imported_user_supplied',dataset_id:'a'.repeat(64),selection_id:'dataset:'+'a'.repeat(64)});
+ const capture=require('../extension/xgss-catalog.js').parse(require('./fixtures/xgss-visible-catalog-test.json'));
+ const injections=[];p.box.chrome.scripting={executeScript:async options=>{injections.push(options);return options.files?[]:[{frameId:0,result:capture}];}};
+ p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog?token=SECRET',id:11,windowId:1,status:'complete'}];
+ await p.elements['capture-catalog'].onclick();
+ assert.equal(injections.length,2);assert.equal(injections[0].target.tabId,11);
+ const posted=p.outgoing.at(-1);assert.equal(posted.origin,'http://127.0.0.1:8892');
+ assert.equal(posted.data.type,'jilian:xgss-catalog-capture');assert.equal(posted.data.dataset_id,'a'.repeat(64));
+ assert.equal(posted.data.asset_id,asset);assert.equal(posted.data.capture.source_url,'https://xgss.xcmg.com/');
+ assert.equal(JSON.stringify(posted).includes('SECRET'),false);assert.equal(p.elements['capture-catalog'].disabled,true);
+ reply(p,'jilian:xgss-catalog-result',{request_id:'wrong',success:true,message:'wrong'});
+ assert.equal(p.elements['capture-catalog'].disabled,true);
+ reply(p,'jilian:xgss-catalog-result',{request_id:posted.data.request_id,success:true,message:'已核对 VIN 并保存 2 行。'});
+ assert.equal(p.elements['capture-catalog'].disabled,false);assert.match(p.elements['catalog-status'].textContent,/保存 2 行/);
+});
+
+test('catalog read rejects missing device, unreadable rows and ambiguous frames',async()=>{
+ const p=setup(assetURL(asset));ready(p);
+ await p.elements['capture-catalog'].onclick();assert.match(p.elements['catalog-status'].textContent,/确认实测数据/);
+ await p.elements.identify.onclick();matched(p);
+ p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog',id:11,windowId:1,status:'complete'}];
+ let result={capture_status:'vin_missing'};p.box.chrome.scripting={executeScript:async options=>options.files?[]:[{result}]};
+ await p.elements['capture-catalog'].onclick();assert.match(p.elements['catalog-status'].textContent,/未显示可识别/);
+ const capture=require('../extension/xgss-catalog.js').parse(require('./fixtures/xgss-visible-catalog-test.json'));
+ p.box.chrome.scripting.executeScript=async options=>options.files?[]:[{result:capture},{result:capture}];
+ await p.elements['capture-catalog'].onclick();assert.match(p.elements['catalog-status'].textContent,/多个图册区域/);
+ assert.equal(p.outgoing.some(item=>item.data.type==='jilian:xgss-catalog-capture'),false);
+});
+
+test('catalog read does not expose raw browser errors and rejects mid-read device changes',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog',id:11,windowId:1,status:'complete'}];
+ p.box.chrome.scripting={executeScript:async()=>{throw new Error('https://private.example/?token=SECRET');}};
+ await p.elements['capture-catalog'].onclick();assert.equal(p.elements['catalog-status'].textContent.includes('SECRET'),false);
+ let resolve;p.box.chrome.scripting.executeScript=async options=>options.files?[]:new Promise(done=>resolve=done);
+ const pending=p.elements['capture-catalog'].onclick();await flush();
+ p.box.chrome.tabs.query=async()=>[tab(otherAsset)];await p.elements.identify.onclick();matched(p,otherAsset);
+ const capture=require('../extension/xgss-catalog.js').parse(require('./fixtures/xgss-visible-catalog-test.json'));
+ resolve([{result:capture}]);await pending;
+ assert.match(p.elements['catalog-status'].textContent,/设备或数据版本已切换/);
+ assert.equal(p.outgoing.some(item=>item.data.type==='jilian:xgss-catalog-capture'),false);
 });

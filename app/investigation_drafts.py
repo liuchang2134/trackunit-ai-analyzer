@@ -13,6 +13,7 @@ from app.data_store import get_data_source
 from app.investigation_history import read_investigation
 from app.local_datasets import load_dataset
 from app.local_assistant import ManualFault
+from app.manual_knowledge import EngineeringFault
 from app.services.machine_service import find_machine
 
 DRAFT_DIR = Path(__file__).resolve().parents[1]/'data/local/investigation-drafts'
@@ -36,10 +37,13 @@ class DraftContent(BaseModel):
     language: Literal['zh','en'] = 'zh'
     prior_record_id: str | None = Field(default=None, pattern=r'^[0-9a-f]{64}$')
     manual_fault: ManualFault | None = None
+    engineering_fault: EngineeringFault | None = None
 
     @model_validator(mode='after')
     def has_content(self):
-        if not (self.question.strip() or self.observations.strip() or self.prior_record_id or self.manual_fault):
+        if self.manual_fault and self.engineering_fault:
+            raise ValueError('Choose one equipment-specific fault context per investigation')
+        if not (self.question.strip() or self.observations.strip() or self.prior_record_id or self.manual_fault or self.engineering_fault):
             raise ValueError('Draft needs a question, observations or a manual fault code')
         return self
 
@@ -66,6 +70,8 @@ def _scope(machine_id, dataset_id, source, content=None):
             raise DraftScopeError('Draft device, dataset or source mismatch')
         if content and content.manual_fault and machine.model.strip().upper()!=content.manual_fault.model:
             raise DraftScopeError('Draft fault reference does not match the equipment model')
+        if content and content.engineering_fault and machine.model.strip().upper()!=content.engineering_fault.model:
+            raise DraftScopeError('Draft engineering fault does not match the equipment model')
     except ValueError:
         raise DraftScopeError('Draft device, dataset or source mismatch') from None
     return {'machine_id':machine_id,'serial_number':machine.serial_number,
@@ -128,6 +134,8 @@ def save_draft(request):
         content=request.content.model_dump(mode='json')
         if content['manual_fault'] is None:
             content.pop('manual_fault')  # Preserve the existing shape of code-free drafts.
+        if content['engineering_fault'] is None:
+            content.pop('engineering_fault')
         record={'schema_version':1,'scope':scope,'source_kind':'unverified_operator_draft',
                 'saved_at':datetime.now(timezone.utc).isoformat(),
                 'content':content}

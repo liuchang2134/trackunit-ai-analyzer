@@ -2,10 +2,11 @@ import hashlib
 import json
 import posixpath
 import re
+import zipfile
 from urllib.parse import unquote
 import pytest
 from scripts import build_release_v10 as builder,verify_release_v10 as verifier
-from tests.historical_assets import require_release_history
+from tests.historical_assets import require_release_history, require_historical_files
 
 
 @pytest.fixture(scope='module')
@@ -18,12 +19,20 @@ def entries():
 def sealed_version_entries(entries):
  # Controlled serialization fixture, not a reconstruction of the sealed artifact.
  # The actual recipe must continue rejecting newer development under the v10 name.
- extension=json.loads(entries['extension/manifest.json'])
- extension['version']=verifier.EXTENSION_VERSION
- # v10 predates the narrowly scoped Trackunit hosts used by automatic following.
- extension.pop('host_permissions',None)
- return {**entries,'app/assistant_version.py':f"ASSISTANT_BUILD = '{verifier.BUILD}'\n".encode(),
-         'extension/manifest.json':json.dumps(extension,ensure_ascii=False).encode()}
+ # Restore the whole sealed extension, not a renamed modern manifest around 0.6 code.
+ # Its checksum is recorded in docs/evaluation/extension-0.4.0-package.json.
+ relative='dist/jilian-extension-0.4.0.zip'
+ require_historical_files(builder.ROOT,[relative],'v10 sealed extension fixture')
+ path=builder.ROOT/relative
+ assert hashlib.sha256(path.read_bytes()).hexdigest()=='0a9b32bdcb41f721c657467055eb7a5b4c79bdb9c01107caa55ff41a704cbb17'
+ with zipfile.ZipFile(path) as archive:
+  assert set(archive.namelist())=={'manifest.json','background.js','context.js','panel.js','panel.html','panel.css','README.md'}
+  extension_entries={'extension/'+name:archive.read(name) for name in archive.namelist()}
+ extension=json.loads(extension_entries['extension/manifest.json'])
+ assert extension['version']==verifier.EXTENSION_VERSION
+ assert extension['permissions']==['sidePanel','activeTab'] and 'host_permissions' not in extension
+ return {**{name:content for name,content in entries.items() if not name.startswith('extension/')},
+         **extension_entries,'app/assistant_version.py':f"ASSISTANT_BUILD = '{verifier.BUILD}'\n".encode()}
 
 
 def test_current_release_includes_both_deliverables_without_runtime_data(entries):

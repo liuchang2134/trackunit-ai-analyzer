@@ -1,10 +1,12 @@
 // A stored draft is operator input, never a successful diagnosis.
 const cloneDraftContent=content=>({...content,...(Object.prototype.hasOwnProperty.call(content,'manual_fault')
-  ?{manual_fault:content.manual_fault?{...content.manual_fault}:null}:{})});
+  ?{manual_fault:content.manual_fault?{...content.manual_fault}:null}:{}),...(Object.prototype.hasOwnProperty.call(content,'engineering_fault')
+  ?{engineering_fault:content.engineering_fault?{...content.engineering_fault}:null}:{})});
 const cloneStoredDraft=saved=>saved?{...saved,content:cloneDraftContent(saved.content)}:null;
 const manualFaultValue=fault=>fault?[fault.code,fault.model,fault.version,fault.applicability_confirmed]:null;
+const engineeringFaultValue=fault=>fault?[fault.code,fault.model,fault.configuration,fault.source]:null;
 const meaningfulDraft=content=>Boolean(content.question.trim()||content.observations.trim()||content.prior_record_id||
-  (content.manual_fault?.code&&content.manual_fault.applicability_confirmed===true));
+  (content.manual_fault?.code&&content.manual_fault.applicability_confirmed===true)||content.engineering_fault?.code);
 class LocalDraftState {
   constructor(){this.key=null;this.entries=new Map();}
   select(key){this.key=key;if(key!==null&&!this.entries.has(key))this.entries.set(key,{saved:null,loaded:false,loading:false,busy:false,error:null,conflict:false,ticket:0,undo:null});return this.entry();}
@@ -15,7 +17,7 @@ class LocalDraftState {
   beginSave(content){const e=this.entry();e.busy=true;e.error=null;return {key:this.key,ticket:++e.ticket,expected_revision:e.saved?.revision||null,content:cloneDraftContent(content)};}
   finishSave(token,saved){const e=this.entries.get(token.key);if(e?.ticket!==token.ticket)return false;e.busy=false;e.loaded=true;e.saved=cloneStoredDraft(saved);e.error=null;return this.key===token.key;}
   failSave(token,error,conflict=false){const e=this.entries.get(token.key);if(e?.ticket!==token.ticket)return false;e.busy=false;e.error=error;e.conflict=conflict;return this.key===token.key;}
-  dirty(content){const saved=this.entry()?.saved?.content;return !saved||['question','observations','task','language','prior_record_id'].some(field=>content[field]!==saved[field])||JSON.stringify(manualFaultValue(content.manual_fault))!==JSON.stringify(manualFaultValue(saved.manual_fault));}
+  dirty(content){const saved=this.entry()?.saved?.content;return !saved||['question','observations','task','language','prior_record_id'].some(field=>content[field]!==saved[field])||JSON.stringify(manualFaultValue(content.manual_fault))!==JSON.stringify(manualFaultValue(saved.manual_fault))||JSON.stringify(engineeringFaultValue(content.engineering_fault))!==JSON.stringify(engineeringFaultValue(saved.engineering_fault));}
   restore(current){const e=this.entry();if(!e?.saved||(e.conflict&&e.error))return null;e.undo=cloneDraftContent(current);e.conflict=false;e.error=null;return cloneDraftContent(e.saved.content);}
   undoRestore(){const e=this.entry();if(!e?.undo)return null;const value=cloneDraftContent(e.undo);e.undo=null;return value;}
 }
@@ -25,7 +27,8 @@ if(typeof window!=='undefined')(()=>{
   const state=new LocalDraftState();
   let restoreEpoch=0;
   const get=()=>({question:$('question').value,observations:$('observations').value,task:$('task').value,language:$('language').value,prior_record_id:priorRecordId,
-    manual_fault:typeof getManualFaultDraftReference==='function'?getManualFaultDraftReference():typeof getManualFaultReference==='function'?getManualFaultReference():null});
+    manual_fault:typeof getManualFaultDraftReference==='function'?getManualFaultDraftReference():typeof getManualFaultReference==='function'?getManualFaultReference():null,
+    engineering_fault:typeof getEngineeringFault==='function'?getEngineeringFault():null});
   const scope=()=>{const m=selected();return m?{machine_id:m.machine_id,dataset_id:m.dataset_id||null,source:m.dataset_id?'imported_'+m.provenance:defaultSource}:null;};
   const key=s=>s?JSON.stringify([s.machine_id,s.dataset_id,s.source]):null;
   const meaningful=meaningfulDraft;
@@ -40,6 +43,7 @@ if(typeof window!=='undefined')(()=>{
     if(typeof restoreManualFaultReference==='function')Promise.resolve(restoreManualFaultReference(content.manual_fault||null)).catch(()=>{
       if(epoch===restoreEpoch&&applyKey===key(scope()))$('draft-state').textContent='文字已恢复；故障码资料暂未载入，请重新查码并确认。';
     });
+    if(typeof restoreEngineeringFault==='function')restoreEngineeringFault(content.engineering_fault||null);
     render();
     $(content.observations?'observations':content.question?'question':'task').focus({preventScroll:true});
   }
@@ -55,7 +59,7 @@ if(typeof window!=='undefined')(()=>{
       meaningful(current)?'尚未保存；刷新或关闭页面会清空当前输入。':'此设备与数据版本尚无已存草稿。';
     const m=selected();$('draft-device').textContent=m?`${m.model} · ${m.serial_number} · ${m.dataset_id?'数据版本 '+m.dataset_id.slice(0,8):'当前来源 '+defaultSource}`:'';
     $('draft-preview').hidden=!e?.saved;
-    $('draft-preview-body').textContent=e?.saved?`问题：${e.saved.content.question||'（使用任务默认问题）'}\n\n现场检查记录：${e.saved.content.observations||'（未填写）'}\n\n故障码：${e.saved.content.manual_fault?`${e.saved.content.manual_fault.code} · ${e.saved.content.manual_fault.model} / ${e.saved.content.manual_fault.version}（恢复后需重新确认）`:'（未关联）'}\n\n报告语言：${e.saved.content.language==='zh'?'中文':'English'}${e.saved.content.prior_record_id?'\n已关联原诊断记录及其检查反馈。':''}`:'';
+    $('draft-preview-body').textContent=e?.saved?`问题：${e.saved.content.question||'（使用任务默认问题）'}\n\n现场检查记录：${e.saved.content.observations||'（未填写）'}\n\n故障码：${e.saved.content.engineering_fault?`${e.saved.content.engineering_fault.code} · XE55U / ${e.saved.content.engineering_fault.configuration} · ${e.saved.content.engineering_fault.source==='test'?'测试故障':'人工报告'}`:e.saved.content.manual_fault?`${e.saved.content.manual_fault.code} · ${e.saved.content.manual_fault.model} / ${e.saved.content.manual_fault.version}（恢复后需重新确认）`:'（未关联）'}\n\n报告语言：${e.saved.content.language==='zh'?'中文':'English'}${e.saved.content.prior_record_id?'\n已关联原诊断记录及其检查反馈。':''}`:'';
   }
   async function load(){
     const s=scope();if(!s||state.entry()?.busy)return;

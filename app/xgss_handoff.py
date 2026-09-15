@@ -102,6 +102,10 @@ def request_page(vin, fault_code=None, language='zh'):
             result = response.json()
     except (httpx.HTTPError, ValueError):
         raise XGSSUpstreamError('XGSS 网络连接失败或响应格式无效，未获得页面地址。') from None
+    if isinstance(result, dict) and result.get('success') is not True:
+        message = str(result.get('message') or '').casefold()
+        if ('vin' in message or 'pin' in message) and ('不存在' in message or 'not found' in message):
+            raise XGSSUpstreamError('XGSS 返回此 VIN/PIN 不存在，请核对整机编号及图册覆盖范围；AI 部件排查仍可继续。')
     if not isinstance(result, dict) or result.get('success') is not True or not valid_destination(result.get('data')):
         raise XGSSUpstreamError('XGSS 未返回有效的官方页面地址；这不等于没有对应手册。')
     return dict(provider='XGSS', url=result['data'], vin=vin, fault_code=fault_code,

@@ -27,7 +27,7 @@ def test_service_recommendations_do_not_invent_parts():
     recommendations = build_service_recommendations(risks)
 
     assert recommendations
-    assert "fault-code-to-parts mapping" in recommendations[0]["parts_recommendation"]
+    assert "real captured catalog entries" in recommendations[0]["parts_recommendation"]
 
 
 def test_structured_context_limits_records_and_includes_risk():
