@@ -1,1 +1,1 @@
-ASSISTANT_BUILD = '20260915.6-trackunit-follow'
+ASSISTANT_BUILD = '20260915.7-auto-device-data'

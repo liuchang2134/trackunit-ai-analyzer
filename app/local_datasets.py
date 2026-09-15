@@ -6,7 +6,7 @@ import json
 import os
 import re
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -118,8 +118,12 @@ def load_dataset(dataset_id: str) -> LocalDataset:
 
 
 def dataset_summary(dataset_id: str, dataset: LocalDataset) -> dict:
+    cutoff = dataset.replay_at or datetime.now(timezone.utc)
+    latest = max((dt for row in dataset.telemetry
+                  if (dt := timestamp(row.recorded_at)) is not None and dt <= cutoff), default=None)
     return {"dataset_id": dataset_id, "name": dataset.name, "provenance": dataset.provenance,
             "machine": dataset.machine.model_dump(), "sample_count": len(dataset.telemetry),
+            "latest_telemetry_at": latest.isoformat() if latest else None,
             "source_document": dataset.source_document,
             "cooling_reference": dataset.cooling_reference.model_dump() if dataset.cooling_reference else None,
             "replay_at": dataset.replay_at.isoformat() if dataset.replay_at else None}

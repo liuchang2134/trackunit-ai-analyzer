@@ -83,14 +83,37 @@ test('same-asset acknowledgement preserves the report and draft without reselect
   assert.equal(h.notifications.at(-1).state,'matched');
 });
 
-test('new ambiguous or missing platform asset stays unselected with no fallback machine',()=>{
+test('switching to a multi-version asset loads its default, while a missing asset stays unselected',()=>{
   const h=harness({machines:[a1,b1,b2]});h.context.selectMachine();h.get('observations').value='A only';
   h.context.location.hash='#trackunit-asset='+assetB;h.context.applyPlatformContext();
-  assert.equal(h.get('machine').value,'');assert.equal(h.get('observations').value,'');
-  assert.equal(h.notifications.at(-1).state,'choose_version');
+  assert.equal(h.get('machine').value,b1.selection_id);assert.equal(h.get('observations').value,'');
+  assert.equal(h.notifications.at(-1).state,'matched');
   assert.match(h.get('machine-note').textContent,/LOCAL-2.*2 个本地数据版本/);
+  assert.match(h.get('machine-note').textContent,/采样时间相同.*自动载入/);
+  assert.equal(h.get('demo-entry').hidden,true);
   h.context.location.hash='#trackunit-asset=00000000-0000-0000-0000-000000000003';h.context.applyPlatformContext();
   assert.equal(h.get('machine').value,'');assert.equal(h.notifications.at(-1).state,'missing');
+});
+
+test('first platform load automatically selects by actual telemetry time with no placeholder',async()=>{
+  const older={...a1,last_seen_at:'2026-09-15T09:00:00Z',latest_telemetry_at:'2026-01-01T10:00:00Z'};
+  const newer={...a2,last_seen_at:'2026-01-01T09:00:00Z',latest_telemetry_at:'2026-01-02T10:00:00Z'};
+  const h=harness({machines:[],selection:''});
+  const loading=h.context.refresh();complete(h.requests[0],[b1,older,newer]);await loading;
+  assert.equal(h.get('machine').value,newer.selection_id);
+  assert.deepEqual(h.selectionEvents,[newer.selection_id]);
+  assert.equal(h.get('machine').options().length,2);
+  assert.equal(h.notifications.at(-1).state,'matched');
+  assert.match(h.get('machine-note').textContent,/已自动载入最近采样版本.*2026-01-02T10:00:00Z/);
+  assert.equal(h.get('case-open').disabled,false);
+});
+
+test('unknown sampling dates still load a default and disclose the missing date',()=>{
+  const h=harness({machines:[{...a1,latest_telemetry_at:null},{...a2,latest_telemetry_at:null}],selection:''});
+  h.context.applyPlatformContext();
+  assert.equal(h.get('machine').value,a1.selection_id);
+  assert.equal(h.notifications.at(-1).state,'matched');
+  assert.match(h.get('machine-note').textContent,/默认版本.*采样时间待核实.*最近采样：未知/);
 });
 
 test('a late index response or error cannot overwrite a newer refresh',async()=>{

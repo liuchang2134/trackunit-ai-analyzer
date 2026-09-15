@@ -57,6 +57,26 @@ def test_real_data_cannot_use_synthetic_clock(payload):
         store.LocalDataset.model_validate(payload)
 
 
+def test_summary_uses_actual_measurement_time_excluding_future_records(payload):
+    payload.update(provenance='user_supplied', replay_at=None)
+    payload['machine']['last_seen_at'] = '2099-01-01T00:00:00Z'
+    payload['telemetry'].append({'machine_id': 'SIM-1', 'recorded_at': '2099-01-01T00:00:00Z'})
+    dataset = store.LocalDataset.model_validate(payload)
+    before = dataset.model_dump_json()
+    summary = store.dataset_summary('a' * 64, dataset)
+    assert summary['latest_telemetry_at'] == '2026-01-01T12:00:00+00:00'
+    assert dataset.model_dump_json() == before
+    future_only = dataset.model_copy(update={'telemetry': [dataset.telemetry[-1]]})
+    assert store.dataset_summary('b' * 64, future_only)['latest_telemetry_at'] is None
+
+
+def test_summary_respects_synthetic_replay_clock(payload):
+    payload['replay_at'] = '2099-01-01T12:00:00Z'
+    payload['telemetry'][0]['recorded_at'] = '2099-01-01T12:00:00Z'
+    dataset = store.LocalDataset.model_validate(payload)
+    assert store.dataset_summary('a' * 64, dataset)['latest_telemetry_at'] == '2099-01-01T12:00:00+00:00'
+
+
 def test_investigation_reads_import_instead_of_fleet(payload, monkeypatch):
     from app import local_assistant as agent
     saved = store.save_dataset(store.LocalDataset.model_validate(payload))

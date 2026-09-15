@@ -60,7 +60,7 @@ function setView(view) {
   $('page-title').textContent={demo:'完整案例演示',queue:'待处理工作台',work:'设备排查',data:'资料管理',history:'诊断记录',states:'工况识别实验',cooling:'冷却预警实验'}[view];
   $('secondary-nav').open=false;
   $('demo-view').hidden = view !== 'demo';
-  $('demo-entry').hidden = view !== 'work';
+  $('demo-entry').hidden = view !== 'work' || Boolean(PlatformContext.asset(location.hash));
   $('queue-view').hidden = view !== 'queue';
   $('work-view').hidden = view !== 'work';
   $('data-view').hidden = view !== 'data';
@@ -195,16 +195,19 @@ function applyPlatformContext(focusSelection=false,refreshSelection=false) {
   const id=location.hash.slice('#trackunit-asset='.length);
   const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
   const matches=valid?PlatformContext.candidates(machines,defaultSource,id):[];
-  const retained=matches.some(m=>m.selection_id===previousSelection);
-  $('machine').replaceChildren(...matches.map(m=>{const o=document.createElement('option');o.value=m.selection_id;o.textContent=`${m.model} · ${m.serial_number} · ${m.dataset_name || '本地真实缓存'}${m.dataset_id?' · '+m.sample_count+' 条 · '+m.dataset_id.slice(0,8):''} · 最近采样 ${displayDate(m.last_seen_at)}`;return o;}));
-  if(matches.length!==1){const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent=matches.length?'请选择该设备的数据版本':'该设备暂无本地实测数据';$('machine').prepend(placeholder);$('machine').value='';}
-  if(retained)$('machine').value=previousSelection;
-  const selectedVersion=matches.find(m=>m.selection_id===$('machine').value);
+  const choice=PlatformContext.selectDefault(machines,defaultSource,id,previousSelection);
+  const sampledAt=m=>Object.hasOwn(m,'latest_telemetry_at')?m.latest_telemetry_at:m.last_seen_at;
+  $('machine').replaceChildren(...matches.map(m=>{const o=document.createElement('option');o.value=m.selection_id;o.textContent=`${m.model} · ${m.serial_number} · ${m.dataset_name || '本地真实缓存'}${m.dataset_id?' · '+m.sample_count+' 条 · '+m.dataset_id.slice(0,8):''} · 最近采样 ${displayDate(sampledAt(m))}`;return o;}));
+  if(!matches.length){const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='该设备暂无本地实测数据';$('machine').append(placeholder);}
+  $('machine').value=choice.selected?.selection_id || '';
+  const selectedVersion=choice.selected;
   if(refreshSelection||previousSelection!==$('machine').value)selectMachine();
   else notifyPlatformContext();
-  if(matches.length!==1)$('machine-note').textContent=matches.length?`已定位 ${[...new Set(matches.map(m=>m.model+' · '+m.serial_number))].join(' / ')}，共有 ${matches.length} 个本地数据版本。${selectedVersion?'已保留当前选择，可按最近采样时间切换。':'请按最近采样时间选择要分析的版本。'}`:'尚无对应数据，未选择其他设备替代。';
-  $('status').textContent=!valid?'平台设备 ID 格式无效。':selectedVersion?'已按平台设备 ID 定位，请核对数据来源后开始分析。':matches.length?'该设备有多个本地数据版本，请明确选择。':'平台设备未匹配到本地实测数据，请先同步或导入对应设备。';
-  if(!selectedVersion)$('source').textContent='平台设备 · 待选择实测数据';
+  const choiceNote={retained:'已保留当前版本',latest_sample:'已自动载入最近采样版本',equal_latest_sample:`${choice.tied} 个版本最近采样时间相同，已自动载入其中一个`,undated_default:'已自动载入默认版本，采样时间待核实'}[choice.reason];
+  $('machine-note').textContent=selectedVersion?`已定位 ${selectedVersion.model} · ${selectedVersion.serial_number}，共有 ${matches.length} 个本地数据版本。${choiceNote}${matches.length>1?'，可在上方切换':''}。最近采样：${displayDate(sampledAt(selectedVersion))}（本机时间）${selectedVersion.dataset_id?' · '+selectedVersion.sample_count+' 条记录':''}。`:'尚无对应数据，未选择其他设备替代。';
+  $('status').textContent=!valid?'平台设备 ID 格式无效。':selectedVersion?'已载入当前平台设备的本地数据，可查看趋势或开始分析。':'平台设备未匹配到本地实测数据，请先同步或导入对应设备。';
+  if(!selectedVersion)$('source').textContent='平台设备 · 暂无实测数据';
+  if(valid)$('demo-entry').hidden=true;
   if(focusSelection){setView('work');$('machine').focus({preventScroll:true});document.querySelector('.device').scrollIntoView({block:'start'});}
 }
 window.addEventListener('hashchange',()=>{if($('run').disabled){pendingPlatformContext=true;notifyPlatformContext();$('status').textContent='正在等待当前操作完成，随后应用新的平台设备上下文。';return;}if(location.hash.startsWith('#trackunit-asset='))applyPlatformContext(true);else refresh();});
