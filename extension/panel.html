@@ -4,8 +4,8 @@
 <header>
   <div class="brand-row"><span class="brand-mark" aria-hidden="true">JL</span><div class="brand"><strong>机联智检</strong><small>工程机械辅助排查</small></div><span id="connection" class="connection-badge" data-state="connecting" role="status">连接中</span></div>
   <div class="toolbar"><button id="open-demo" class="primary" type="button">演示案例 <span aria-hidden="true">→</span></button><button id="identify" type="button">读取当前设备</button></div>
-  <p id="context" class="context-note" role="status">可先查看演示案例，或从 Trackunit 详情页读取设备。</p>
-  <div class="secondary-toolbar"><a id="standalone" target="_blank" rel="noopener noreferrer" aria-disabled="true">独立窗口 ↗</a><details id="connection-options"><summary>连接设置</summary><div class="settings-panel">
+  <p id="context" class="context-note" role="status">打开 Trackunit 设备详情页后自动读取；也可先查看演示案例。</p>
+  <div class="secondary-toolbar"><button id="follow" class="follow-toggle" type="button" aria-pressed="true">自动跟随：开</button><a id="standalone" target="_blank" rel="noopener noreferrer" aria-disabled="true">独立窗口 ↗</a><details id="connection-options"><summary>连接设置</summary><div class="settings-panel">
     <p id="connection-detail" role="status"></p><p id="runtime"></p>
     <form id="service-form"><label for="service-port">优先连接端口</label><div class="settings-row"><select id="service-port"><option value="8892">8892 · 项目预览</option><option value="8890">8890 · 标准启动</option></select><button type="submit">应用</button></div></form>
     <button id="retry" class="text-button" type="button">重新连接</button><p class="settings-note">端口无响应时会尝试另一个本机端口。演示入口、重连或修改端口会重新载入网页，请先保存草稿。</p>

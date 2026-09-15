@@ -1,1 +1,1 @@
-ASSISTANT_BUILD = '20260915.5-deepseek'
+ASSISTANT_BUILD = '20260915.6-trackunit-follow'

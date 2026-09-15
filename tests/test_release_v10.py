@@ -20,6 +20,8 @@ def sealed_version_entries(entries):
  # The actual recipe must continue rejecting newer development under the v10 name.
  extension=json.loads(entries['extension/manifest.json'])
  extension['version']=verifier.EXTENSION_VERSION
+ # v10 predates the narrowly scoped Trackunit hosts used by automatic following.
+ extension.pop('host_permissions',None)
  return {**entries,'app/assistant_version.py':f"ASSISTANT_BUILD = '{verifier.BUILD}'\n".encode(),
          'extension/manifest.json':json.dumps(extension,ensure_ascii=False).encode()}
 

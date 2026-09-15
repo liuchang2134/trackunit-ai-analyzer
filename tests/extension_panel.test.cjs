@@ -3,9 +3,9 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
 const asset='00000000-0000-0000-0000-000000000001';
 const cloud={provider:'gemini',model:'gemini-flash-latest',backend_build:'build-test'};
-function setup(url='https://example.com',savedPort){
+function setup(url='https://example.com',savedPort,auto=false){
  const outgoing=[],tabHandlers={},confirmations=[];
- const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','open-demo'];
+ const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','open-demo','follow'];
  const elements=Object.fromEntries(ids.map(id=>[id,{textContent:'',hidden:false,dataset:{},attributes:{},
   setAttribute(key,value){this.attributes[key]=value;},removeAttribute(key){delete this.attributes[key];delete this[key];},
   contentWindow:{postMessage:(data,origin)=>outgoing.push({data,origin})}}]));
@@ -19,8 +19,11 @@ function setup(url='https://example.com',savedPort){
   setTimeout:(fn,ms)=>{timers.set(++counter,{fn,ms});return counter;},clearTimeout:id=>timers.delete(id)};
  vm.createContext(box);
  for(const file of ['context.js','panel.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension',file),'utf8'),box);
+ // Legacy connection tests isolate startup detection; explicit automatic-follow tests retain it below.
+ if(!auto)for(const [id,timer] of timers)if(timer.ms===150)timers.delete(id);
  return {elements,handlers,timers,storage,outgoing,tabHandlers,box,confirmations,
-  tick(){const [id,timer]=timers.entries().next().value;timers.delete(id);timer.fn();}};
+  tick(){const [id,timer]=timers.entries().next().value;timers.delete(id);timer.fn();},
+  async follow(){const entry=[...timers.entries()].find(([,timer])=>timer.ms===150);assert.ok(entry,'automatic lookup scheduled');const [id,timer]=entry;timers.delete(id);timer.fn();await new Promise(resolve=>setImmediate(resolve));}};
 }
 function reply(panel,type,extra={},url=new URL(panel.elements.assistant.src)){
  panel.handlers.message({origin:url.origin,source:panel.elements.assistant.contentWindow,
@@ -115,10 +118,10 @@ test('same work document forwards only UUID with unchanged connection and renewe
  const confirmed=p.elements.context.textContent;reply(p,'jilian:context',{asset_id:'wrong',state:'missing'});assert.equal(p.elements.context.textContent,confirmed);
 });
 
-test('reading while disconnected requires new full handshake before sending context request',async()=>{
+test('reading during initial connection preserves handshake and includes device before readiness',async()=>{
  const p=setup(`https://manager.trackunit.com/assets/${asset}`),old=new URL(p.elements.assistant.src);reply(p,'jilian:runtime',cloud);
- await p.elements.identify.onclick();assert.notEqual(new URL(p.elements.assistant.src).search,old.search);assert.equal(p.outgoing.length,0);
- reply(p,'jilian:ready');assert.equal(state(p),'connecting');reply(p,'jilian:runtime',cloud);
+ await p.elements.identify.onclick();assert.equal(new URL(p.elements.assistant.src).search,old.search);assert.equal(p.outgoing.length,0);
+ reply(p,'jilian:ready');
  assert.equal(state(p),'connected');assert.equal(p.outgoing.length,1);assert.equal(p.outgoing[0].data.asset_id,asset);
  p.tick();assert.match(p.elements.context.textContent,/尚未收到设备匹配确认/);
 });
@@ -163,24 +166,163 @@ test('invalid current page leaves previous frame and clearly reports no new sele
  await p.elements.identify.onclick();assert.equal(p.elements.assistant.src,original);assert.match(p.elements.context.textContent,/无法识别/);
 });
 
-test('page navigation notice survives late device acknowledgement until next explicit read',async()=>{
+test('page navigation notice survives late device acknowledgement until current page is identified',async()=>{
  const p=setup(`https://manager.trackunit.com/assets/${asset}`);ready(p);await p.elements.identify.onclick();
- p.tabHandlers.activated({windowId:2});assert.doesNotMatch(p.elements.context.textContent,/页面已变化/);
- p.tabHandlers.updated(10,{status:'loading'});assert.match(p.elements.context.textContent,/页面已变化/);
+ p.tabHandlers.activated({windowId:2});assert.doesNotMatch(p.elements.context.textContent,/当前页面尚未关联/);
+ p.tabHandlers.updated(10,{status:'loading'});assert.match(p.elements.context.textContent,/当前页面尚未关联/);
  reply(p,'jilian:context',{asset_id:asset,machine_id:asset,state:'matched',source:'trackunit_cache',dataset_id:null,selection_id:'fleet:'+asset});
- assert.match(p.elements.context.textContent,/页面已变化/);await p.elements.identify.onclick();assert.doesNotMatch(p.elements.context.textContent,/页面已变化/);
+ assert.match(p.elements.context.textContent,/当前页面尚未关联/);await p.elements.identify.onclick();assert.doesNotMatch(p.elements.context.textContent,/当前页面尚未关联/);
 });
 
 test('navigation during asynchronous tab lookup cannot commit a stale device',async()=>{
  const p=setup(`https://manager.trackunit.com/assets/${asset}`);let resolve;p.box.chrome.tabs.query=()=>new Promise(done=>resolve=done);
  const before=p.elements.assistant.src,read=p.elements.identify.onclick();p.tabHandlers.activated({windowId:1});
  resolve([{url:`https://manager.trackunit.com/assets/${asset}`,id:10,windowId:1}]);await read;
- assert.equal(p.elements.assistant.src,before);assert.match(p.elements.context.textContent,/读取期间/);assert.equal(p.elements.identify.disabled,false);
+ assert.equal(p.elements.assistant.src,before);assert.equal(p.elements.identify.disabled,false);
 });
 
-test('manifest remains restricted to two loopback frames with no extra permissions',()=>{
+test('manifest only permits exact Trackunit sites and two loopback frames',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../extension/manifest.json'),'utf8'));
- assert.equal(manifest.version,'0.4.2');assert.deepEqual(manifest.permissions,['sidePanel','activeTab']);assert.equal(manifest.host_permissions,undefined);
+ assert.equal(manifest.version,'0.5.0');assert.deepEqual(manifest.permissions,['sidePanel','activeTab']);
+ assert.deepEqual(manifest.host_permissions,['https://manager.trackunit.com/*','https://new.manager.trackunit.com/*']);
+ assert.equal(manifest.content_scripts,undefined);
  assert.match(manifest.content_security_policy.extension_pages,/frame-src http:\/\/127\.0\.0\.1:8890 http:\/\/127\.0\.0\.1:8892$/);
  assert.equal(manifest.content_security_policy.extension_pages.includes('*'),false);
+});
+
+const otherAsset='00000000-0000-0000-0000-000000000002';
+const assetURL=id=>`https://new.manager.trackunit.com/assets/${id}/status`;
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+const tab=(id=asset,tabId=10,windowId=1)=>({url:assetURL(id),id:tabId,windowId,status:'complete'});
+const matched=(p,id=asset)=>reply(p,'jilian:context',{asset_id:id,machine_id:id,state:'matched',source:'trackunit_cache',dataset_id:null,selection_id:'fleet:'+id});
+
+test('startup automatically reads UUID during connection without changing its nonce or making API calls',async()=>{
+ const p=setup(assetURL(asset)+'?session=do-not-forward',undefined,true),before=new URL(p.elements.assistant.src);
+ await p.follow();const after=new URL(p.elements.assistant.src);
+ assert.equal(after.hash,'#trackunit-asset='+asset);assert.equal(after.search,before.search);
+ assert.equal(after.href.includes('do-not-forward'),false);assert.equal(state(p),'connecting');assert.equal(p.outgoing.length,0);
+ ready(p);assert.equal(state(p),'connected');assert.equal(p.outgoing.length,1);assert.equal(p.outgoing[0].data.asset_id,asset);
+ matched(p);assert.match(p.elements.context.textContent,/已关联/);
+});
+
+test('startup after readiness uses same iframe document and awaits exact local dataset acknowledgement',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);const before=new URL(p.elements.assistant.src);
+ await p.follow();assert.equal(new URL(p.elements.assistant.src).search,before.search);
+ assert.match(p.elements.context.textContent,/等待/);
+ reply(p,'jilian:context',{asset_id:asset,state:'missing'});assert.match(p.elements.context.textContent,/没有对应的本地实测数据/);
+ assert.doesNotMatch(p.elements.context.textContent,/已关联/);
+ reply(p,'jilian:context',{asset_id:asset,state:'choose_version'});assert.match(p.elements.context.textContent,/版本尚未选定/);
+});
+
+test('SPA asset change follows automatically by hash and reports in-flight work as pending',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);
+ const before=new URL(p.elements.assistant.src);p.box.chrome.tabs.query=async()=>[tab(otherAsset)];
+ p.tabHandlers.updated(10,{url:assetURL(otherAsset)});
+ assert.equal(p.elements.context.dataset.stale,'true');await p.follow();
+ const after=new URL(p.elements.assistant.src);assert.equal(after.search,before.search);assert.equal(after.hash,'#trackunit-asset='+otherAsset);
+ assert.equal(p.elements.context.dataset.stale,'false');
+ reply(p,'jilian:context',{asset_id:otherAsset,state:'pending'});assert.match(p.elements.context.textContent,/尚未切换/);
+ matched(p,asset);assert.doesNotMatch(p.elements.context.textContent,/已关联/);
+ matched(p,otherAsset);assert.match(p.elements.context.textContent,/已关联/);
+});
+
+test('latest navigation wins when earlier asynchronous URL lookup resolves afterward',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();
+ const callbacks=[];p.box.chrome.tabs.query=()=>new Promise(resolve=>callbacks.push(resolve));
+ p.tabHandlers.updated(10,{url:assetURL(asset)});await p.follow();
+ p.tabHandlers.updated(10,{url:assetURL(otherAsset)});await p.follow();assert.equal(callbacks.length,2);
+ callbacks[1]([tab(otherAsset)]);await flush();matched(p,otherAsset);
+ const before=p.elements.assistant.src,message=p.elements.context.textContent;
+ callbacks[0]([tab(asset)]);await flush();
+ assert.equal(p.elements.assistant.src,before);assert.equal(p.elements.context.textContent,message);
+});
+
+test('loading page never commits old URL and completion reads the newly committed device',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);
+ const before=p.elements.assistant.src;
+ p.box.chrome.tabs.query=async()=>[{...tab(asset),status:'loading',pendingUrl:assetURL(otherAsset)}];
+ p.tabHandlers.updated(10,{status:'loading',url:assetURL(otherAsset)});await p.follow();
+ assert.equal(p.elements.assistant.src,before);assert.match(p.elements.context.textContent,/页面正在加载/);
+ matched(p);assert.doesNotMatch(p.elements.context.textContent,/已关联/);
+ p.box.chrome.tabs.query=async()=>[tab(otherAsset)];p.tabHandlers.updated(10,{status:'complete'});await p.follow();
+ assert.equal(new URL(p.elements.assistant.src).hash,'#trackunit-asset='+otherAsset);
+});
+
+test('navigation bursts debounce and a repeated device does not reset iframe or confirmation deadline',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);
+ const before=p.elements.assistant.src;let queries=0;p.box.chrome.tabs.query=async()=>{queries++;return [tab()];};
+ p.tabHandlers.updated(10,{url:assetURL(asset).replace('/status','/location')});
+ p.tabHandlers.updated(10,{status:'complete'});p.tabHandlers.updated(10,{url:assetURL(asset)});
+ assert.equal([...p.timers.values()].filter(timer=>timer.ms===150).length,1);await p.follow();
+ assert.equal(queries,1);assert.equal(p.elements.assistant.src,before);
+ assert.equal([...p.timers.values()].filter(timer=>timer.ms===8000).length,0);assert.match(p.elements.context.textContent,/已关联/);
+});
+
+test('only active tabs in the side panel window can change the selected machine',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);
+ const before=p.elements.assistant.src,message=p.elements.context.textContent;
+ p.tabHandlers.updated(99,{url:assetURL(otherAsset),status:'complete'});p.tabHandlers.activated({tabId:99,windowId:2});
+ assert.equal(p.elements.assistant.src,before);assert.equal(p.elements.context.textContent,message);
+ assert.equal([...p.timers.values()].some(timer=>timer.ms===150),false);
+ p.box.chrome.tabs.query=async()=>[tab(otherAsset,12)];p.tabHandlers.activated({tabId:12,windowId:1});await p.follow();
+ assert.equal(new URL(p.elements.assistant.src).hash,'#trackunit-asset='+otherAsset);
+});
+
+test('unsupported, list and permission-redacted pages keep drafts but never claim current machine association',async()=>{
+ for(const url of ['https://example.com','https://new.manager.trackunit.com/assets',undefined]){
+  const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);const before=p.elements.assistant.src;
+  p.box.chrome.tabs.query=async()=>[{id:12,windowId:1,url,status:'complete'}];
+  p.tabHandlers.activated({tabId:12,windowId:1});await p.follow();
+  assert.equal(p.elements.assistant.src,before);assert.equal(p.elements.context.dataset.stale,'true');
+  assert.match(p.elements.context.textContent,/当前页面尚未关联/);assert.match(p.elements.context.textContent,/无法识别/);
+  const message=p.elements.context.textContent;matched(p);assert.equal(p.elements.context.textContent,message);
+  p.box.chrome.tabs.query=async()=>[tab(otherAsset,12)];p.tabHandlers.updated(12,{url:assetURL(otherAsset),status:'complete'});await p.follow();
+  assert.equal(new URL(p.elements.assistant.src).hash,'#trackunit-asset='+otherAsset);
+ }
+});
+
+test('demo pauses queued automatic reads and only an explicit read resumes machine following',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();
+ p.tabHandlers.updated(10,{url:assetURL(otherAsset)});p.elements['open-demo'].onclick();ready(p);
+ const before=p.elements.assistant.src;assert.equal(p.elements.follow.attributes['aria-pressed'],'false');
+ assert.match(p.elements.context.textContent,/自动跟随已暂停/);
+ p.box.chrome.tabs.query=async()=>[tab(otherAsset)];p.tabHandlers.updated(10,{status:'complete'});
+ assert.equal([...p.timers.values()].some(timer=>timer.ms===150),false);assert.equal(p.elements.assistant.src,before);
+ await p.elements.identify.onclick();assert.equal(p.elements.follow.attributes['aria-pressed'],'true');
+ assert.equal(new URL(p.elements.assistant.src).hash,'#trackunit-asset='+otherAsset);assert.equal(new URL(p.elements.assistant.src).searchParams.has('demo'),false);
+});
+
+test('follow can pause without reloading work and manual read resumes it',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);
+ const before=p.elements.assistant.src;p.elements.follow.onclick();assert.match(p.elements.context.textContent,/自动跟随已暂停/);
+ p.box.chrome.tabs.query=async()=>[tab(otherAsset)];p.tabHandlers.updated(10,{url:assetURL(otherAsset)});
+ assert.equal(p.elements.assistant.src,before);assert.equal([...p.timers.values()].some(timer=>timer.ms===150),false);
+ matched(p);assert.doesNotMatch(p.elements.context.textContent,/已关联/);
+ await p.elements.identify.onclick();assert.equal(new URL(p.elements.assistant.src).hash,'#trackunit-asset='+otherAsset);
+ assert.equal(p.elements.follow.attributes['aria-pressed'],'true');
+});
+
+test('an outstanding auto-read cannot replace explicit demo or manual selection',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();
+ let resolve;p.box.chrome.tabs.query=()=>new Promise(done=>resolve=done);
+ p.tabHandlers.updated(10,{url:assetURL(otherAsset)});await p.follow();p.elements['open-demo'].onclick();const demo=p.elements.assistant.src;
+ resolve([tab(otherAsset)]);await flush();assert.equal(p.elements.assistant.src,demo);
+ assert.equal(p.elements.follow.attributes['aria-pressed'],'false');
+});
+
+test('automatic identification while connection failed retains UUID without a reconnect loop',async()=>{
+ const p=setup(assetURL(asset),undefined,true);await p.follow();p.tick();p.tick();assert.equal(state(p),'failed');
+ p.box.chrome.tabs.query=async()=>[tab(otherAsset)];p.tabHandlers.updated(10,{url:assetURL(otherAsset)});await p.follow();
+ assert.equal(state(p),'failed');assert.equal(p.elements.assistant.src,undefined);assert.equal(p.timers.size,0);
+ assert.match(p.elements.context.textContent,/本机服务尚未连接/);p.elements.retry.onclick();
+ assert.equal(new URL(p.elements.assistant.src).hash,'#trackunit-asset='+otherAsset);ready(p);matched(p,otherAsset);
+ assert.match(p.elements.context.textContent,/已关联/);
+});
+
+test('browser lookup errors do not expose raw URLs or secret-bearing browser messages',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);
+ p.box.chrome.tabs.query=async()=>{throw new Error('https://private.example/?token=do-not-display');};
+ p.tabHandlers.updated(10,{status:'complete'});await p.follow();
+ assert.match(p.elements.context.textContent,/站点访问权限/);assert.equal(p.elements.context.dataset.stale,'true');
+ assert.equal(p.elements.context.textContent.includes('do-not-display'),false);assert.equal(p.elements.context.textContent.includes('private.example'),false);
 });

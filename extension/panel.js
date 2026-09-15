@@ -1,6 +1,7 @@
-/* Probe only the two permitted loopback frames; no host permissions or network fetch. */
+/* Exact Trackunit hosts expose only the active URL. Connection probes use loopback frames, never fetch. */
 const PORTS = ['8892', '8890'];
 const HANDSHAKE_TIMEOUT = 6500;
+const FOLLOW_DELAY = 150;
 const get = id => document.getElementById(id);
 const frame = get('assistant'), portSelector = get('service-port');
 let preferredPort = '8892';
@@ -9,16 +10,39 @@ portSelector.value = preferredPort;
 let deadline, contextDeadline, assetId = null, localOrigin, connectionId, sequence = 0;
 let dataReady = false, runtime = null, state = 'connecting', mode = 'work', remaining = [], failures = [];
 let pageChanged = false, pageGeneration = 0, currentTabId = null, currentWindowId = null;
+let followEnabled = true, followTimer, lookupTicket = 0, lastContextLabel = '';
 
 function contextText(message) {
-  get('context').textContent = (pageChanged ? '页面已变化，仍保留上次设备；请重新读取。 ' : '') + message;
+  get('context').dataset.stale = String(pageChanged);
+  get('context').textContent = (pageChanged ? '当前页面尚未关联，下面保留上次设备。 ' : '') +
+    (!followEnabled && mode !== 'demo' ? '自动跟随已暂停。 ' : '') + message;
 }
 function markPageChanged() {
-  pageGeneration++;
-  if (assetId) { pageChanged = true; contextText('设备 ID：' + assetId); }
+  pageGeneration++; lookupTicket++;
+  clearTimeout(contextDeadline);
+  if (assetId) { pageChanged = true; contextText('正在核对页面。上次设备 ID：' + assetId); }
 }
-chrome.tabs.onActivated?.addListener(info => { if (currentWindowId === null || info.windowId === currentWindowId) markPageChanged(); });
-chrome.tabs.onUpdated?.addListener((id, change) => { if (id === currentTabId && (change.url || change.status === 'loading')) markPageChanged(); });
+function scheduleRead() {
+  clearTimeout(followTimer);
+  if (!followEnabled || mode === 'demo') return;
+  followTimer = setTimeout(() => { followTimer = null; readCurrent(false); }, FOLLOW_DELAY);
+}
+function setFollow(enabled) {
+  followEnabled = enabled;
+  clearTimeout(followTimer); lookupTicket++;
+  get('follow').setAttribute('aria-pressed', String(enabled));
+  get('follow').textContent = enabled ? '自动跟随：开' : '自动跟随：关';
+}
+chrome.tabs.onActivated?.addListener(info => {
+  if (currentWindowId !== null && info.windowId !== currentWindowId) return;
+  if (Number.isInteger(info.tabId)) currentTabId = info.tabId;
+  markPageChanged(); scheduleRead();
+});
+chrome.tabs.onUpdated?.addListener((id, change) => {
+  if (id !== currentTabId || !(change.url || change.status === 'loading' || change.status === 'complete')) return;
+  markPageChanged();
+  if (change.url || change.status === 'complete') scheduleRead();
+});
 
 function assistantUrl(withPanel = true) {
   const query = new URLSearchParams();
@@ -37,13 +61,13 @@ function setState(next) {
   else get('standalone').removeAttribute('href');
 }
 function requestContext() {
-  if (assetId && state === 'connected') frame.contentWindow.postMessage({
+  if (assetId && !pageChanged && state === 'connected') frame.contentWindow.postMessage({
     type: 'jilian:context-request', protocol: 1, connection_id: connectionId, asset_id: assetId
   }, localOrigin);
 }
 function awaitContext() {
   clearTimeout(contextDeadline);
-  if (!assetId) return;
+  if (!assetId || pageChanged) return;
   const expectedId = assetId, expectedConnection = connectionId;
   contextText('已读取设备 ID，正在等待助手确认数据与版本。');
   contextDeadline = setTimeout(() => {
@@ -106,16 +130,16 @@ function finishHandshake() {
     : '本机界面与后端配置已确认。';
   get('runtime').textContent = runtime.provider + ' / ' + runtime.model + ' · ' + runtime.backend_build + '。模型可用性以实际分析结果为准。';
   if (assetId) awaitContext();
-  else contextText(mode === 'demo' ? '模拟案例 · 预设讲解，不调用外部接口。' : '可先查看演示案例，或从 Trackunit 详情页读取设备。');
+  else contextText(mode === 'demo' ? '模拟案例 · 自动跟随已暂停；预设讲解不调用外部接口。' : '打开 Trackunit 设备详情页后自动读取；也可先查看演示案例。');
 }
 window.addEventListener('message', event => {
   if (state === 'failed' || event.origin !== localOrigin || event.source !== frame.contentWindow) return;
   const data = event.data;
   if (data?.protocol !== 1 || data.connection_id !== connectionId) return;
   if (data.type === 'jilian:context') {
-    if (state !== 'connected') return;
+    if (state !== 'connected' || pageChanged || mode !== 'work') return;
     const label = trackunitContextLabel(data, assetId); if (label === null) return;
-    clearTimeout(contextDeadline); contextText(label + ' 设备 ID：' + assetId); return;
+    clearTimeout(contextDeadline); lastContextLabel = label; contextText(label + ' 设备 ID：' + assetId); return;
   }
   if (data.type === 'jilian:ready') dataReady = true;
   else if (data.type === 'jilian:runtime' && ['provider', 'model', 'backend_build'].every(key => typeof data[key] === 'string' && data[key].length > 0 && data[key].length <= 160)) runtime = data;
@@ -136,29 +160,69 @@ get('service-form').onsubmit = event => {
 get('open-demo').onclick = () => {
   if (mode === 'demo' && state === 'connected') return;
   if (mode === 'work' && state === 'connected' && !window.confirm('打开演示案例会重新载入工作区，未保存的输入可能丢失。请先保存本机草稿。继续打开演示吗？')) return;
-  mode = 'demo'; assetId = null; pageChanged = false;
+  setFollow(false); mode = 'demo'; assetId = null; pageChanged = false; lastContextLabel = '';
   contextText('正在打开模拟案例…');
   connect(localOrigin ? new URL(localOrigin).port : preferredPort);
 };
-get('identify').onclick = async () => {
-  const button = get('identify'); button.disabled = true;
-  const generation = pageGeneration;
+async function readCurrent(manual = false) {
+  if (!manual && (!followEnabled || mode === 'demo')) return;
+  clearTimeout(followTimer);
+  const button = get('identify');
+  if (manual) { button.disabled = true; setFollow(true); }
+  const generation = pageGeneration, ticket = ++lookupTicket;
   try {
     const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-    if (generation !== pageGeneration) throw new Error('读取期间页面已变化，请重新读取当前设备。');
+    if (ticket !== lookupTicket || generation !== pageGeneration) return;
+    if (Number.isInteger(tab?.id)) currentTabId = tab.id;
+    if (Number.isInteger(tab?.windowId)) currentWindowId = tab.windowId;
+    if (tab?.status === 'loading' || tab?.pendingUrl) {
+      if (assetId) pageChanged = true;
+      contextText('页面正在加载，完成后自动核对设备。' + (assetId ? ' 上次设备 ID：' + assetId : ''));
+      if (mode === 'demo') setFollow(false);
+      return;
+    }
     const found = trackunitAssetId(tab?.url);
-    if (!found) throw new Error('请打开 Trackunit 设备详情页并点击插件图标；当前页面无法识别设备。');
-    const sameDocument = mode === 'work' && state === 'connected';
-    assetId = found; currentTabId = tab.id; currentWindowId = tab.windowId; pageChanged = false; mode = 'work';
+    if (!found) throw new Error('当前页面无法识别设备，请打开 Trackunit 设备详情页。');
+    const sameDocument = mode === 'work' && state !== 'failed';
+    const sameAsset = mode === 'work' && assetId === found, wasChanged = pageChanged;
+    assetId = found; pageChanged = false; mode = 'work';
+    if (sameAsset && sameDocument) {
+      // Sub-tabs, reloads and repeated events must not reset the work form or acknowledgement timer.
+      if (wasChanged || manual) {
+        contextText((lastContextLabel || '已读取设备 ID，等待助手确认数据与版本。') + ' 设备 ID：' + assetId);
+        requestContext();
+      }
+      return;
+    }
+    lastContextLabel = '';
     if (sameDocument) {
       // A hash-only change preserves drafts/in-flight analysis. Device acknowledgement is renewed.
-      frame.src = assistantUrl(); get('standalone').href = assistantUrl(false); awaitContext();
+      frame.src = assistantUrl();
+      if (state === 'connected') { get('standalone').href = assistantUrl(false); awaitContext(); }
+      else contextText('已读取设备 ID，正在等待本机工作区连接。');
+    } else if (state === 'failed' && !manual) {
+      contextText('已读取设备 ID；本机服务尚未连接，请点击重新连接。设备 ID：' + assetId);
     } else {
       // Every full navigation gets a new connection id and a complete readiness handshake.
       contextText('已读取设备 ID，正在连接对应工作区。');
       connect(localOrigin ? new URL(localOrigin).port : preferredPort);
     }
-  } catch (error) { contextText((error.message || '无法读取当前设备。') + (assetId ? ' 仍保留上次设备，尚未切换。' : '')); }
-  finally { button.disabled = false; }
+  } catch (error) {
+    if (ticket !== lookupTicket || generation !== pageGeneration) return;
+    clearTimeout(contextDeadline);
+    if (assetId) pageChanged = true;
+    if (mode === 'demo') setFollow(false);
+    const message = error?.message === '当前页面无法识别设备，请打开 Trackunit 设备详情页。'
+      ? error.message : '无法读取当前页面，请检查插件的 Trackunit 站点访问权限后重试。';
+    contextText(message + (assetId ? ' 上次设备 ID：' + assetId : ''));
+  } finally { if (manual) button.disabled = false; }
+}
+get('identify').onclick = () => readCurrent(true);
+get('follow').onclick = () => {
+  if (!followEnabled && mode === 'demo') return readCurrent(true);
+  setFollow(!followEnabled);
+  if (followEnabled) scheduleRead();
+  else contextText(assetId ? '保留设备 ID：' + assetId : '点击“读取当前设备”可恢复自动跟随。');
 };
 connect();
+scheduleRead();
