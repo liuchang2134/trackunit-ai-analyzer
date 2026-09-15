@@ -1,4 +1,5 @@
 const $ = id => document.getElementById(id);
+document.documentElement.classList.toggle('panel-embedded', window.parent !== window && new URLSearchParams(location.search).has('panel'));
 let report = null, machines = [], defaultSource = "mock", priorRecordId = null, pendingPlatformContext = false;
 let historyRequest = 0;
 let deviceIndexWarnings = [];
@@ -54,7 +55,7 @@ async function api(path, options) {
 }
 function setView(view) {
   $('page-title').textContent={demo:'完整案例演示',queue:'待处理工作台',work:'设备排查',data:'资料管理',history:'诊断记录',states:'工况识别实验',cooling:'冷却预警实验'}[view];
-  $('secondary-nav').open=!['demo','queue','work','history'].includes(view) && window.innerWidth>720;
+  $('secondary-nav').open=false;
   $('demo-view').hidden = view !== 'demo';
   $('demo-entry').hidden = view !== 'work';
   $('queue-view').hidden = view !== 'queue';

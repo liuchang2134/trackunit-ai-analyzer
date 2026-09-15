@@ -96,3 +96,7 @@
 ## 2026-09-14：冷却热事件预警
 
 再次查看 [aeon](https://github.com/aeon-toolkit/aeon) 的时序算法及基准评价组织方式，以及 [scikit-learn 随机森林官方接口](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)。继续用既有 sklearn 1.7.2 训练环境和自行编写的数值 JSON 推理，不安装 aeon，不复制其代码。评价按 [Carrasco 等论文](https://arxiv.org/abs/2105.12818) 所讨论的事件前窗口和提前发现思路设计，同时保留温度阈值对照及误报计数；未声称复现完整论文方法。热平衡为自编的简化模拟，所有参数是实验假设；具体来源、采用范围和结果见 [冷却预警说明](COOLING_WARNING.md)。
+
+## 设备服务工作台视觉参考（2026-09-15）
+
+参考用户提供的 XGSS 界面：蓝色顶栏、水平导航、细分隔线和紧凑资料表。公开信息组织参考[徐工官网](https://www.xcmg.com/)及[产品目录](https://www.xcmg.com/product/pro-list.htm?catId=0)。本项目采用的颜色和尺寸为设计实现值，并非官方品牌规范；保留机联智检名称，未复制官方Logo或私有页面素材。

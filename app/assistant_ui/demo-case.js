@@ -9,7 +9,7 @@
   function drawChart(){
     if(!scenario||byId('demo-view').hidden||!window.echarts)return;
     chart=chart||echarts.init(byId('demo-chart'));
-    chart.setOption({animation:false,color:['#2463bc','#bb713e'],grid:{left:42,right:16,top:34,bottom:36},
+    chart.setOption({animation:false,color:['#0055d9','#db963b'],grid:{left:42,right:16,top:34,bottom:36},
       tooltip:{trigger:'axis'},legend:{data:['左行走指令（%）','左行走响应（%）'],textStyle:{fontSize:11}},
       xAxis:{type:'value',name:'分钟',nameLocation:'middle',nameGap:24,min:0},
       yAxis:{type:'value',min:0,max:100,axisLabel:{formatter:'{value}%'}},

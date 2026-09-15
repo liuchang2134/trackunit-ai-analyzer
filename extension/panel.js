@@ -1,81 +1,164 @@
-const PORTS=new Set(['8890','8892']);
-const frame=document.getElementById('assistant');
-const portSelector=document.getElementById('service-port');
-try{const saved=localStorage.getItem('jilian-service-port');if(PORTS.has(saved))portSelector.value=saved;}catch{}
-let deadline,contextDeadline,assetId=null,localOrigin,connectionId,sequence=0,dataReady=false,runtime=null;
-let pageChanged=false,pageGeneration=0,currentTabId=null,currentWindowId=null;
-function contextText(message){document.getElementById('context').textContent=(pageChanged?'浏览器页面已变化，下方保留上次设备；请重新读取。 ':'')+message;}
-function markPageChanged(){pageGeneration++;if(assetId){pageChanged=true;contextText('上次读取的设备 ID：'+assetId);}}
-chrome.tabs.onActivated?.addListener(info=>{if(currentWindowId===null||info.windowId===currentWindowId)markPageChanged();});
-chrome.tabs.onUpdated?.addListener((id,change)=>{if(id===currentTabId&&(change.url||change.status==='loading'))markPageChanged();});
-function assistantUrl(){return localOrigin+'/assistant-ui/?panel='+connectionId+(assetId?'#trackunit-asset='+assetId:'');}
-function updateFrame(){frame.src=assistantUrl();document.getElementById('standalone').href=assistantUrl();}
-function requestContext(){
-  if(assetId)frame.contentWindow.postMessage({type:'jilian:context-request',protocol:1,connection_id:connectionId,asset_id:assetId},localOrigin);
+/* Probe only the two permitted loopback frames; no host permissions or network fetch. */
+const PORTS = ['8892', '8890'];
+const HANDSHAKE_TIMEOUT = 6500;
+const get = id => document.getElementById(id);
+const frame = get('assistant'), portSelector = get('service-port');
+let preferredPort = '8892';
+try { const saved = localStorage.getItem('jilian-service-port'); if (PORTS.includes(saved)) preferredPort = saved; } catch {}
+portSelector.value = preferredPort;
+let deadline, contextDeadline, assetId = null, localOrigin, connectionId, sequence = 0;
+let dataReady = false, runtime = null, state = 'connecting', mode = 'work', remaining = [], failures = [];
+let pageChanged = false, pageGeneration = 0, currentTabId = null, currentWindowId = null;
+
+function contextText(message) {
+  get('context').textContent = (pageChanged ? '页面已变化，仍保留上次设备；请重新读取。 ' : '') + message;
 }
-function awaitContext(){
+function markPageChanged() {
+  pageGeneration++;
+  if (assetId) { pageChanged = true; contextText('设备 ID：' + assetId); }
+}
+chrome.tabs.onActivated?.addListener(info => { if (currentWindowId === null || info.windowId === currentWindowId) markPageChanged(); });
+chrome.tabs.onUpdated?.addListener((id, change) => { if (id === currentTabId && (change.url || change.status === 'loading')) markPageChanged(); });
+
+function assistantUrl(withPanel = true) {
+  const query = new URLSearchParams();
+  if (withPanel) query.set('panel', connectionId);
+  if (mode === 'demo') query.set('demo', '1');
+  return localOrigin + '/assistant-ui/' + (query.size ? '?' + query : '') + (assetId ? '#trackunit-asset=' + assetId : '');
+}
+function setState(next) {
+  state = next;
+  get('workspace').dataset.state = next;
+  get('connection').dataset.state = next;
+  get('connection-cover').hidden = next === 'connected';
+  frame.setAttribute('aria-hidden', String(next !== 'connected'));
+  get('standalone').setAttribute('aria-disabled', String(next !== 'connected'));
+  if (next === 'connected') get('standalone').href = assistantUrl(false);
+  else get('standalone').removeAttribute('href');
+}
+function requestContext() {
+  if (assetId && state === 'connected') frame.contentWindow.postMessage({
+    type: 'jilian:context-request', protocol: 1, connection_id: connectionId, asset_id: assetId
+  }, localOrigin);
+}
+function awaitContext() {
   clearTimeout(contextDeadline);
-  if(!assetId)return;
-  contextText('已读取平台设备 ID：'+assetId+'；正在等待下方助手确认数据匹配。');
-  contextDeadline=setTimeout(()=>{contextText('尚未收到设备匹配确认。请核对下方设备，旧版网页可能不支持此确认。');},8000);
+  if (!assetId) return;
+  const expectedId = assetId, expectedConnection = connectionId;
+  contextText('已读取设备 ID，正在等待助手确认数据与版本。');
+  contextDeadline = setTimeout(() => {
+    if (assetId === expectedId && connectionId === expectedConnection)
+      contextText('尚未收到设备匹配确认，请核对工作区中的设备和数据版本。');
+  }, 8000);
   requestContext();
 }
-function connect(){
-  clearTimeout(deadline);
-  const port=PORTS.has(portSelector.value)?portSelector.value:'8890';
-  portSelector.value=port;localOrigin='http://127.0.0.1:'+port;
-  connectionId=String(Date.now())+'-'+(++sequence);dataReady=false;runtime=null;
-  document.getElementById('connection').textContent='正在连接本地服务…';
-  document.getElementById('runtime').textContent='等待后端配置；连接成功不代表模型请求已成功。';
-  document.getElementById('help').textContent='请在项目目录的 CMD 运行 start_local.cmd --port '+port+'，然后点击重新连接。旧版本服务需在其终端关闭后重新启动。';
-  document.getElementById('help').hidden=true;
-  updateFrame();
-  awaitContext();
-  deadline=setTimeout(()=>{
-    document.getElementById('connection').textContent=dataReady?'界面已响应，但后端配置未通过核验。':'本地界面未响应，或服务版本过旧。';
-    document.getElementById('help').hidden=false;
-  },8000);
+function failConnection() {
+  clearTimeout(deadline); clearTimeout(contextDeadline);
+  connectionId = 'inactive-' + (++sequence);
+  setState('failed');
+  frame.removeAttribute('src');
+  get('connection').textContent = '未连接';
+  get('cover-title').textContent = '本机助手尚未连接';
+  get('cover-detail').textContent = '已检查端口 ' + failures.map(item => item.port).join('、') + '，未完成连接。请启动本机服务后重试。';
+  get('connection-detail').textContent = failures.map(item => item.port + '：' + item.reason).join('；');
+  get('runtime').textContent = '尚未读取后端配置。';
+  get('help').hidden = false;
+  get('start-command').textContent = 'start_local.cmd --port ' + preferredPort;
+  get('cover-retry').hidden = false;
+  if (assetId) contextText('保留上次读取的设备 ID；重新连接后再确认匹配。');
 }
-window.addEventListener('message',event=>{
-  if(event.origin!==localOrigin || event.source!==frame.contentWindow)return;
-  const data=event.data;
-  if(data?.protocol!==1 || data.connection_id!==connectionId)return;
-  if(data.type==='jilian:context'){
-    const label=trackunitContextLabel(data,assetId);if(label===null)return;
-    clearTimeout(contextDeadline);contextText(label+' 设备 ID：'+assetId);return;
+function attemptNext() {
+  clearTimeout(deadline); clearTimeout(contextDeadline);
+  if (!remaining.length) { failConnection(); return; }
+  const port = remaining.shift();
+  localOrigin = 'http://127.0.0.1:' + port;
+  connectionId = String(Date.now()) + '-' + (++sequence);
+  dataReady = false; runtime = null;
+  setState('connecting');
+  get('connection').textContent = '连接中 · ' + port;
+  get('cover-title').textContent = '正在连接本机助手';
+  get('cover-detail').textContent = failures.length ? '正在尝试备用端口 ' + port + '…' : '正在检查本机端口 ' + port + '…';
+  get('connection-detail').textContent = failures.length ? failures.map(item => item.port + '：' + item.reason).join('；') : '通过网页握手确认连接，不调用 AI 或设备接口。';
+  get('runtime').textContent = '等待后端配置…';
+  get('help').hidden = true; get('cover-retry').hidden = true;
+  frame.title = mode === 'demo' ? '机联智检模拟案例' : '机联智检设备工作区';
+  frame.src = assistantUrl();
+  const attemptId = connectionId;
+  deadline = setTimeout(() => {
+    if (connectionId !== attemptId || state !== 'connecting') return;
+    failures.push({port, reason: dataReady ? '工作区已响应，配置未确认' : runtime ? '已读取配置，工作区尚未就绪' : '未收到助手回应'});
+    attemptNext();
+  }, HANDSHAKE_TIMEOUT);
+}
+function connect(firstPort = preferredPort) {
+  const first = PORTS.includes(firstPort) ? firstPort : '8892';
+  remaining = [first, ...PORTS.filter(port => port !== first)]; failures = [];
+  attemptNext();
+}
+function finishHandshake() {
+  if (!dataReady || !runtime || state !== 'connecting') return;
+  clearTimeout(deadline);
+  setState('connected');
+  const port = new URL(localOrigin).port;
+  get('connection').textContent = '已连接 · ' + port;
+  get('connection-detail').textContent = failures.length
+    ? '优先端口未响应，已自动连接 ' + port + '。保存的端口偏好保持不变。'
+    : '本机界面与后端配置已确认。';
+  get('runtime').textContent = runtime.provider + ' / ' + runtime.model + ' · ' + runtime.backend_build + '。模型可用性以实际分析结果为准。';
+  if (assetId) awaitContext();
+  else contextText(mode === 'demo' ? '模拟案例 · 预设讲解，不调用外部接口。' : '可先查看演示案例，或从 Trackunit 详情页读取设备。');
+}
+window.addEventListener('message', event => {
+  if (state === 'failed' || event.origin !== localOrigin || event.source !== frame.contentWindow) return;
+  const data = event.data;
+  if (data?.protocol !== 1 || data.connection_id !== connectionId) return;
+  if (data.type === 'jilian:context') {
+    if (state !== 'connected') return;
+    const label = trackunitContextLabel(data, assetId); if (label === null) return;
+    clearTimeout(contextDeadline); contextText(label + ' 设备 ID：' + assetId); return;
   }
-  if(data.type==='jilian:ready'){dataReady=true;requestContext();}
-  else if(data.type==='jilian:runtime' && typeof data.provider==='string' && typeof data.model==='string' && typeof data.backend_build==='string'){
-    runtime=data;
-  }else return;
-  if(dataReady && runtime){
-    clearTimeout(deadline);
-    const currentCloud=runtime.provider==='gemini' && runtime.inference_location==='cloud'
-      && runtime.investigation_timeout_seconds===120 && runtime.transient_attempt_limit===3;
-    document.getElementById('connection').textContent=currentCloud?'本地界面与 Gemini 配置已连接。':'界面已连接；当前后端未采用新版 Gemini 配置。';
-    document.getElementById('runtime').textContent=runtime.provider+' / '+runtime.model+' · '+runtime.backend_build+'。模型是否可用需以实际分析结果为准。';
-    document.getElementById('help').hidden=currentCloud;
-  }
+  if (data.type === 'jilian:ready') dataReady = true;
+  else if (data.type === 'jilian:runtime' && ['provider', 'model', 'backend_build'].every(key => typeof data[key] === 'string' && data[key].length > 0 && data[key].length <= 160)) runtime = data;
+  else return;
+  finishHandshake();
 });
-document.getElementById('retry').onclick=connect;
-document.getElementById('service-form').onsubmit=event=>{
+get('retry').onclick = () => connect();
+get('cover-retry').onclick = () => connect();
+get('standalone').onclick = event => { if (state !== 'connected') event.preventDefault(); };
+get('service-form').onsubmit = event => {
   event.preventDefault();
-  if(!PORTS.has(portSelector.value))return;
-  try{localStorage.setItem('jilian-service-port',portSelector.value);}catch{}
+  if (!PORTS.includes(portSelector.value)) return;
+  preferredPort = portSelector.value;
+  try { localStorage.setItem('jilian-service-port', preferredPort); } catch {}
+  get('connection-options').open = false;
   connect();
 };
-document.getElementById('identify').onclick=async()=>{
-  const button=document.getElementById('identify');button.disabled=true;
-  const generation=pageGeneration;
-  try{
-    const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
-    if(generation!==pageGeneration)throw new Error('读取期间浏览器页面已变化，请重新读取当前设备。');
-    const found=trackunitAssetId(tab?.url);
-    if(!found)throw new Error('请打开 Trackunit 设备详情页并再次点击插件图标；列表页或其他网站无法识别。');
-    assetId=found;currentTabId=tab.id;currentWindowId=tab.windowId;pageChanged=false;
-    updateFrame();
-    awaitContext();
-  }catch(error){contextText((error.message || '无法读取当前设备。')+(assetId?' 下方仍保留上次设备，尚未切换。':''));}
-  finally{button.disabled=false;}
+get('open-demo').onclick = () => {
+  if (mode === 'demo' && state === 'connected') return;
+  if (mode === 'work' && state === 'connected' && !window.confirm('打开演示案例会重新载入工作区，未保存的输入可能丢失。请先保存本机草稿。继续打开演示吗？')) return;
+  mode = 'demo'; assetId = null; pageChanged = false;
+  contextText('正在打开模拟案例…');
+  connect(localOrigin ? new URL(localOrigin).port : preferredPort);
+};
+get('identify').onclick = async () => {
+  const button = get('identify'); button.disabled = true;
+  const generation = pageGeneration;
+  try {
+    const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+    if (generation !== pageGeneration) throw new Error('读取期间页面已变化，请重新读取当前设备。');
+    const found = trackunitAssetId(tab?.url);
+    if (!found) throw new Error('请打开 Trackunit 设备详情页并点击插件图标；当前页面无法识别设备。');
+    const sameDocument = mode === 'work' && state === 'connected';
+    assetId = found; currentTabId = tab.id; currentWindowId = tab.windowId; pageChanged = false; mode = 'work';
+    if (sameDocument) {
+      // A hash-only change preserves drafts/in-flight analysis. Device acknowledgement is renewed.
+      frame.src = assistantUrl(); get('standalone').href = assistantUrl(false); awaitContext();
+    } else {
+      // Every full navigation gets a new connection id and a complete readiness handshake.
+      contextText('已读取设备 ID，正在连接对应工作区。');
+      connect(localOrigin ? new URL(localOrigin).port : preferredPort);
+    }
+  } catch (error) { contextText((error.message || '无法读取当前设备。') + (assetId ? ' 仍保留上次设备，尚未切换。' : '')); }
+  finally { button.disabled = false; }
 };
 connect();

@@ -1,1 +1,1 @@
-ASSISTANT_BUILD = '20260915.3-demo-case'
+ASSISTANT_BUILD = '20260915.4-xcmg-workbench'
