@@ -11,7 +11,7 @@ def test_machine_prompt_contains_key_fields():
     )
 
     assert "Machine ID: M-1002" in prompt
-    assert "Serial number: XUG00958JSCB00267" in prompt
+    assert "Serial number: SIM-M-1002" in prompt
     assert "Operating hours: 3761.6" in prompt
     assert "Idle hours: 2104.0" in prompt
     assert "Fuel remaining percent: 94.8" in prompt

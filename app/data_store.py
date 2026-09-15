@@ -132,18 +132,18 @@ def get_data_source() -> str:
 
 
 def load_machines() -> list[Machine]:
-    if get_data_source() == "trackunit_cache" and MACHINES_CACHE.exists():
+    if get_data_source() == "trackunit_cache":
         return [Machine(**item) for item in _read_json(MACHINES_CACHE)]
     return load_mock_machines()
 
 
 def load_telemetry() -> list[TelemetrySnapshot]:
-    if get_data_source() == "trackunit_cache" and TELEMETRY_CACHE.exists():
+    if get_data_source() == "trackunit_cache":
         return [TelemetrySnapshot(**item) for item in _read_json(TELEMETRY_CACHE)]
     return load_mock_telemetry()
 
 
 def load_faults() -> list[FaultCode]:
-    if get_data_source() == "trackunit_cache" and FAULTS_CACHE.exists():
+    if get_data_source() == "trackunit_cache":
         return [FaultCode(**item) for item in _read_json(FAULTS_CACHE)]
     return load_mock_faults()

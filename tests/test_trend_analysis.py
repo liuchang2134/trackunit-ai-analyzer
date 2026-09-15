@@ -1,11 +1,13 @@
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
 from app import database
 from app.trend_analysis import get_fleet_trends
 
 
-def test_fleet_trends_returns_latest_and_delta(tmp_path: Path):
-    database.DB_PATH = tmp_path / "trend_test.db"
+def test_fleet_trends_returns_latest_and_delta(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(database, "DB_PATH", tmp_path / "trend_test.db")
+    now = datetime.now(timezone.utc)
     database.init_database()
     with database.get_connection() as connection:
         connection.executemany(
@@ -18,8 +20,8 @@ def test_fleet_trends_returns_latest_and_delta(tmp_path: Path):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
-                ("2026-06-02T10:00:00+00:00", 10, 8, 2, 1, 3, 4, 55.0, 120.0, "test"),
-                ("2026-06-03T10:00:00+00:00", 10, 7, 3, 2, 4, 5, 50.0, 122.0, "test"),
+                ((now - timedelta(days=2)).isoformat(), 10, 8, 2, 1, 3, 4, 55.0, 120.0, "test"),
+                ((now - timedelta(days=1)).isoformat(), 10, 7, 3, 2, 4, 5, 50.0, 122.0, "test"),
             ],
         )
 

@@ -6,6 +6,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .tmp/
+/.chart-data-*/
+.venv/
 .ruff_cache/
 .mypy_cache/
 
@@ -27,3 +29,6 @@ uvicorn.err.log
 
 .DS_Store
 Thumbs.db
+
+# User supplied catalogs and diagnostics
+data/local/

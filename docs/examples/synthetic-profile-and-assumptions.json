@@ -1,0 +1,29 @@
+{
+  "profile": {
+    "name": "SYNTHETIC diesel excavator, XE135U brochure envelope reference only",
+    "brochure_version": "4.14-2025-01",
+    "source_url": "https://xcmg-usa.com/wp-content/uploads/2025/04/XCMG_Brochures_XE135U_0425_WEB.pdf",
+    "rated_power_kw": 90,
+    "maximum_torque_nm": 500,
+    "tank_l": 250,
+    "idle_rpm_range": [
+      950,
+      1100
+    ],
+    "max_travel_kmh": 4.7,
+    "note": "Brochure lists 2200 rpm and a conflicting 2100 rpm label; model caps at 2100, not a calibration."
+  },
+  "assumptions": {
+    "not_measured": true,
+    "not_a_digital_twin": true,
+    "physical_step_seconds": 5,
+    "nominal_cloud_sample_seconds": 60,
+    "fuel_model": "fuel_lph = 1.6 + shaft_power_kw * 0.245 / 0.835 while engine on; zero off",
+    "fuel_parameters": "1.6 L/h parasitic/intercept, 0.245 kg/kWh slope, 0.835 kg/L diesel density: assumed, not OEM curve",
+    "thermal_model": "first-order relaxation to load-dependent targets; no cooling-failure model",
+    "hydraulic_model": "single equivalent circuit; output = 0.76 * (shaft - 4kW auxiliaries); Q=600P/p",
+    "state_model": "semi-Markov excavation cycle with assumed durations and soil/operator factors",
+    "scope": "one simulated fault at a time; no physical component failures or real SPN/FMI codes",
+    "detailed_channels": "rpm/pressure/flow/temperature are simulator channels, NOT guaranteed Trackunit account fields"
+  }
+}

@@ -14,7 +14,7 @@ FUTURE_AI_PROVIDERS = {"openai", "claude", "deepseek"}
 
 
 def get_ai_provider(provider_override: str | None = None) -> str:
-    return provider_override or os.getenv("AI_PROVIDER", "ollama_local")
+    return provider_override or os.getenv("AI_PROVIDER", "gemini")
 
 
 def generate_machine_ai_report(prompt: str, machine_context: Any = None, provider_override: str | None = None) -> dict[str, Any]:

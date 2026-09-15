@@ -12,8 +12,11 @@ def test_load_machines_normalizes_required_fields():
     machines = load_machines()
 
     assert len(machines) == 5
+    assert all(machine.serial_number.startswith('SIM-') for machine in machines)
+    assert all(machine.customer.startswith('演示客户') for machine in machines)
+    assert all(machine.location.startswith('模拟作业区') for machine in machines)
     assert machines[0].machine_id == "M-1001"
-    assert machines[0].serial_number == "XUGA1355PPKA00006"
+    assert machines[0].serial_number == "SIM-M-1001"
     assert machines[0].machine_type == "excavator"
 
 
@@ -25,7 +28,9 @@ def test_load_telemetry_normalizes_trackunit_like_fields():
     assert item.idle_hours == 2104.0
     assert item.fuel_remaining_percent == 94.8
     assert item.engine_status == "running"
-    assert item.latitude == 29.749423
+    assert item.latitude is None
+    assert item.longitude is None
+    assert all(row.latitude is None and row.longitude is None for row in telemetry)
 
 
 def test_load_faults_normalizes_repeated_faults():

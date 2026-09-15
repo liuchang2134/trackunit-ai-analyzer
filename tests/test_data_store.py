@@ -39,3 +39,14 @@ def test_data_store_reads_cache(monkeypatch, tmp_path):
     assert len(machines) == 1
     assert machines[0].machine_id == "CACHE-1"
 
+
+
+def test_partial_real_cache_never_loads_demo_faults(monkeypatch, tmp_path):
+    monkeypatch.setattr(data_store, "MACHINES_CACHE", tmp_path / "machines.json")
+    monkeypatch.setattr(data_store, "TELEMETRY_CACHE", tmp_path / "telemetry.json")
+    monkeypatch.setattr(data_store, "FAULTS_CACHE", tmp_path / "faults.json")
+    monkeypatch.setenv("DATA_SOURCE", "trackunit_cache")
+    (tmp_path / "machines.json").write_text("[]")
+    assert data_store.get_data_source() == "trackunit_cache"
+    assert data_store.load_faults() == []
+    assert data_store.load_telemetry() == []

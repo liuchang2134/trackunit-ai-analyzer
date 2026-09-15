@@ -8,6 +8,23 @@ from app.models import FaultCode, Machine, TelemetrySnapshot
 DATA_DIR = Path(__file__).resolve().parent / "mock_data"
 
 
+def first_present(*values):
+    """Zero and False are values, not missing data."""
+    return next((value for value in values if value is not None),None)
+
+
+def mapping(value):
+    return value if isinstance(value,dict) else {}
+
+
+def trackunit_identity(raw):
+    metadata=mapping(raw.get('metadata')) or mapping(raw.get('Metadata'))
+    header=mapping(raw.get('EquipmentHeader'))
+    asset_id=first_present(raw.get('assetId'),raw.get('id'),metadata.get('assetId'),metadata.get('AssetId'),metadata.get('machineId'),metadata.get('MachineId'))
+    equipment_id=first_present(header.get('EquipmentID'),raw.get('equipmentId'),raw.get('equipment_id'))
+    return asset_id,equipment_id
+
+
 def load_json_file(filename: str) -> list[dict[str, Any]]:
     path = DATA_DIR / filename
     with path.open("r", encoding="utf-8") as handle:
@@ -80,22 +97,26 @@ def normalize_fault(raw: dict[str, Any]) -> FaultCode:
 
 
 def normalize_trackunit_machine(raw: dict[str, Any]) -> Machine:
-    header = raw.get("EquipmentHeader") or {}
-    metadata = raw.get("metadata") or raw.get("Metadata") or {}
-    location = raw.get("Location") or raw.get("location") or {}
-    asset_id = raw.get("id") or raw.get("assetId") or metadata.get("MachineId")
-    equipment_id = header.get("EquipmentID") or raw.get("equipmentId") or raw.get("equipment_id")
+    from app.telemetry_evidence import timestamp
+    header = mapping(raw.get("EquipmentHeader"))
+    location = mapping(raw.get("Location")) or mapping(raw.get("location"))
+    asset_id,equipment_id=trackunit_identity(raw)
     serial_number = (
         header.get("SerialNumber")
+        or header.get("PIN")
         or raw.get("SerialNumber")
         or raw.get("serialNumber")
         or raw.get("serial_number")
-        or raw.get("name")
         or "Data not available"
     )
     city = get_nested(raw, ["properties", "locationAddress", "city"]) or raw.get("city")
     country = get_nested(raw, ["properties", "locationAddress", "country"]) or raw.get("country")
-    location_label = raw.get("location") or ", ".join(part for part in [city, country] if part) or "Data not available"
+    label=raw.get('location') if isinstance(raw.get('location'),str) else None
+    location_label = label or ", ".join(str(part) for part in [city, country] if part) or "Data not available"
+    observed=[timestamp(raw.get('lastSeenAt')),timestamp(location.get('datetime'))]
+    observed.extend(timestamp(mapping(raw.get(key)).get('datetime')) for key in
+                    ('CumulativeOperatingHours','CumulativeIdleHours','FuelRemaining','EngineStatus','engineStatus'))
+    observed=[instant for instant in observed if instant is not None]
 
     return Machine(
         machine_id=str(asset_id or equipment_id or serial_number),
@@ -106,51 +127,46 @@ def normalize_trackunit_machine(raw: dict[str, Any]) -> Machine:
         machine_type=raw.get("type") or raw.get("assetType") or "Data not available",
         customer=raw.get("customer") or raw.get("ownerAccountId") or "Data not available",
         location=location_label,
-        latitude=location.get("Latitude") or raw.get("latitude"),
-        longitude=location.get("Longitude") or raw.get("longitude"),
-        last_seen_at=(
-            raw.get("lastSeenAt")
-            or location.get("datetime")
-            or raw.get("createdAt")
-            or raw.get("updatedAt")
-            or "Data not available"
-        ),
+        latitude=first_present(location.get("Latitude"),location.get('latitude'),raw.get("latitude")),
+        longitude=first_present(location.get("Longitude"),location.get('longitude'),raw.get("longitude")),
+        last_seen_at=max(observed).isoformat() if observed else "Data not available",
     )
+
+
+def normalize_trackunit_telemetry_series(raw: dict[str, Any]) -> list[TelemetrySnapshot]:
+    """A fleet snapshot contains independently timestamped channels, not one row."""
+    from app.telemetry_evidence import timestamp
+    asset_id,equipment_id=trackunit_identity(raw)
+    groups={}
+    def add(field,value,time):
+        if value is None:return
+        instant=timestamp(time)
+        key=instant.isoformat() if instant else 'Data not available'
+        groups.setdefault(key,{})[field]=value
+    for nested,field in [('CumulativeOperatingHours','operating_hours'),('CumulativeIdleHours','idle_hours'),('FuelRemaining','fuel_remaining_percent')]:
+        channel=mapping(raw.get(nested))
+        key='Percent' if nested=='FuelRemaining' else 'Hour'
+        if key in channel:add(field,channel[key],channel.get('datetime'))
+        else:add(field,raw.get(field),raw.get('recordedAt'))
+    location=mapping(raw.get('Location')) or mapping(raw.get('location'))
+    for key,field in [('Latitude','latitude'),('Longitude','longitude')]:
+        if key in location or field in location:add(field,first_present(location.get(key),location.get(field)),location.get('datetime'))
+        else:add(field,raw.get(field),raw.get('recordedAt'))
+    engine=mapping(raw.get('EngineStatus')) or mapping(raw.get('engineStatus'))
+    running=engine.get('Running')
+    if type(running) is bool:add('engine_status','running' if running else 'stopped',engine.get('datetime'))
+    groups=groups or {'Data not available':{}}
+    # Unknown observation times stay unknown; object creation/update is not telemetry.
+    return [TelemetrySnapshot(machine_id=str(first_present(asset_id,equipment_id,'Data not available')),
+        trackunit_asset_id=str(asset_id) if asset_id is not None else None,
+        equipment_id=str(equipment_id) if equipment_id is not None else None,
+        recorded_at=time,raw_payload=raw,**values)
+        for time,values in sorted(groups.items(),key=lambda item:(item[0]!='Data not available',item[0]))]
 
 
 def normalize_trackunit_telemetry(raw: dict[str, Any]) -> TelemetrySnapshot:
-    location = raw.get("Location") or raw.get("location") or {}
-    engine = raw.get("EngineStatus") or raw.get("engineStatus") or {}
-    running = engine.get("Running") if isinstance(engine, dict) else None
-    if running is True:
-        engine_status = "running"
-    elif running is False:
-        engine_status = "stopped"
-    else:
-        engine_status = "unknown"
-
-    asset_id = raw.get("id") or raw.get("assetId") or get_nested(raw, ["metadata", "MachineId"])
-    equipment_id = get_nested(raw, ["EquipmentHeader", "EquipmentID"]) or raw.get("equipmentId")
-
-    return TelemetrySnapshot(
-        machine_id=str(asset_id or equipment_id or "Data not available"),
-        trackunit_asset_id=str(asset_id) if asset_id else None,
-        equipment_id=str(equipment_id) if equipment_id else None,
-        operating_hours=get_nested(raw, ["CumulativeOperatingHours", "Hour"]) or raw.get("operating_hours"),
-        idle_hours=get_nested(raw, ["CumulativeIdleHours", "Hour"]) or raw.get("idle_hours"),
-        fuel_remaining_percent=get_nested(raw, ["FuelRemaining", "Percent"]) or raw.get("fuel_remaining_percent"),
-        engine_status=engine_status,
-        latitude=location.get("Latitude") or raw.get("latitude"),
-        longitude=location.get("Longitude") or raw.get("longitude"),
-        recorded_at=(
-            location.get("datetime")
-            or get_nested(raw, ["CumulativeOperatingHours", "datetime"])
-            or raw.get("recordedAt")
-            or raw.get("updatedAt")
-            or "Data not available"
-        ),
-        raw_payload=raw,
-    )
+    """Compatibility view of latest timestamp only; callers ingesting data use series."""
+    return normalize_trackunit_telemetry_series(raw)[-1]
 
 
 def normalize_trackunit_fault(raw: dict[str, Any]) -> FaultCode:
@@ -167,8 +183,8 @@ def normalize_trackunit_fault(raw: dict[str, Any]) -> FaultCode:
         machine_id=str(asset_id or equipment_id or "Data not available"),
         trackunit_asset_id=str(asset_id) if asset_id else None,
         equipment_id=str(equipment_id) if equipment_id else None,
-        spn=raw.get("SPN") or raw.get("spn"),
-        fmi=raw.get("FMI") or raw.get("fmi"),
+        spn=first_present(raw.get("SPN"),raw.get("spn")),
+        fmi=first_present(raw.get("FMI"),raw.get("fmi")),
         fault_code=str(raw.get("code") or raw.get("fault_code") or raw.get("faultCode") or "Data not available"),
         description=str(raw.get("text") or raw.get("description") or raw.get("fault_description") or "Data not available"),
         severity=severity,

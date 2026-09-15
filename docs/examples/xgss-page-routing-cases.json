@@ -1,0 +1,33 @@
+{
+  "source": "User supplied screenshots and explanation, 2026-09-14; not live API verification",
+  "cases": [
+    {
+      "id": "manual-present",
+      "fault_code": "E4030",
+      "vin_supplied": true,
+      "expected_page": "XGSS fault troubleshooting manual",
+      "visible_title": "E4030 J1939 总线故障",
+      "evidence_image": "dccfb53cb3f8f53544bd69fd5ce9a2ee.png"
+    },
+    {
+      "id": "no-fault-code",
+      "fault_code": null,
+      "vin_supplied": true,
+      "expected_page": "XGSS equipment parts catalog",
+      "evidence_image": "7827909616fd4323e3e93596a5b26b44.png"
+    },
+    {
+      "id": "manual-not-maintained",
+      "fault_code": "unspecified in user example",
+      "vin_supplied": true,
+      "expected_page": "XGSS equipment parts catalog",
+      "evidence": "User explicitly described fallback behavior; screenshot shows destination, not an API response"
+    }
+  ],
+  "not_established": [
+    "Exact fault-code request field and encryption location",
+    "Query type value and authorized identity/business mapping",
+    "Whether API reports which page type was returned",
+    "Machine-readable manual body or parts-query API"
+  ]
+}

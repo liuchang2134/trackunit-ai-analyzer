@@ -1,0 +1,11 @@
+{
+  "query_mode_confirmed": false,
+  "identity": {
+    "username": "",
+    "orderId": ""
+  },
+  "type": null,
+  "public_key_path": "",
+  "fault_code_field": null,
+  "fault_code_location": null
+}

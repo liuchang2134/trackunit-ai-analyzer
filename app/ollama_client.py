@@ -4,7 +4,7 @@ import httpx
 
 
 DEFAULT_BASE_URL = "http://127.0.0.1:11434"
-DEFAULT_MODEL = "qwen2.5:7b"
+DEFAULT_MODEL = "qwen3.5:9b"
 
 
 class OllamaError(Exception):

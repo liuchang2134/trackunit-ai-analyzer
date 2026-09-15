@@ -1,0 +1,2 @@
+# Optional local XGSS encryption adapter. No API credentials or public keys included.
+cryptography==50.0.1

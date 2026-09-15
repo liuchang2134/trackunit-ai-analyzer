@@ -1,0 +1,976 @@
+{
+  "scope": "Synthetic thermal-event warning only; no real failure validation",
+  "sklearn_version": "1.7.2",
+  "model_sha256": "d62c4998a3557bb857c125fa61e316ff08115e460c72157fa938c3de460177bb",
+  "manifest_sha256": "2c2dbc9234f8564cf3e5873497c8697e02e8f64cce7f43b9a53a8a9ca513c3c6",
+  "parameters": {
+    "trees": 48,
+    "max_depth": 8,
+    "min_samples_leaf": 10,
+    "class_weight": "balanced",
+    "random_state": 20260914
+  },
+  "validation_selection": {
+    "false_alert_budget_per_eligible_hour": 0.1,
+    "trials": [
+      {
+        "threshold": 0.3,
+        "event_recall": 1.0,
+        "median_lead_minutes": 15.0,
+        "false_alert_episodes_per_eligible_hour": 0.12689723811893625,
+        "window_precision": 0.47715736040609136
+      },
+      {
+        "threshold": 0.4,
+        "event_recall": 1.0,
+        "median_lead_minutes": 15.0,
+        "false_alert_episodes_per_eligible_hour": 0.08210997760637051,
+        "window_precision": 0.5290697674418605
+      },
+      {
+        "threshold": 0.5,
+        "event_recall": 1.0,
+        "median_lead_minutes": 15.0,
+        "false_alert_episodes_per_eligible_hour": 0.09703906444389242,
+        "window_precision": 0.5637583892617449
+      },
+      {
+        "threshold": 0.6,
+        "event_recall": 1.0,
+        "median_lead_minutes": 14.0,
+        "false_alert_episodes_per_eligible_hour": 0.08210997760637051,
+        "window_precision": 0.6
+      },
+      {
+        "threshold": 0.7,
+        "event_recall": 1.0,
+        "median_lead_minutes": 14.0,
+        "false_alert_episodes_per_eligible_hour": 0.05971634735008764,
+        "window_precision": 0.624
+      },
+      {
+        "threshold": 0.8,
+        "event_recall": 1.0,
+        "median_lead_minutes": 13.0,
+        "false_alert_episodes_per_eligible_hour": 0.05971634735008764,
+        "window_precision": 0.6636363636363637
+      },
+      {
+        "threshold": 0.9,
+        "event_recall": 1.0,
+        "median_lead_minutes": 10.0,
+        "false_alert_episodes_per_eligible_hour": 0.037322717093804775,
+        "window_precision": 0.75
+      }
+    ],
+    "selected_threshold": 0.4,
+    "budget_met": true
+  },
+  "split_counts": {
+    "train": 72,
+    "validation": 24,
+    "test": 24
+  },
+  "training_windows": 23462,
+  "training_positive_windows": 304,
+  "export_max_error": 3.3306690738754696e-16,
+  "definitions": {
+    "false_alert_episode": "Contiguous confirmed-alert minutes outside the preceding 15-minute event window; separated by an eligible non-alert or ineligible minute.",
+    "lead": "Minutes between the first confirmed alert within the preceding window and event confirmation, at minute resolution; only while observed coolant is below 100C.",
+    "censoring": "Last 15 minutes, post-event samples, stopped/warmup/invalid windows and already-high observations are excluded.",
+    "exposure": "Eligible sampled minutes / 60. Not wall-clock fleet hours. Scenarios intentionally balanced, not real event prevalence."
+  },
+  "validation": {
+    "random_forest": {
+      "events": 9,
+      "detected_events": 9,
+      "event_recall": 1.0,
+      "lead_minutes_detected": [
+        15,
+        15,
+        15,
+        15,
+        12,
+        15,
+        15,
+        15,
+        14
+      ],
+      "median_lead_minutes": 15.0,
+      "false_alert_episodes": 11,
+      "eligible_hours": 133.96666666666542,
+      "negative_eligible_hours": 132.28333333333075,
+      "false_alert_episodes_per_eligible_hour": 0.08210997760637051,
+      "window_counts": {
+        "tp": 91,
+        "fp": 81,
+        "tn": 7856,
+        "fn": 10
+      },
+      "window_precision": 0.5290697674418605,
+      "window_recall": 0.900990099009901,
+      "per_episode": [
+        {
+          "episode_id": "CW-0010355f80c3",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-0ab789847aa1",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-153eebe3b1e2",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-1c6ff7348471",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-209e3fd63f76",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-294941336f12",
+          "scenario": "gradual_loss",
+          "event_index": 197,
+          "lead_minutes": 15,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 184
+        },
+        {
+          "episode_id": "CW-3e552f46435c",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-4224e9741f91",
+          "scenario": "severe_loss",
+          "event_index": 211,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 198
+        },
+        {
+          "episode_id": "CW-458d847f3f59",
+          "scenario": "severe_loss",
+          "event_index": 190,
+          "lead_minutes": 15,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 177
+        },
+        {
+          "episode_id": "CW-588115f6f0c4",
+          "scenario": "gradual_loss",
+          "event_index": 306,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 253
+        },
+        {
+          "episode_id": "CW-6742e97f0905",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-699ac27854fd",
+          "scenario": "severe_loss",
+          "event_index": 193,
+          "lead_minutes": 12,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 177
+        },
+        {
+          "episode_id": "CW-6a08e92c847f",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-7ce47e066d2d",
+          "scenario": "severe_loss",
+          "event_index": 211,
+          "lead_minutes": 15,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 197
+        },
+        {
+          "episode_id": "CW-87ea316539ba",
+          "scenario": "gradual_loss",
+          "event_index": 219,
+          "lead_minutes": 15,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 203
+        },
+        {
+          "episode_id": "CW-8eb4c1b1154c",
+          "scenario": "recovery",
+          "event_index": 238,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 224
+        },
+        {
+          "episode_id": "CW-9116883152bc",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-acb9a62c840a",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-b950cc8da285",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-c25b397b75a7",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-c79d38f1d11f",
+          "scenario": "gradual_loss",
+          "event_index": 213,
+          "lead_minutes": 14,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 200
+        },
+        {
+          "episode_id": "CW-cf070e603a46",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-eaf7de4fd68e",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-f4e4c36224fd",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        }
+      ]
+    },
+    "temperature_95c": {
+      "events": 9,
+      "detected_events": 9,
+      "event_recall": 1.0,
+      "lead_minutes_detected": [
+        10,
+        6,
+        10,
+        15,
+        9,
+        15,
+        15,
+        15,
+        6
+      ],
+      "median_lead_minutes": 10.0,
+      "false_alert_episodes": 5,
+      "eligible_hours": 133.96666666666542,
+      "negative_eligible_hours": 132.28333333333075,
+      "false_alert_episodes_per_eligible_hour": 0.037322717093804775,
+      "window_counts": {
+        "tp": 52,
+        "fp": 12,
+        "tn": 7925,
+        "fn": 49
+      },
+      "window_precision": 0.8125,
+      "window_recall": 0.5148514851485149,
+      "per_episode": [
+        {
+          "episode_id": "CW-0010355f80c3",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-0ab789847aa1",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-153eebe3b1e2",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-1c6ff7348471",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-209e3fd63f76",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-294941336f12",
+          "scenario": "gradual_loss",
+          "event_index": 197,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 184
+        },
+        {
+          "episode_id": "CW-3e552f46435c",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-4224e9741f91",
+          "scenario": "severe_loss",
+          "event_index": 211,
+          "lead_minutes": 6,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 198
+        },
+        {
+          "episode_id": "CW-458d847f3f59",
+          "scenario": "severe_loss",
+          "event_index": 190,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 177
+        },
+        {
+          "episode_id": "CW-588115f6f0c4",
+          "scenario": "gradual_loss",
+          "event_index": 306,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 253
+        },
+        {
+          "episode_id": "CW-6742e97f0905",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-699ac27854fd",
+          "scenario": "severe_loss",
+          "event_index": 193,
+          "lead_minutes": 9,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 177
+        },
+        {
+          "episode_id": "CW-6a08e92c847f",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-7ce47e066d2d",
+          "scenario": "severe_loss",
+          "event_index": 211,
+          "lead_minutes": 15,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 197
+        },
+        {
+          "episode_id": "CW-87ea316539ba",
+          "scenario": "gradual_loss",
+          "event_index": 219,
+          "lead_minutes": 15,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 203
+        },
+        {
+          "episode_id": "CW-8eb4c1b1154c",
+          "scenario": "recovery",
+          "event_index": 238,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 224
+        },
+        {
+          "episode_id": "CW-9116883152bc",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-acb9a62c840a",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-b950cc8da285",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-c25b397b75a7",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-c79d38f1d11f",
+          "scenario": "gradual_loss",
+          "event_index": 213,
+          "lead_minutes": 6,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 200
+        },
+        {
+          "episode_id": "CW-cf070e603a46",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-eaf7de4fd68e",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-f4e4c36224fd",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        }
+      ]
+    }
+  },
+  "test": {
+    "random_forest": {
+      "events": 8,
+      "detected_events": 8,
+      "event_recall": 1.0,
+      "lead_minutes_detected": [
+        15,
+        5,
+        15,
+        12,
+        15,
+        15,
+        15,
+        15
+      ],
+      "median_lead_minutes": 15.0,
+      "false_alert_episodes": 36,
+      "eligible_hours": 134.53333333333254,
+      "negative_eligible_hours": 133.09999999999806,
+      "false_alert_episodes_per_eligible_hour": 0.26759167492567054,
+      "window_counts": {
+        "tp": 79,
+        "fp": 293,
+        "tn": 7693,
+        "fn": 7
+      },
+      "window_precision": 0.21236559139784947,
+      "window_recall": 0.9186046511627907,
+      "per_episode": [
+        {
+          "episode_id": "CW-0adc1eb6bb7b",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-0d38b3520a3a",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-15167370bd8f",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-1b1941610c93",
+          "scenario": "severe_loss",
+          "event_index": 150,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 137
+        },
+        {
+          "episode_id": "CW-248ee59c00cf",
+          "scenario": "severe_loss",
+          "event_index": 285,
+          "lead_minutes": 5,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 232
+        },
+        {
+          "episode_id": "CW-255282c9c890",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-26dfc8215653",
+          "scenario": "gradual_loss",
+          "event_index": 162,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 148
+        },
+        {
+          "episode_id": "CW-2ae751552c67",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-2c7345904951",
+          "scenario": "gradual_loss",
+          "event_index": 199,
+          "lead_minutes": 12,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 185
+        },
+        {
+          "episode_id": "CW-37d71739618a",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-43bb570c091d",
+          "scenario": "gradual_loss",
+          "event_index": 202,
+          "lead_minutes": 15,
+          "false_alert_episodes": 5,
+          "eligible_minutes": 180
+        },
+        {
+          "episode_id": "CW-51859d2c3944",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-553e437d5ff8",
+          "scenario": "severe_loss",
+          "event_index": 216,
+          "lead_minutes": 15,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 204
+        },
+        {
+          "episode_id": "CW-5ade9138d30f",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-75b72e515a14",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-82a22d30fe0a",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 8,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-9841b3746c64",
+          "scenario": "gradual_loss",
+          "event_index": 170,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 157
+        },
+        {
+          "episode_id": "CW-996a616de302",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-a143fb96a56f",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-a25e16e33253",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-a8d0b0e15988",
+          "scenario": "severe_loss",
+          "event_index": 202,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 189
+        },
+        {
+          "episode_id": "CW-c414bc97bfa9",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-e33b8cd08168",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 16,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-e5aeca5f670e",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        }
+      ]
+    },
+    "temperature_95c": {
+      "events": 8,
+      "detected_events": 7,
+      "event_recall": 0.875,
+      "lead_minutes_detected": [
+        5,
+        7,
+        9,
+        15,
+        9,
+        12,
+        15
+      ],
+      "median_lead_minutes": 9.0,
+      "false_alert_episodes": 19,
+      "eligible_hours": 134.53333333333254,
+      "negative_eligible_hours": 133.09999999999806,
+      "false_alert_episodes_per_eligible_hour": 0.1412289395441039,
+      "window_counts": {
+        "tp": 31,
+        "fp": 89,
+        "tn": 7897,
+        "fn": 55
+      },
+      "window_precision": 0.25833333333333336,
+      "window_recall": 0.36046511627906974,
+      "per_episode": [
+        {
+          "episode_id": "CW-0adc1eb6bb7b",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-0d38b3520a3a",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-15167370bd8f",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-1b1941610c93",
+          "scenario": "severe_loss",
+          "event_index": 150,
+          "lead_minutes": 5,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 137
+        },
+        {
+          "episode_id": "CW-248ee59c00cf",
+          "scenario": "severe_loss",
+          "event_index": 285,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 232
+        },
+        {
+          "episode_id": "CW-255282c9c890",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-26dfc8215653",
+          "scenario": "gradual_loss",
+          "event_index": 162,
+          "lead_minutes": 7,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 148
+        },
+        {
+          "episode_id": "CW-2ae751552c67",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-2c7345904951",
+          "scenario": "gradual_loss",
+          "event_index": 199,
+          "lead_minutes": 9,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 185
+        },
+        {
+          "episode_id": "CW-37d71739618a",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-43bb570c091d",
+          "scenario": "gradual_loss",
+          "event_index": 202,
+          "lead_minutes": 15,
+          "false_alert_episodes": 6,
+          "eligible_minutes": 180
+        },
+        {
+          "episode_id": "CW-51859d2c3944",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-553e437d5ff8",
+          "scenario": "severe_loss",
+          "event_index": 216,
+          "lead_minutes": 9,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 204
+        },
+        {
+          "episode_id": "CW-5ade9138d30f",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-75b72e515a14",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-82a22d30fe0a",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 8,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-9841b3746c64",
+          "scenario": "gradual_loss",
+          "event_index": 170,
+          "lead_minutes": 12,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 157
+        },
+        {
+          "episode_id": "CW-996a616de302",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-a143fb96a56f",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-a25e16e33253",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-a8d0b0e15988",
+          "scenario": "severe_loss",
+          "event_index": 202,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 189
+        },
+        {
+          "episode_id": "CW-c414bc97bfa9",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-e33b8cd08168",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        },
+        {
+          "episode_id": "CW-e5aeca5f670e",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415
+        }
+      ]
+    }
+  }
+}

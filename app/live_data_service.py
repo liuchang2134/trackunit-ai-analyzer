@@ -5,7 +5,7 @@ from typing import Any
 
 from app.data_store import cache_status, get_data_source, load_faults, load_machines, load_telemetry
 from app.models import FaultCode, Machine, TelemetrySnapshot
-from app.normalizer import normalize_trackunit_fault, normalize_trackunit_machine, normalize_trackunit_telemetry
+from app.normalizer import normalize_trackunit_fault, normalize_trackunit_machine, normalize_trackunit_telemetry_series
 from app.trackunit_client import TrackunitClient, TrackunitError
 
 
@@ -214,7 +214,7 @@ def _normalize_machines(payload: Any) -> list[Machine]:
 
 def _normalize_telemetry(payload: Any) -> list[TelemetrySnapshot]:
     items = _extract_items(payload)
-    return [normalize_trackunit_telemetry(item) for item in items if isinstance(item, dict)]
+    return [row for item in items if isinstance(item, dict) for row in normalize_trackunit_telemetry_series(item)]
 
 
 def _normalize_faults(payload: Any) -> list[FaultCode]:

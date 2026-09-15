@@ -1,3 +1,14 @@
+from datetime import datetime, timezone
+import pytest
+
+@pytest.fixture(autouse=True)
+def fixed_mock_clock(monkeypatch):
+    class MockClock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 6, 2, 16, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr("app.query_engine.datetime", MockClock)
+
 from app.query_engine import run_query, run_query_with_data
 
 

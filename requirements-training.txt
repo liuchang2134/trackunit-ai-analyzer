@@ -1,0 +1,2 @@
+# Optional: synthetic work-state and cooling-warning training; inference does not require it.
+scikit-learn==1.7.2

@@ -12,7 +12,7 @@ from app.database import (
 from app.normalizer import (
     normalize_trackunit_fault,
     normalize_trackunit_machine,
-    normalize_trackunit_telemetry,
+    normalize_trackunit_telemetry_series,
 )
 from app.trackunit_client import TrackunitClient, TrackunitError
 
@@ -79,7 +79,7 @@ def sync_fleet_snapshot() -> dict:
         endpoint = client.get_configured_endpoint("TRACKUNIT_FLEET_SNAPSHOT_ENDPOINT")
         items = _paged_get(client, endpoint)
         machines = [normalize_trackunit_machine(item) for item in items]
-        telemetry = [normalize_trackunit_telemetry(item) for item in items]
+        telemetry = [row for item in items for row in normalize_trackunit_telemetry_series(item)]
         save_machines(machines)
         save_telemetry(telemetry)
         upsert_machines(machines)
@@ -98,7 +98,7 @@ def sync_single_asset(asset_id: str) -> dict:
         payload = client.request("GET", endpoint)
         items = _extract_items(payload)
         machines = [normalize_trackunit_machine(item) for item in items]
-        telemetry = [normalize_trackunit_telemetry(item) for item in items]
+        telemetry = [row for item in items for row in normalize_trackunit_telemetry_series(item)]
         save_machines(machines)
         save_telemetry(telemetry)
         upsert_machines(machines)
@@ -115,7 +115,7 @@ def sync_time_series(start_date: str, end_date: str) -> dict:
         endpoint_template = client.get_configured_endpoint("TRACKUNIT_TIME_SERIES_ENDPOINT")
         endpoint = endpoint_template.format(start_date=start_date, end_date=end_date)
         items = _paged_get(client, endpoint)
-        telemetry = [normalize_trackunit_telemetry(item) for item in items]
+        telemetry = [row for item in items for row in normalize_trackunit_telemetry_series(item)]
         save_telemetry(telemetry)
         insert_telemetry_snapshots(telemetry)
         return _log("time_series", "success", len(items))

@@ -1,47 +1,47 @@
 [
   {
     "id": "M-1001",
-    "serialNumber": "XUGA1355PPKA00006",
+    "serialNumber": "SIM-M-1001",
     "model": "XE135U",
     "type": "excavator",
-    "customer": "Gulf Coast Rental",
-    "location": "Houston, TX",
+    "customer": "演示客户A",
+    "location": "模拟作业区A",
     "lastSeenAt": "2026-06-02T14:45:53Z"
   },
   {
     "id": "M-1002",
-    "serialNumber": "XUG00958JSCB00267",
+    "serialNumber": "SIM-M-1002",
     "model": "XC958",
     "type": "wheel loader",
-    "customer": "Lone Star Aggregates",
-    "location": "Dallas, TX",
+    "customer": "演示客户B",
+    "location": "模拟作业区B",
     "lastSeenAt": "2026-06-02T14:47:48Z"
   },
   {
     "id": "M-1003",
-    "serialNumber": "XUG0ROLLER000123",
+    "serialNumber": "SIM-M-1003",
     "model": "XS123",
     "type": "roller",
-    "customer": "Midwest Paving",
-    "location": "Kansas City, MO",
+    "customer": "演示客户C",
+    "location": "模拟作业区C",
     "lastSeenAt": "2026-05-28T09:10:00Z"
   },
   {
     "id": "M-1004",
-    "serialNumber": "XUG0164STRRL09632",
+    "serialNumber": "SIM-M-1004",
     "model": "XGA46J",
     "type": "boom lift",
-    "customer": "Oxford Equipment Rental",
-    "location": "Oxford, AL",
+    "customer": "演示客户D",
+    "location": "模拟作业区D",
     "lastSeenAt": "2026-06-02T14:40:57Z"
   },
   {
     "id": "M-1005",
-    "serialNumber": "XUG0THDLR000789",
+    "serialNumber": "SIM-M-1005",
     "model": "XC6-3514K",
     "type": "telehandler",
-    "customer": "Carolina Site Services",
-    "location": "Charlotte, NC",
+    "customer": "演示客户E",
+    "location": "模拟作业区E",
     "lastSeenAt": "2026-06-02T13:02:19Z"
   }
 ]

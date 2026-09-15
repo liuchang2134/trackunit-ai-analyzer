@@ -1,0 +1,734 @@
+{
+  "version": "cooling_warning_v1",
+  "source": "synthetic_only",
+  "sample_interval_seconds": 60,
+  "event_definition": {
+    "temperature_c": 100,
+    "continuous_seconds": 180,
+    "prediction_horizon_minutes": 15,
+    "meaning": "Experimental sustained-temperature event; not an OEM fault or damage label"
+  },
+  "episodes": [
+    {
+      "episode_id": "CW-d0459c95b50b",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "28007dd6aab9727a307bb229019f34b9a4657afd2bdf0435c2e81893752fbbf5"
+    },
+    {
+      "episode_id": "CW-db3519588198",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "4f4ce2fb9ede6787bb77b40837fbafd6fdb1da0574349882b53bea5f076b7879"
+    },
+    {
+      "episode_id": "CW-aa7a753509c9",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "b5ce92eea2e8b7138cbcca10106fb76bfd4e78d3a650f96c20dc4ef656a9ab9e"
+    },
+    {
+      "episode_id": "CW-890b0cba28b0",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "66744f81ba8bc40f5ec18bbb1159dfeff5d3168606abcef97c0e1f01c65024e7"
+    },
+    {
+      "episode_id": "CW-02325006b1ec",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "1c8ec2e31b3b3a7f5011216d5ae42af9678bbbaea384c8746dff4aa4adfba59d"
+    },
+    {
+      "episode_id": "CW-5b22076ee8e5",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "de051a06220a818da2bf2f922810d545e670e2963630bee99219dee438a51050"
+    },
+    {
+      "episode_id": "CW-aeca71be5458",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "f616a91a1ce54eae2d8ac6ab2293fceb154b9bbf3d2dafeb9a09648a7d97bf01"
+    },
+    {
+      "episode_id": "CW-950b34f98595",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "335d95141c8fe67dcec781b507f8b01a7b6fe3d756758bc92483eca7bffa776c"
+    },
+    {
+      "episode_id": "CW-03fc2615426b",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "3e4ab5462fe9e482e5440f5da55ac63c0ca637d7b45ee494a1becce6a3795c8d"
+    },
+    {
+      "episode_id": "CW-57e54682d65d",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "bbee4bddc8bcacc0d9aee340477fa394c333646fda8120f93abc039b922c895b"
+    },
+    {
+      "episode_id": "CW-22578a7f9784",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "c492f4258ef64616e7203a4921eb30f32915ab69e9bb7b2efbe654f693671445"
+    },
+    {
+      "episode_id": "CW-8c3b1fce21a8",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "859a7d5ff6d25437f866d579f4e8eee61afa54daa8b0b48f036f86df2af5b6c1"
+    },
+    {
+      "episode_id": "CW-90f64723dac3",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "f35ee764e25da384a8ff832f69ec9a32ff5c1f3f222e33a8afce5ada440f1608"
+    },
+    {
+      "episode_id": "CW-c436f6c4c4a7",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "be9813490c8313af1c5d2eedaeec9232a87d8a7f29391108cee6d48820634380"
+    },
+    {
+      "episode_id": "CW-b1e5eef139e4",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "aed98b92f0283ebd99ef970c2f876fcf93a618eca21fc652a595578150bbd398"
+    },
+    {
+      "episode_id": "CW-62623ce6e7b7",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "f37990547bbd539f0682a734495fc6868466508b6b98dd262b3013b72b259460"
+    },
+    {
+      "episode_id": "CW-c6ede87552a7",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "05c8d6a8e73a95c0b4e85ca9fa7d84765f9dd26af5d1e0f3e5920ecc51b65a56"
+    },
+    {
+      "episode_id": "CW-c3af7f2b2ea0",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "33dd91063306cb19810ae11b70d51024566766f7c6a9a4f5c12d13f25399e586"
+    },
+    {
+      "episode_id": "CW-2d0b51258709",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "6f769ef84ce47df2bc792a0aefe7409367529b14bda3b89284781f7a5d5315f1"
+    },
+    {
+      "episode_id": "CW-791298d93edc",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "f2498b4aa6ae001fa75c82088290c2d3355ca80555ad6714d2458d01b80b7c02"
+    },
+    {
+      "episode_id": "CW-96b4cac1c15e",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "4f515a7f5a18b811ea3d7433bb6c4e4c24ba2c3e010c652edcd929d69e5ba382"
+    },
+    {
+      "episode_id": "CW-95416379560c",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "4ba40593e00fd4b81469477e88b0aac2541ba8b08c20505a48828301a5ebecf9"
+    },
+    {
+      "episode_id": "CW-86ecb12d9512",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "fa6332112e77ad217de40d78c4cf524c622a22c7e663201ed87826e6cf4713ab"
+    },
+    {
+      "episode_id": "CW-77a1ee190e13",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "a07abede5907c96600209a08f1d037771a0dc71704d2a8c1e81efdc893744bd1"
+    },
+    {
+      "episode_id": "CW-3a697e33c4c4",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "9e8b97eade602f51bc4ac48a57e21f5987ebb74e317a1a77fedd3996d7f70541"
+    },
+    {
+      "episode_id": "CW-35bb7e6d0e9a",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "ad7a72ffefccce2125443f9001fb007799088cbf2a5ddeff7df0bf4775f4bb38"
+    },
+    {
+      "episode_id": "CW-ff818b9edd5a",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "76b7f25249933c0afd146e1cfae507111f91f3e4aa9a418757be73c385707485"
+    },
+    {
+      "episode_id": "CW-df3143f6aa8a",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "e2942ff02013f554115f994d63507a3bd1116674e4a8b94a2f6e646ab3e7e4fd"
+    },
+    {
+      "episode_id": "CW-1fefbf5ec1fb",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "0b96a263c9868516aedc7dfde607f577184f18642c4a83e8233d6c3777df0261"
+    },
+    {
+      "episode_id": "CW-574bb6dc382a",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "6f385356cda0dfadd3ccb60137ae5d89933f7d4a63312f084516c47ffeffe48f"
+    },
+    {
+      "episode_id": "CW-c2eb7f2d0a46",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "d33c9084c0b241fdca439544a2d50d7f605b4ec993325f2e1786c06e40d97228"
+    },
+    {
+      "episode_id": "CW-daf2adeef1f3",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "f24945580b20efbfdea9c43f7b6042fcb0ed6f0f91be0980b34e83651e9f28b9"
+    },
+    {
+      "episode_id": "CW-0b85e3cf91f8",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "1e5cf9c598b871feab56a35af8cd9ae378ac355f5ede486e07a421f5acfcf855"
+    },
+    {
+      "episode_id": "CW-a8268d68dfac",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "b6d7605eeabe2d46df53e2e9f47d8fdfa9dfe83f63a719ff2b946faaff6a614e"
+    },
+    {
+      "episode_id": "CW-9907e310c334",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "df3e7eaa53327f3044022029ea93cd46e58921476ef37162104db9ff9c2af8f6"
+    },
+    {
+      "episode_id": "CW-88792db6e11c",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "feaed125c9ae91d962f082ea8c0d5fd9ac43f6779fd49d32a7b053e4ff6da9bb"
+    },
+    {
+      "episode_id": "CW-2e6bd0f7afc1",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "0c407fa33b99cc6039aeac55c31ec0d31d48b55ceed574cac3a54605d442da22"
+    },
+    {
+      "episode_id": "CW-69240f5d9f1b",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "4cdc7ba4160f06fc17002590cea053a3ba5fb9855332b901ead3e3e60025e796"
+    },
+    {
+      "episode_id": "CW-8f7bd6043bd6",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "e26473b58af08514e6feffdda1e3413b641da753aa13841b3471ae0d2557a784"
+    },
+    {
+      "episode_id": "CW-6f72031777f4",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "86f5a320132e20f752b509e20260dbe5af0c8415b23483c54725357ed1739d28"
+    },
+    {
+      "episode_id": "CW-110a486a479e",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "996105e19b3bc65a604653262aaac32714a5e953e6d6cebeb421f1137430c1b3"
+    },
+    {
+      "episode_id": "CW-db8d324c1cc7",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "5dc17597bcc1e1e589e9ea8f764087b4b36e8b7bfddf616f5fc82975a68c3e02"
+    },
+    {
+      "episode_id": "CW-58ffd9cc9401",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "03226c283de754e8a098cc18579223142ac2f31fe2c06fda438b4aabd14bdb89"
+    },
+    {
+      "episode_id": "CW-6bc47aff51d9",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "be842c4cec14dc2b47611214145d3489a72c70423d23123bf5bba56ae14016db"
+    },
+    {
+      "episode_id": "CW-e2804ba20f4f",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "ca7367113772f388a777e453cee459128c6bf971c57298d3421b6478bc6ea04d"
+    },
+    {
+      "episode_id": "CW-558a79320e69",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "603bada47c52fd475fce4ebb53d0e50beac747dda41698ecc252a3fa7c5d9c06"
+    },
+    {
+      "episode_id": "CW-e3a753ca5266",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "443fe131d01f89946fe8a31ce318931e39453fc25a584f158e2badd5a0c2a590"
+    },
+    {
+      "episode_id": "CW-27111bca9077",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "5e4be857c29de73c8fb2a1b5af4fa7dca90c8ae8ec3a3131839b062f7145e53f"
+    },
+    {
+      "episode_id": "CW-47774bf41256",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "0d33689e00eb0efd33ed307cfe1e4f3722c0e56f7f57e345d39bdc676a011324"
+    },
+    {
+      "episode_id": "CW-2500ee30397f",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "88610ac3de28d7170ccd9938098b4c6e42ae64eb64bc8d3cdc7621170b513db8"
+    },
+    {
+      "episode_id": "CW-4e29aba6fc55",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "f3a8d293ff72b36d0c4d2af7a2fdcf7da06e43be0b7004af6bcf236a86b4de9d"
+    },
+    {
+      "episode_id": "CW-9bd5267f396c",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "9e995c74cef1e2257fc40e8a270799eabf29f94295ec20a8116341678705dba2"
+    },
+    {
+      "episode_id": "CW-f33ee11c9b2a",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "3db6e677843e7a0cb2aa4159e367b12bd03dd4799bda4a42db9a9929e95017d5"
+    },
+    {
+      "episode_id": "CW-d2f034b0389c",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "40e565ba5a1ea769069012d801d9f19b440cf0f34ff9533e529412193dc682f9"
+    },
+    {
+      "episode_id": "CW-01133f445630",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "ce988f91ebb8fba9a24240eceaa5faf1c55ac7690cdb4dfa0bc890270d7ac8cd"
+    },
+    {
+      "episode_id": "CW-6e56b66765e8",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "06fd6204067aa75c80f73f8ab103b9d662cb5ca49712488499a01c7a352766f5"
+    },
+    {
+      "episode_id": "CW-70ae878e9803",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "a4b83742026ed935a21bfcdcf00df9089f3616198fa6e39a4a7240e40c600d6f"
+    },
+    {
+      "episode_id": "CW-e35525b2fa9e",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "c786b0fce7e8969dae0f8c832a8f5990c39de5ae2ef5a93f696fb33ab36ea006"
+    },
+    {
+      "episode_id": "CW-41c861545de3",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "7bd50261447a850950a4cdf711da31eef9923cdd6fa7d49208e778c753ef4ee4"
+    },
+    {
+      "episode_id": "CW-cd7bed06be71",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "6ba9ccfcc0c4647a52a971f464f711323fb8d5d2863475234e75f5583c1d9ef5"
+    },
+    {
+      "episode_id": "CW-19563bf3a556",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "f48c9a6d88585cac267c8a46ceea007b9e016e607d923b8ec32218f34b37dd7e"
+    },
+    {
+      "episode_id": "CW-5e8afed16b40",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "face2b0b85cbcab3790d81d44dee75e312a06f4614659231b1327cd472b02765"
+    },
+    {
+      "episode_id": "CW-8d6549aef655",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "ff23d4f2fd9b3aeab7394775df8f0344032d440adc8f63769f7cbc0694b0b011"
+    },
+    {
+      "episode_id": "CW-acc8917429f1",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "26c4442f00aa3df4a17f4aa5aa221963ccdf5a1c22af63d52a8364c414bbff26"
+    },
+    {
+      "episode_id": "CW-e3098ab4e2fc",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "11af0f3f1395d04d70a8a3f3e37e4186572f8c3467a15e48ca082a029b5171ae"
+    },
+    {
+      "episode_id": "CW-daf22a848743",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "c60f0cc0f0b7780aa22619c8286f05ca755683dd98b7cb6e8ea01a43b6829284"
+    },
+    {
+      "episode_id": "CW-156450d6b25c",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "61915489535fea86b9b84c2acdacd2ca44ab0977a15afda05a43c336e559458c"
+    },
+    {
+      "episode_id": "CW-3cb58aa74b77",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "84c567f4a6f8c27471bcb9e41341fb27954c72823873417075fe8987d851d9af"
+    },
+    {
+      "episode_id": "CW-faea633e279e",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "6a8fbdbeaf159c76c6e45b5249830dbe84068a97645cd0af4d86982ac30d4fc8"
+    },
+    {
+      "episode_id": "CW-4fb798e5e9cd",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "40cc3af7cfc2c5d47fa923da96ff70955bc5392680d7e1868a548542caaee2ff"
+    },
+    {
+      "episode_id": "CW-57c8b0409d7e",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "086c02f0f1656f2f97fc74d8e2294d483ed5c307eb38d65df2e44445f55fdb5a"
+    },
+    {
+      "episode_id": "CW-6c6b31f9d1c5",
+      "split": "train",
+      "samples": 480,
+      "sensor_sha256": "db191c020fc2f977c5590e1fa236024ec4706e9fc0d563b771572f4ce6920a96"
+    },
+    {
+      "episode_id": "CW-209e3fd63f76",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "064bc8d653df3d0d56bf5514206c7e75ef0b16752bc7223035732978174a9178"
+    },
+    {
+      "episode_id": "CW-eaf7de4fd68e",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "38f0f12609d880f150f441c69db6dfefee6b930e194d47633367710375573216"
+    },
+    {
+      "episode_id": "CW-294941336f12",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "7428fa8b1f4898fc9c87552b4f7290fd3d187c50c9ba6610eec5b41152483640"
+    },
+    {
+      "episode_id": "CW-458d847f3f59",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "51f4a37ff5adca25dea556736697038d0fc75d24f833c490236a0abb9edbfbc8"
+    },
+    {
+      "episode_id": "CW-6742e97f0905",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "e724fa090a93cfd32e5641413bcabe0c603a544cac35daaa72dc6098f174e591"
+    },
+    {
+      "episode_id": "CW-6a08e92c847f",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "ceafd95c088709d46c50b0d812f4275f07d4c51f76a6155234d84054de51d5ba"
+    },
+    {
+      "episode_id": "CW-c25b397b75a7",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "2f437a4d8a6f9e978cd0be40334612876f44ecafce45c5903a776a5e4a399f13"
+    },
+    {
+      "episode_id": "CW-9116883152bc",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "12e4fcb9cb87804d603bca0be96700811882d2f29960c4a3022994c3a85313ad"
+    },
+    {
+      "episode_id": "CW-588115f6f0c4",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "6ccab484392a1d3c30b74e8ddd750a43fc9f7348eac0adc360b0302a5ffa95b8"
+    },
+    {
+      "episode_id": "CW-4224e9741f91",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "f334a0b744157c1a4f85488d7e86ffcb0ff3dac04adf49b9b3e64bc7eb609453"
+    },
+    {
+      "episode_id": "CW-b950cc8da285",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "486e0ab349149ac317bf42502ac78f68f76069e3e99114f6c7c996cd051ac5e4"
+    },
+    {
+      "episode_id": "CW-cf070e603a46",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "5bad2ea25f4743326c671a4a4c6d33c77ec945b29348be8ac2888687532e3ac1"
+    },
+    {
+      "episode_id": "CW-0010355f80c3",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "6434ae504d7d0176636bd90e4c75bfe57e5b9b37d8c5cf9a7c7b1d8525471390"
+    },
+    {
+      "episode_id": "CW-3e552f46435c",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "717d2947793bd3c6c3a4b0ac883abd2dc2666676988f23b7b4bc99b83abaca42"
+    },
+    {
+      "episode_id": "CW-87ea316539ba",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "075c06b351a9bcc0a3358eeb854f018c85cf3be778792804f6dec66589f20f81"
+    },
+    {
+      "episode_id": "CW-7ce47e066d2d",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "050d45c1c3932e1fb55531552415b5bccc39d841bd4dbfab5c6712118d68157a"
+    },
+    {
+      "episode_id": "CW-acb9a62c840a",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "aeb81ae860b0e02ce18cbb2bf53caffc525abe03e289fed36721c656bded323d"
+    },
+    {
+      "episode_id": "CW-153eebe3b1e2",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "8f11438a2f6b099c20d4cf756e4a63b647418e809a6c6afd87d1ba01ad2b296b"
+    },
+    {
+      "episode_id": "CW-f4e4c36224fd",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "07f10b5fad128df65d4168afc871d2e387393e9c7bb4898e2c7e1c5cc65807ae"
+    },
+    {
+      "episode_id": "CW-1c6ff7348471",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "fdca17e838cfd48d8a7aaa7de541c1cf6109d9c9c33b64a717b4c49202110331"
+    },
+    {
+      "episode_id": "CW-c79d38f1d11f",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "d0d42f4c18bc0b0da1a58a3ed0252447cb1084359b023c7108da40e1848f1173"
+    },
+    {
+      "episode_id": "CW-699ac27854fd",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "01ceb07ae8b8bfd29a0ea0e2b74400dc7e9f3c3fc7ddb637d634d9e5fdc6cd5e"
+    },
+    {
+      "episode_id": "CW-0ab789847aa1",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "a33b20376bc3b81ea56a331563d2760fdb76425590ade12cbee1ee50fd5d0ddf"
+    },
+    {
+      "episode_id": "CW-8eb4c1b1154c",
+      "split": "validation",
+      "samples": 480,
+      "sensor_sha256": "fb102b42ea0be9449b0594870955ed9a016d7a3ba934562ba7e5a803d3ce5050"
+    },
+    {
+      "episode_id": "CW-255282c9c890",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "2c635ba86106cfb09200b166a3e20f43ccc47da8f17b7d0f5fcb350c01bc9d68"
+    },
+    {
+      "episode_id": "CW-a25e16e33253",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "10c23505276931f35ca4127935e04b9642421f61caa84875358bd48499201f80"
+    },
+    {
+      "episode_id": "CW-43bb570c091d",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "b1d7f00f6ff969d9c5c9beda28566a757d54b84db443414c4d97d082b747fd9a"
+    },
+    {
+      "episode_id": "CW-1b1941610c93",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "2409307f0fc2837e16a276f26ba65338565999bb1bffcd5e992524ca7c6fcfde"
+    },
+    {
+      "episode_id": "CW-e33b8cd08168",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "8a6c920359272850ee4fc441b4d318ba8e6c98f64e117c6bd9ab503dbac322f9"
+    },
+    {
+      "episode_id": "CW-37d71739618a",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "ddc6fda151940215ffdd118361552061ca06a248dd3cd6a244dc1d55a90c44c5"
+    },
+    {
+      "episode_id": "CW-5ade9138d30f",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "3d762de2c0f0990c920d05d92c036d9f19f0b4a7b1ed6c5493622f967191175e"
+    },
+    {
+      "episode_id": "CW-0d38b3520a3a",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "ae08b27705627c240d790172a5704eba9fbbdf0e44470b6a2c76a6bd35f5f580"
+    },
+    {
+      "episode_id": "CW-26dfc8215653",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "bdcbcd848d086689f638487f75d10e239d133f55ee94c2f998fe88c82d1afebd"
+    },
+    {
+      "episode_id": "CW-a8d0b0e15988",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "5a75224a0598c0f51a68682558e0c51b0f6d014a961d4e1c0a629ce5f120bbb8"
+    },
+    {
+      "episode_id": "CW-75b72e515a14",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "dbc845c4df2f0d91dc901e7a002196e682b79cd6755c9a34135400b7620302b8"
+    },
+    {
+      "episode_id": "CW-c414bc97bfa9",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "0fe7804ab6dd7293afba1adf4438488cfb2f7ebd84675d61b6157511f81c61d6"
+    },
+    {
+      "episode_id": "CW-0adc1eb6bb7b",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "4d50484cf7726c3f8762e91b61fe0b7eaa5e6ba029b330e21c8688066088f5b0"
+    },
+    {
+      "episode_id": "CW-15167370bd8f",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "896d21057d11815f6ca5e5fa7174a007398e0a4a1b13e7fa77b36fcfc806e9d5"
+    },
+    {
+      "episode_id": "CW-9841b3746c64",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "d6a2af0daf628278a05819e565050828999b91187995b21f29feb9e9483c587a"
+    },
+    {
+      "episode_id": "CW-248ee59c00cf",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "a3d1e858bffe4f3e495ade22c94074021a9ea965e88dfd26fc7e2c5e6387aa3f"
+    },
+    {
+      "episode_id": "CW-82a22d30fe0a",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "7d19784be22e1ceb4484bea90cae9223b8e90505ffd5b6471e7eba7bb3fec4fb"
+    },
+    {
+      "episode_id": "CW-a143fb96a56f",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "0ed7646e245ca159e6accb462992cb4b1b2beab4c7172451d98efa8265e8165c"
+    },
+    {
+      "episode_id": "CW-2ae751552c67",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "e3e0f15621ca6133020c1998e3b88e703bfe2d5f2866181b419317c022fc56a1"
+    },
+    {
+      "episode_id": "CW-e5aeca5f670e",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "eaa36d3970b94a6fcff0888a9b887fd4edff8520892fc9ed218bdf09d6150159"
+    },
+    {
+      "episode_id": "CW-2c7345904951",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "cfb75b2c83e4ed43234405265fedd30cb05fd7660f30c41fb22e0ead9e6aae3d"
+    },
+    {
+      "episode_id": "CW-553e437d5ff8",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "69bf0a97fa66fde0f12548ae1af757683da566e43756896102db111978162ca5"
+    },
+    {
+      "episode_id": "CW-996a616de302",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "bf845715f5fa1208f79012030c95d5b29015d8884bb52632fefcf21d513e5ce8"
+    },
+    {
+      "episode_id": "CW-51859d2c3944",
+      "split": "test",
+      "samples": 480,
+      "sensor_sha256": "2d8601fee7f9cd1fcd7576beaffd341551dccaf5fbd285ff5eedc2fe1fb72f57"
+    }
+  ],
+  "physical_invariants": "Thermal energy balance, temperature bound and fuel conservation asserted for every episode."
+}

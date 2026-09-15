@@ -1,0 +1,514 @@
+{
+  "scope": "Synthetic noisy sensor experiment, not real equipment accuracy",
+  "sklearn_version": "1.7.2",
+  "features": [
+    "engine_rpm_current",
+    "hydraulic_pressure_bar_current",
+    "hydraulic_flow_lpm_current",
+    "speed_kmh_current",
+    "engine_rpm_mean3",
+    "hydraulic_pressure_bar_mean3",
+    "hydraulic_flow_lpm_mean3",
+    "speed_kmh_mean3",
+    "engine_rpm_delta3",
+    "hydraulic_pressure_bar_delta3",
+    "hydraulic_flow_lpm_delta3",
+    "speed_kmh_delta3"
+  ],
+  "noise_assumptions": {
+    "rpm_sigma": 20,
+    "pressure_sigma": "max(2bar,8%)",
+    "flow_sigma": "max(1lpm,8%)",
+    "speed_sigma_kmh": 0.08
+  },
+  "parameters": {
+    "trees": 64,
+    "max_depth": 10,
+    "min_samples_leaf": 12,
+    "class_weight": "balanced",
+    "random_state": 20260914,
+    "abstain_below": 0.65
+  },
+  "label_mapping": {
+    "loaded_swing": "swing",
+    "return_swing": "swing",
+    "warmup": "idle",
+    "dig": "dig",
+    "swing": "swing",
+    "dump": "dump",
+    "idle": "idle",
+    "travel": "travel",
+    "off": "off"
+  },
+  "model_sha256": "b0d990a2b10c2aecd523b26eac2f31357fb5243a172ca7d5e27228135599e2d9",
+  "input_hashes": {
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-02e02e4502c5\\physical_truth.csv.gz": "5bd539cabb57dafdc8bcb9c6e747cc415b52e2129ecea1471a4165316b58f9f9",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-038faccb3a4d\\physical_truth.csv.gz": "4b46cb20dc33e8d2fe8801989c20059a1a36e895f5df8b30ea926e21a0178216",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-08caf233ddfc\\physical_truth.csv.gz": "e5812ec8521e896809737b0ba22f44fda24fbdab41d460cbaf0b53ca0039bf8c",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-092cb1d23ed0\\physical_truth.csv.gz": "9e9220b08b942d86dd85b758b9351d80d71b812f281bfe40a589a210f3f87c08",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-1172908fc355\\physical_truth.csv.gz": "f90b9585ba73b699effc03e8db61907981d3799f68ac6f8f87ebb6909ea61fb9",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-1c81d9fb2376\\physical_truth.csv.gz": "12d9df26e4195fba1a934cd74efdd06989b82b791bd5c766dd68693582601704",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-20281dcc83cc\\physical_truth.csv.gz": "043da0fa2ee1497a000ae7c58b4cf2e050671978be3c19672941e78471204466",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-2387c8e216df\\physical_truth.csv.gz": "3c6f6b74c2dce1134412c0a167cd8a11134b5c4c337c1e903c44de246528fd3a",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-368847c7c761\\physical_truth.csv.gz": "32a19b414530814279136c943d3722b1ede1453742c74cf16390a0eee856b5ce",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-38be8da86795\\physical_truth.csv.gz": "081aa1a608984a53c5eb5b88050e737bc47dd10477db19d271065ac905014810",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-3a7decd5f625\\physical_truth.csv.gz": "a682c717e9833519f9ffb09000abc755e46618ac2862f9e1fa01beadf1666c3b",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-53952f633e84\\physical_truth.csv.gz": "f3b065255ccf1a71c21a91f80d837c4b9d737e12c2fb9839c3dd0c7c675ec74b",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-5e26c33b8966\\physical_truth.csv.gz": "ab0031cc9fe9010cf2c7f350119893fd3dc4a27fe74077815c31b6f4f6c33713",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-6f9107a80ba2\\physical_truth.csv.gz": "637cb7302520470993d4350239d4ffd1f4664a349668f229abb7942877dd52d6",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-74c94a15b8a6\\physical_truth.csv.gz": "2d9af90cb32382025a3df2c9078eb649ce20d54c023594d65fa0003eb81ed565",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-7521ffa05414\\physical_truth.csv.gz": "9226695a54fd1a198820480d6ae6c258fce760ef8626a085f5b579dc095e2cc1",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-8a120a1aeaaa\\physical_truth.csv.gz": "ec232399c5aa54354f05de4538477a61f0f15f0937397fabab5c0af950af681a",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-9d2c268bd8b1\\physical_truth.csv.gz": "b144e5937d0178ebee20b1a242f972555b52f8585cb2cf637f51a9cce4e6d795",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-a0c4d66d47c7\\physical_truth.csv.gz": "66d9b4034884eac20b722e5a9216b4e7b4745abd2cc2d99a0829df7303b69fd9",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-b5ff4086d51c\\physical_truth.csv.gz": "7918543e9d1a7cfd0d671c6407dc9a33eb12a732f939e976f2b1842e1ae74db9",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-c51f5e23053f\\physical_truth.csv.gz": "6076e08697c9b73ccb0e27d7e1a506384b40032389c1697ea0b56e813e2f598f",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-c724490e1c1c\\physical_truth.csv.gz": "10bc172300fc6b7706bb21355eb303d8c91b98fb33d7928499a7b2520c7d4b31",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-ca383fb1e83b\\physical_truth.csv.gz": "b1875cc6940a60655f9e2d349bbe82381597ee1fd79b4693196afcff47e76f01",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-e225e75fe8a4\\physical_truth.csv.gz": "c397739e6738231a6648a610f97be76a1919d1036b77a93d1687960bd3097029",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-e3e5cc9cfaaf\\physical_truth.csv.gz": "0ace05d75850416d37be71a4cabad2e5ed2f978a652519302b292928ad0cbc7c",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-e7f7c7e47451\\physical_truth.csv.gz": "c60cc6c68ac2b81036af22830e10eda221d87f1fdc0bcae85c4c099a8cd1a0b7",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-ef7cca7effe2\\physical_truth.csv.gz": "af3cdbaf423ee871bf8d0b9b50f96dccd4ae884cd785e70264594b47ac35601a",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\train\\EP-f37fed2512a9\\physical_truth.csv.gz": "d54e359775970d01d7801a9a5c6bf8da6587e0c1597a9b2c515fe7229e64d8d2",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\validation\\EP-1c2f9086a244\\physical_truth.csv.gz": "b4e7969de6fece4a62dc9bb11c903954eab9d3cb237a81c8bacb588c1fa7598e",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\validation\\EP-44a21bbda8f5\\physical_truth.csv.gz": "c216c853b1d96a84697c88ed8a400a73c135ad6784e7ca67f97d64b45ed02f74",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\validation\\EP-574c1671a2fd\\physical_truth.csv.gz": "736a3b3ff161563b67667fa0667244b734cd34c30679cde606916aa0a9fbcf19",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\validation\\EP-60b626287007\\physical_truth.csv.gz": "649d248c6760587690c89af940b7e7a0fa549f3bc5c3429d7fd491e72697c954",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\validation\\EP-65dda359f07e\\physical_truth.csv.gz": "55ce0f73817469159375a65d3fc8783d1a63dfae75fd17c019d4c8a360ee9b37",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\validation\\EP-91326dac570a\\physical_truth.csv.gz": "33a0963c719fb42eaeffd95ef461aeaa53b44ad09c5fa24054bae3bc86d2e6aa",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\validation\\EP-ac23416917bf\\physical_truth.csv.gz": "0d6c908a8b11bba28e4da679b071d9028c07305f53c19d1efeed993106a8f47f",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-04f3fe977fa0\\physical_truth.csv.gz": "c386035575b5e9793a469f5002059840d910cd45042a7d18e1fed7c1a1073d89",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-0a47fae3b9d2\\physical_truth.csv.gz": "1490d50d1a2d1cc891dae17c54535ee82fc1a0512939a21e039ba908d8f53638",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-36dcbc17b7bc\\physical_truth.csv.gz": "cc54cd2e365ea5c522f56bbcda7417f219bf51a4b155805da96afe5aa48e52c2",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-61d3d45e95c4\\physical_truth.csv.gz": "762590f1cb6dba8f2d935a3889ac724b77bdf000d24217f56256003e1c5ac8c3",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-6449671b4b5c\\physical_truth.csv.gz": "83d5f9e9cdc35ea39ee4e14c5297befbf4b50250e3cd13c36f30ac07844ebc84",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-bd2c4d437330\\physical_truth.csv.gz": "62d382b8bb7b9a3d5debf078f0b92c3b971e02525c4d4c18133a3fbc346430fb",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-e2947e458859\\physical_truth.csv.gz": "ad9cd02ea4affdc7f8e4528c06545549f3085d06d0c5c5430d5f7c352c6f7d61"
+  },
+  "splits": {
+    "train": {
+      "rows": 161280,
+      "episodes": {
+        "EP-02e02e4502c5": 5760,
+        "EP-038faccb3a4d": 5760,
+        "EP-08caf233ddfc": 5760,
+        "EP-092cb1d23ed0": 5760,
+        "EP-1172908fc355": 5760,
+        "EP-1c81d9fb2376": 5760,
+        "EP-20281dcc83cc": 5760,
+        "EP-2387c8e216df": 5760,
+        "EP-368847c7c761": 5760,
+        "EP-38be8da86795": 5760,
+        "EP-3a7decd5f625": 5760,
+        "EP-53952f633e84": 5760,
+        "EP-5e26c33b8966": 5760,
+        "EP-6f9107a80ba2": 5760,
+        "EP-74c94a15b8a6": 5760,
+        "EP-7521ffa05414": 5760,
+        "EP-8a120a1aeaaa": 5760,
+        "EP-9d2c268bd8b1": 5760,
+        "EP-a0c4d66d47c7": 5760,
+        "EP-b5ff4086d51c": 5760,
+        "EP-c51f5e23053f": 5760,
+        "EP-c724490e1c1c": 5760,
+        "EP-ca383fb1e83b": 5760,
+        "EP-e225e75fe8a4": 5760,
+        "EP-e3e5cc9cfaaf": 5760,
+        "EP-e7f7c7e47451": 5760,
+        "EP-ef7cca7effe2": 5760,
+        "EP-f37fed2512a9": 5760
+      },
+      "class_counts": {
+        "idle": 44176,
+        "dig": 40200,
+        "swing": 38161,
+        "dump": 17214,
+        "travel": 6046,
+        "off": 15483
+      },
+      "accuracy": 0.9115761408730159,
+      "macro_f1": 0.918340169317554,
+      "majority_baseline_accuracy": 0.2739087301587302,
+      "accepted_coverage": 0.9033482142857143,
+      "accepted_accuracy": 0.9441287098811191,
+      "class_order": [
+        "dig",
+        "dump",
+        "idle",
+        "off",
+        "swing",
+        "travel"
+      ],
+      "confusion_matrix": [
+        [
+          37339,
+          7,
+          0,
+          0,
+          2854,
+          0
+        ],
+        [
+          2,
+          15699,
+          0,
+          0,
+          1513,
+          0
+        ],
+        [
+          0,
+          0,
+          44176,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          15483,
+          0,
+          0
+        ],
+        [
+          2411,
+          7474,
+          0,
+          0,
+          28276,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          6046
+        ]
+      ],
+      "per_class": {
+        "dig": {
+          "precision": 0.939298651640169,
+          "recall": 0.9288308457711443,
+          "f1-score": 0.9340354212527516,
+          "support": 40200.0
+        },
+        "dump": {
+          "precision": 0.6772648835202761,
+          "recall": 0.911990240501917,
+          "f1-score": 0.7772936574738822,
+          "support": 17214.0
+        },
+        "idle": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 44176.0
+        },
+        "off": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 15483.0
+        },
+        "swing": {
+          "precision": 0.8662194038538125,
+          "recall": 0.7409659076020021,
+          "f1-score": 0.7987119371786905,
+          "support": 38161.0
+        },
+        "travel": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 6046.0
+        },
+        "accuracy": 0.9115761408730159,
+        "macro avg": {
+          "precision": 0.9137971565023763,
+          "recall": 0.9302978323125105,
+          "f1-score": 0.918340169317554,
+          "support": 161280.0
+        },
+        "weighted avg": {
+          "precision": 0.9187688626693835,
+          "recall": 0.9115761408730159,
+          "f1-score": 0.9121602380257443,
+          "support": 161280.0
+        }
+      }
+    },
+    "validation": {
+      "rows": 40320,
+      "episodes": {
+        "EP-1c2f9086a244": 5760,
+        "EP-44a21bbda8f5": 5760,
+        "EP-574c1671a2fd": 5760,
+        "EP-60b626287007": 5760,
+        "EP-65dda359f07e": 5760,
+        "EP-91326dac570a": 5760,
+        "EP-ac23416917bf": 5760
+      },
+      "class_counts": {
+        "idle": 11382,
+        "dig": 10008,
+        "swing": 9504,
+        "dump": 4248,
+        "travel": 1536,
+        "off": 3642
+      },
+      "accuracy": 0.8957589285714286,
+      "macro_f1": 0.9005026144245222,
+      "majority_baseline_accuracy": 0.28229166666666666,
+      "accepted_coverage": 0.8903521825396825,
+      "accepted_accuracy": 0.9329229226440848,
+      "class_order": [
+        "dig",
+        "dump",
+        "idle",
+        "off",
+        "swing",
+        "travel"
+      ],
+      "confusion_matrix": [
+        [
+          9466,
+          2,
+          0,
+          0,
+          540,
+          0
+        ],
+        [
+          2,
+          3391,
+          0,
+          0,
+          855,
+          0
+        ],
+        [
+          0,
+          0,
+          11382,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          3642,
+          0,
+          0
+        ],
+        [
+          966,
+          1838,
+          0,
+          0,
+          6700,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1536
+        ]
+      ],
+      "per_class": {
+        "dig": {
+          "precision": 0.9072263753114816,
+          "recall": 0.9458433253397283,
+          "f1-score": 0.9261324723608257,
+          "support": 10008.0
+        },
+        "dump": {
+          "precision": 0.648250812464156,
+          "recall": 0.7982580037664784,
+          "f1-score": 0.7154763160670957,
+          "support": 4248.0
+        },
+        "idle": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 11382.0
+        },
+        "off": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 3642.0
+        },
+        "swing": {
+          "precision": 0.8276714021000617,
+          "recall": 0.70496632996633,
+          "f1-score": 0.7614068981192114,
+          "support": 9504.0
+        },
+        "travel": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 1536.0
+        },
+        "accuracy": 0.8957589285714286,
+        "macro avg": {
+          "precision": 0.8971914316459498,
+          "recall": 0.9081779431787561,
+          "f1-score": 0.9005026144245222,
+          "support": 40320.0
+        },
+        "weighted avg": {
+          "precision": 0.8992926592515882,
+          "recall": 0.8957589285714286,
+          "f1-score": 0.8954486193890168,
+          "support": 40320.0
+        }
+      }
+    },
+    "test": {
+      "rows": 40320,
+      "episodes": {
+        "EP-04f3fe977fa0": 5760,
+        "EP-0a47fae3b9d2": 5760,
+        "EP-36dcbc17b7bc": 5760,
+        "EP-61d3d45e95c4": 5760,
+        "EP-6449671b4b5c": 5760,
+        "EP-bd2c4d437330": 5760,
+        "EP-e2947e458859": 5760
+      },
+      "class_counts": {
+        "idle": 10647,
+        "dig": 10205,
+        "swing": 9659,
+        "dump": 4323,
+        "travel": 1514,
+        "off": 3972
+      },
+      "accuracy": 0.9003968253968254,
+      "macro_f1": 0.9078344968794004,
+      "majority_baseline_accuracy": 0.2640625,
+      "accepted_coverage": 0.8985367063492063,
+      "accepted_accuracy": 0.9347760081702503,
+      "class_order": [
+        "dig",
+        "dump",
+        "idle",
+        "off",
+        "swing",
+        "travel"
+      ],
+      "confusion_matrix": [
+        [
+          9567,
+          1,
+          0,
+          0,
+          637,
+          0
+        ],
+        [
+          1,
+          3726,
+          0,
+          0,
+          596,
+          0
+        ],
+        [
+          0,
+          0,
+          10647,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          3972,
+          0,
+          0
+        ],
+        [
+          798,
+          1983,
+          0,
+          0,
+          6878,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1514
+        ]
+      ],
+      "per_class": {
+        "dig": {
+          "precision": 0.9229210881728729,
+          "recall": 0.9374816266536011,
+          "f1-score": 0.9301443780078752,
+          "support": 10205.0
+        },
+        "dump": {
+          "precision": 0.6525394045534151,
+          "recall": 0.8619014573213046,
+          "f1-score": 0.7427489285358317,
+          "support": 4323.0
+        },
+        "idle": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 10647.0
+        },
+        "off": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 3972.0
+        },
+        "swing": {
+          "precision": 0.8479842189619036,
+          "recall": 0.7120819960658453,
+          "f1-score": 0.7741136747326955,
+          "support": 9659.0
+        },
+        "travel": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 1514.0
+        },
+        "accuracy": 0.9003968253968254,
+        "macro avg": {
+          "precision": 0.9039074519480318,
+          "recall": 0.9185775133401252,
+          "f1-score": 0.9078344968794004,
+          "support": 40320.0
+        },
+        "weighted avg": {
+          "precision": 0.9068208611518256,
+          "recall": 0.9003968253968254,
+          "f1-score": 0.9006247762865544,
+          "support": 40320.0
+        }
+      }
+    }
+  },
+  "export_max_probability_error": 6.5503158452884236e-15
+}

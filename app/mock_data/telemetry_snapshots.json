@@ -5,7 +5,7 @@
     "CumulativeIdleHours": { "Hour": 92.4 },
     "FuelRemaining": { "Percent": 55.0 },
     "EngineStatus": { "Running": false },
-    "Location": { "Latitude": 34.211763, "Longitude": -95.360427 },
+    "Location": { "Latitude": null, "Longitude": null },
     "recordedAt": "2026-06-02T14:45:53Z"
   },
   {
@@ -14,7 +14,7 @@
     "CumulativeIdleHours": { "Hour": 2104.0 },
     "FuelRemaining": { "Percent": 94.8 },
     "EngineStatus": { "Running": true },
-    "Location": { "Latitude": 29.749423, "Longitude": -95.191249 },
+    "Location": { "Latitude": null, "Longitude": null },
     "recordedAt": "2026-06-02T14:47:48Z"
   },
   {
@@ -23,7 +23,7 @@
     "CumulativeIdleHours": { "Hour": 8.1 },
     "FuelRemaining": { "Percent": 18.0 },
     "EngineStatus": { "Running": false },
-    "Location": { "Latitude": 39.099724, "Longitude": -94.578331 },
+    "Location": { "Latitude": null, "Longitude": null },
     "recordedAt": "2026-05-28T09:10:00Z"
   },
   {
@@ -32,7 +32,7 @@
     "CumulativeIdleHours": { "Hour": 5.2 },
     "FuelRemaining": { "Percent": null },
     "EngineStatus": { "Running": false },
-    "Location": { "Latitude": 33.624403, "Longitude": -85.98528 },
+    "Location": { "Latitude": null, "Longitude": null },
     "recordedAt": "2026-06-02T14:40:57Z"
   },
   {
@@ -41,7 +41,7 @@
     "CumulativeIdleHours": { "Hour": 3.6 },
     "FuelRemaining": { "Percent": 61.0 },
     "EngineStatus": { "Running": false },
-    "Location": { "Latitude": 35.227087, "Longitude": -80.843127 },
+    "Location": { "Latitude": null, "Longitude": null },
     "recordedAt": "2026-06-02T13:02:19Z"
   }
 ]

@@ -1,16 +1,16 @@
 from app import ai_provider
 
 
-def test_default_ai_provider_is_ollama_local(monkeypatch):
+def test_default_ai_provider_is_gemini(monkeypatch):
     monkeypatch.delenv("AI_PROVIDER", raising=False)
-    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5:7b")
-    monkeypatch.setattr(ai_provider, "generate_with_ollama", lambda prompt: "real local model report")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-flash-latest")
+    monkeypatch.setattr(ai_provider, "generate_with_gemini", lambda prompt: "cloud model report")
 
     result = ai_provider.generate_machine_report("sample prompt")
 
-    assert result["provider"] == "ollama_local"
-    assert result["model"] == "qwen2.5:7b"
-    assert result["report_markdown"] == "real local model report"
+    assert result["provider"] == "gemini"
+    assert result["model"] == "gemini-flash-latest"
+    assert result["report_markdown"] == "cloud model report"
     assert result["error"] is None
 
 

@@ -1,0 +1,4716 @@
+{
+  "evaluated_at": "2026-09-14T16:44:40.656059+00:00",
+  "source": "synthetic_only",
+  "candidate_sha256": "ed84d6fcf832aa97c9a23d547231f15c959f35bc18b359a185e2e793bd0c0e47",
+  "selection_sha256": "72bd629d63664ba4e239f7ff6e83e8af8e6554f8fe76e3b0c35674d709e3bd9d",
+  "test_manifest_sha256": "e8fd747be077437f9e381264ca69656a712f3d501a4a9e5434836c7c5f1d2172",
+  "audit_hashes": {
+    "candidate.csv.gz": "5ae202b57b3972b1d998847a26791e434c5ba21925119945f6c61c405bf5b8f2",
+    "original.csv.gz": "230ea6cc73e2139634a5a11358707f84803b0f28d3818374aa9e24913a708732",
+    "temperature_95c.csv.gz": "f9ac91ac265c0937902c84f562dd5f371b24e9a302f9788b2c02074c9d72f4bc"
+  },
+  "deployable_under_protocol": false,
+  "checks": {
+    "nominal": {
+      "recall_at_least_90_percent": false,
+      "no_additional_missed_events": true,
+      "median_lead_at_least_10_minutes": true,
+      "median_lead_at_least_temperature_baseline": true,
+      "false_episode_budget_met": false,
+      "false_episodes_reduced_at_least_25_percent": false,
+      "no_more_false_minutes": true
+    },
+    "shifted": {
+      "recall_at_least_90_percent": true,
+      "no_additional_missed_events": true,
+      "median_lead_at_least_10_minutes": true,
+      "median_lead_at_least_temperature_baseline": true,
+      "false_episode_budget_met": false,
+      "false_episodes_reduced_at_least_25_percent": false,
+      "no_more_false_minutes": true
+    }
+  },
+  "reports": {
+    "original": {
+      "overall": {
+        "episodes": 96,
+        "events": 31,
+        "detected_events": 28,
+        "event_recall": 0.9032258064516129,
+        "median_lead_minutes": 15.0,
+        "lead_minutes_detected": [
+          15,
+          15,
+          15,
+          15,
+          15,
+          10,
+          13,
+          11,
+          15,
+          15,
+          14,
+          15,
+          11,
+          15,
+          15,
+          15,
+          15,
+          15,
+          14,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          9,
+          8,
+          12
+        ],
+        "false_alert_episodes": 117,
+        "eligible_hours": 545.2166666666667,
+        "false_alert_episodes_per_eligible_hour": 0.21459358664751016,
+        "false_alert_minutes": 2109,
+        "window_counts": {
+          "tp": 303,
+          "fp": 2109,
+          "tn": 30252,
+          "fn": 49
+        }
+      },
+      "groups": {
+        "nominal": {
+          "episodes": 48,
+          "events": 14,
+          "detected_events": 12,
+          "event_recall": 0.8571428571428571,
+          "median_lead_minutes": 15.0,
+          "lead_minutes_detected": [
+            15,
+            15,
+            15,
+            15,
+            15,
+            10,
+            13,
+            11,
+            15,
+            15,
+            14,
+            15
+          ],
+          "false_alert_episodes": 57,
+          "eligible_hours": 279.6666666666667,
+          "false_alert_episodes_per_eligible_hour": 0.2038140643623361,
+          "false_alert_minutes": 1139,
+          "window_counts": {
+            "tp": 133,
+            "fp": 1139,
+            "tn": 15478,
+            "fn": 30
+          }
+        },
+        "shifted": {
+          "episodes": 48,
+          "events": 17,
+          "detected_events": 16,
+          "event_recall": 0.9411764705882353,
+          "median_lead_minutes": 15.0,
+          "lead_minutes_detected": [
+            11,
+            15,
+            15,
+            15,
+            15,
+            15,
+            14,
+            15,
+            15,
+            15,
+            15,
+            15,
+            15,
+            9,
+            8,
+            12
+          ],
+          "false_alert_episodes": 60,
+          "eligible_hours": 265.55,
+          "false_alert_episodes_per_eligible_hour": 0.2259461495010356,
+          "false_alert_minutes": 970,
+          "window_counts": {
+            "tp": 170,
+            "fp": 970,
+            "tn": 14774,
+            "fn": 19
+          }
+        }
+      },
+      "per_episode": [
+        {
+          "episode_id": "CA-48651dda96b4",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a82ae6c9ecb6",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9600d3355e40",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 6,
+          "eligible_minutes": 414,
+          "window_counts": {
+            "tp": 0,
+            "fp": 233,
+            "tn": 181,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-70a6b2178fc8",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 225,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 212,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 200,
+            "fn": 12
+          }
+        },
+        {
+          "episode_id": "CA-bd888ce8db6d",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-126f268d22e6",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 11,
+            "tn": 404,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-3b3b6698b2f7",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bea705009729",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d366ca2e220b",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 298,
+          "lead_minutes": 15,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 245,
+          "window_counts": {
+            "tp": 12,
+            "fp": 30,
+            "tn": 203,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-b342e44e6b92",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 226,
+          "lead_minutes": 15,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 213,
+          "window_counts": {
+            "tp": 12,
+            "fp": 5,
+            "tn": 196,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-008484891afc",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4ac57f635fd3",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 17,
+            "tn": 398,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-fd4401661dcd",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-b733717005aa",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-6db9917462d2",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 196,
+            "tn": 219,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4fd0aff3738f",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 180,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 167,
+          "window_counts": {
+            "tp": 12,
+            "fp": 1,
+            "tn": 154,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-39ff72c47038",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2ed5c447a950",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-57deb9b014d5",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a907f10aa654",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-813ca18d7ff9",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 208,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 195,
+          "window_counts": {
+            "tp": 12,
+            "fp": 12,
+            "tn": 171,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1115d04da8ff",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 194,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 182,
+          "window_counts": {
+            "tp": 13,
+            "fp": 1,
+            "tn": 168,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1ff239ed10e5",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-18437188ef5d",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 137,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 124,
+          "window_counts": {
+            "tp": 7,
+            "fp": 0,
+            "tn": 112,
+            "fn": 5
+          }
+        },
+        {
+          "episode_id": "CA-0c7a9259f798",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d617a577b360",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bef525e16dab",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 185,
+            "tn": 230,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-deab5ac67860",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 197,
+          "lead_minutes": 13,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 184,
+          "window_counts": {
+            "tp": 10,
+            "fp": 0,
+            "tn": 172,
+            "fn": 2
+          }
+        },
+        {
+          "episode_id": "CA-478ec3f8615f",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 5,
+            "tn": 410,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-06d9a48f97c8",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 288,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 235,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 229,
+            "fn": 6
+          }
+        },
+        {
+          "episode_id": "CA-b708b22884d4",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-38d21673a17d",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-c0272b00144c",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 11,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 189,
+            "tn": 226,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4288c85c554d",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 163,
+          "lead_minutes": 11,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 150,
+          "window_counts": {
+            "tp": 8,
+            "fp": 0,
+            "tn": 138,
+            "fn": 4
+          }
+        },
+        {
+          "episode_id": "CA-3a33db3e9c0d",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-13d6b7744508",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 10,
+            "tn": 405,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-823583fa2b78",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4ef0bb372908",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-c1a1780ebd2e",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 217,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 204,
+          "window_counts": {
+            "tp": 12,
+            "fp": 4,
+            "tn": 188,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-769e87107e09",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 199,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 186,
+          "window_counts": {
+            "tp": 12,
+            "fp": 1,
+            "tn": 173,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-c71a2c29b1be",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-785f423c844b",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 209,
+          "lead_minutes": 14,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 196,
+          "window_counts": {
+            "tp": 11,
+            "fp": 5,
+            "tn": 179,
+            "fn": 1
+          }
+        },
+        {
+          "episode_id": "CA-279b9b23c8ab",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-52d718fceb27",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-e4e47d4108c8",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 5,
+          "eligible_minutes": 413,
+          "window_counts": {
+            "tp": 0,
+            "fp": 177,
+            "tn": 236,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-554542cea04b",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 193,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 180,
+          "window_counts": {
+            "tp": 12,
+            "fp": 12,
+            "tn": 156,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-80842ad23643",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 8,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 30,
+            "tn": 385,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d6188e8a0d06",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 15,
+            "tn": 400,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-43711d917113",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-088451fd2c42",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-74ad6fbca85d",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 291,
+          "lead_minutes": 11,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 236,
+          "window_counts": {
+            "tp": 6,
+            "fp": 25,
+            "tn": 203,
+            "fn": 2
+          }
+        },
+        {
+          "episode_id": "CA-bc51f79f0127",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 280,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 229,
+          "window_counts": {
+            "tp": 0,
+            "fp": 23,
+            "tn": 206,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-00882c52d124",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-8487e73ee6e1",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 5,
+            "tn": 410,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9d51baa5fae2",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-09c28a0c050f",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2d3c5a222ca1",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 225,
+          "lead_minutes": 15,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 212,
+          "window_counts": {
+            "tp": 12,
+            "fp": 9,
+            "tn": 191,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-cab1c9cf600e",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 136,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 123,
+          "window_counts": {
+            "tp": 12,
+            "fp": 6,
+            "tn": 105,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-8284a8b2eec8",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 11,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 164,
+            "tn": 251,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-42effed81d7a",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 3,
+            "tn": 412,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-75c84a8df2f8",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1f3eea95bbc6",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-58257a79d9c1",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 224,
+          "lead_minutes": 15,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 211,
+          "window_counts": {
+            "tp": 12,
+            "fp": 23,
+            "tn": 176,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4927a4e9dc73",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 171,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 158,
+          "window_counts": {
+            "tp": 12,
+            "fp": 6,
+            "tn": 140,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-497c2bc51ed6",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-24b7fe17c83d",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": 194,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 181,
+          "window_counts": {
+            "tp": 12,
+            "fp": 3,
+            "tn": 166,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-03d8a4a54e27",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-159b3dc9b431",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-f8dffd3d9bce",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 196,
+          "lead_minutes": 14,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 184,
+          "window_counts": {
+            "tp": 12,
+            "fp": 0,
+            "tn": 171,
+            "fn": 1
+          }
+        },
+        {
+          "episode_id": "CA-66b728afa07c",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 147,
+          "lead_minutes": 15,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 134,
+          "window_counts": {
+            "tp": 12,
+            "fp": 14,
+            "tn": 108,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-897fc01a426b",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-74c98b547e24",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1ffbfd818d47",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-5376da10cf37",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-47ef54ffa78c",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 6,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 235,
+            "tn": 180,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-92f69a53abab",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 167,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 154,
+          "window_counts": {
+            "tp": 12,
+            "fp": 2,
+            "tn": 140,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-299bf4365eeb",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1422095de6a5",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": 219,
+          "lead_minutes": 15,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 205,
+          "window_counts": {
+            "tp": 11,
+            "fp": 34,
+            "tn": 160,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a144e654398a",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9bbb47a6e33b",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9738ccabefa2",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 154,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 141,
+          "window_counts": {
+            "tp": 12,
+            "fp": 4,
+            "tn": 125,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-275e814a8fdf",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 216,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 203,
+          "window_counts": {
+            "tp": 12,
+            "fp": 4,
+            "tn": 187,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2c40825b5245",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 1,
+            "tn": 414,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-86107171f0df",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2f63c1eab6a0",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-886061d24f78",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-e029d9348f99",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 180,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 167,
+          "window_counts": {
+            "tp": 12,
+            "fp": 10,
+            "tn": 145,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-5993dd923c66",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 210,
+          "lead_minutes": 9,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 198,
+          "window_counts": {
+            "tp": 7,
+            "fp": 0,
+            "tn": 185,
+            "fn": 6
+          }
+        },
+        {
+          "episode_id": "CA-72534ac2fbd5",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 13,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 102,
+            "tn": 313,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a8bdc5c5d3a0",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 23,
+            "tn": 392,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-5cf476a80ed6",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-09c0eb1ffe3d",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d4cf2a7afcbb",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 150,
+          "lead_minutes": 8,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 136,
+          "window_counts": {
+            "tp": 4,
+            "fp": 0,
+            "tn": 125,
+            "fn": 7
+          }
+        },
+        {
+          "episode_id": "CA-0fef9580df62",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 208,
+          "lead_minutes": 12,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 196,
+          "window_counts": {
+            "tp": 10,
+            "fp": 0,
+            "tn": 183,
+            "fn": 3
+          }
+        },
+        {
+          "episode_id": "CA-2e0d19e9ee2d",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 256,
+            "tn": 159,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bc6ce06e1598",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 18,
+            "tn": 397,
+            "fn": 0
+          }
+        }
+      ]
+    },
+    "candidate": {
+      "overall": {
+        "episodes": 96,
+        "events": 31,
+        "detected_events": 28,
+        "event_recall": 0.9032258064516129,
+        "median_lead_minutes": 14.0,
+        "lead_minutes_detected": [
+          15,
+          15,
+          13,
+          15,
+          14,
+          7,
+          10,
+          8,
+          15,
+          14,
+          10,
+          15,
+          10,
+          11,
+          12,
+          15,
+          14,
+          10,
+          10,
+          15,
+          15,
+          15,
+          15,
+          15,
+          15,
+          7,
+          5,
+          9
+        ],
+        "false_alert_episodes": 106,
+        "eligible_hours": 545.2166666666667,
+        "false_alert_episodes_per_eligible_hour": 0.19441812123620578,
+        "false_alert_minutes": 1264,
+        "window_counts": {
+          "tp": 256,
+          "fp": 1264,
+          "tn": 31097,
+          "fn": 96
+        }
+      },
+      "groups": {
+        "nominal": {
+          "episodes": 48,
+          "events": 14,
+          "detected_events": 12,
+          "event_recall": 0.8571428571428571,
+          "median_lead_minutes": 14.0,
+          "lead_minutes_detected": [
+            15,
+            15,
+            13,
+            15,
+            14,
+            7,
+            10,
+            8,
+            15,
+            14,
+            10,
+            15
+          ],
+          "false_alert_episodes": 59,
+          "eligible_hours": 279.6666666666667,
+          "false_alert_episodes_per_eligible_hour": 0.2109654350417163,
+          "false_alert_minutes": 667,
+          "window_counts": {
+            "tp": 113,
+            "fp": 667,
+            "tn": 15950,
+            "fn": 50
+          }
+        },
+        "shifted": {
+          "episodes": 48,
+          "events": 17,
+          "detected_events": 16,
+          "event_recall": 0.9411764705882353,
+          "median_lead_minutes": 13.0,
+          "lead_minutes_detected": [
+            10,
+            11,
+            12,
+            15,
+            14,
+            10,
+            10,
+            15,
+            15,
+            15,
+            15,
+            15,
+            15,
+            7,
+            5,
+            9
+          ],
+          "false_alert_episodes": 47,
+          "eligible_hours": 265.55,
+          "false_alert_episodes_per_eligible_hour": 0.17699115044247787,
+          "false_alert_minutes": 597,
+          "window_counts": {
+            "tp": 143,
+            "fp": 597,
+            "tn": 15147,
+            "fn": 46
+          }
+        }
+      },
+      "per_episode": [
+        {
+          "episode_id": "CA-48651dda96b4",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a82ae6c9ecb6",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9600d3355e40",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 13,
+          "eligible_minutes": 414,
+          "window_counts": {
+            "tp": 0,
+            "fp": 172,
+            "tn": 242,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-70a6b2178fc8",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 225,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 212,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 200,
+            "fn": 12
+          }
+        },
+        {
+          "episode_id": "CA-bd888ce8db6d",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-126f268d22e6",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 3,
+            "tn": 412,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-3b3b6698b2f7",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bea705009729",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d366ca2e220b",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 298,
+          "lead_minutes": 15,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 245,
+          "window_counts": {
+            "tp": 12,
+            "fp": 14,
+            "tn": 219,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-b342e44e6b92",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 226,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 213,
+          "window_counts": {
+            "tp": 12,
+            "fp": 1,
+            "tn": 200,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-008484891afc",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4ac57f635fd3",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 7,
+            "tn": 408,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-fd4401661dcd",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-b733717005aa",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-6db9917462d2",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 7,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 141,
+            "tn": 274,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4fd0aff3738f",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 180,
+          "lead_minutes": 13,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 167,
+          "window_counts": {
+            "tp": 10,
+            "fp": 0,
+            "tn": 155,
+            "fn": 2
+          }
+        },
+        {
+          "episode_id": "CA-39ff72c47038",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2ed5c447a950",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-57deb9b014d5",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a907f10aa654",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-813ca18d7ff9",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 208,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 195,
+          "window_counts": {
+            "tp": 12,
+            "fp": 8,
+            "tn": 175,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1115d04da8ff",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 194,
+          "lead_minutes": 14,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 182,
+          "window_counts": {
+            "tp": 12,
+            "fp": 0,
+            "tn": 169,
+            "fn": 1
+          }
+        },
+        {
+          "episode_id": "CA-1ff239ed10e5",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-18437188ef5d",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 137,
+          "lead_minutes": 7,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 124,
+          "window_counts": {
+            "tp": 4,
+            "fp": 0,
+            "tn": 112,
+            "fn": 8
+          }
+        },
+        {
+          "episode_id": "CA-0c7a9259f798",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d617a577b360",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bef525e16dab",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 11,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 118,
+            "tn": 297,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-deab5ac67860",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 197,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 184,
+          "window_counts": {
+            "tp": 7,
+            "fp": 0,
+            "tn": 172,
+            "fn": 5
+          }
+        },
+        {
+          "episode_id": "CA-478ec3f8615f",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-06d9a48f97c8",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 288,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 235,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 229,
+            "fn": 6
+          }
+        },
+        {
+          "episode_id": "CA-b708b22884d4",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-38d21673a17d",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-c0272b00144c",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 9,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 81,
+            "tn": 334,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4288c85c554d",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 163,
+          "lead_minutes": 8,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 150,
+          "window_counts": {
+            "tp": 2,
+            "fp": 0,
+            "tn": 138,
+            "fn": 10
+          }
+        },
+        {
+          "episode_id": "CA-3a33db3e9c0d",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-13d6b7744508",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 3,
+            "tn": 412,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-823583fa2b78",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4ef0bb372908",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-c1a1780ebd2e",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 217,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 204,
+          "window_counts": {
+            "tp": 12,
+            "fp": 2,
+            "tn": 190,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-769e87107e09",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 199,
+          "lead_minutes": 14,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 186,
+          "window_counts": {
+            "tp": 11,
+            "fp": 0,
+            "tn": 174,
+            "fn": 1
+          }
+        },
+        {
+          "episode_id": "CA-c71a2c29b1be",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-785f423c844b",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 209,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 196,
+          "window_counts": {
+            "tp": 7,
+            "fp": 0,
+            "tn": 184,
+            "fn": 5
+          }
+        },
+        {
+          "episode_id": "CA-279b9b23c8ab",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-52d718fceb27",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-e4e47d4108c8",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 8,
+          "eligible_minutes": 413,
+          "window_counts": {
+            "tp": 0,
+            "fp": 111,
+            "tn": 302,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-554542cea04b",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 193,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 180,
+          "window_counts": {
+            "tp": 12,
+            "fp": 6,
+            "tn": 162,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-80842ad23643",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d6188e8a0d06",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-43711d917113",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-088451fd2c42",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-74ad6fbca85d",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 291,
+          "lead_minutes": 10,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 236,
+          "window_counts": {
+            "tp": 4,
+            "fp": 15,
+            "tn": 213,
+            "fn": 4
+          }
+        },
+        {
+          "episode_id": "CA-bc51f79f0127",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 280,
+          "lead_minutes": null,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 229,
+          "window_counts": {
+            "tp": 0,
+            "fp": 17,
+            "tn": 212,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-00882c52d124",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-8487e73ee6e1",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9d51baa5fae2",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-09c28a0c050f",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2d3c5a222ca1",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 225,
+          "lead_minutes": 11,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 212,
+          "window_counts": {
+            "tp": 8,
+            "fp": 0,
+            "tn": 200,
+            "fn": 4
+          }
+        },
+        {
+          "episode_id": "CA-cab1c9cf600e",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 136,
+          "lead_minutes": 12,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 123,
+          "window_counts": {
+            "tp": 9,
+            "fp": 3,
+            "tn": 108,
+            "fn": 3
+          }
+        },
+        {
+          "episode_id": "CA-8284a8b2eec8",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 12,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 66,
+            "tn": 349,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-42effed81d7a",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-75c84a8df2f8",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1f3eea95bbc6",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-58257a79d9c1",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 224,
+          "lead_minutes": 15,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 211,
+          "window_counts": {
+            "tp": 12,
+            "fp": 17,
+            "tn": 182,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4927a4e9dc73",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 171,
+          "lead_minutes": 14,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 158,
+          "window_counts": {
+            "tp": 11,
+            "fp": 0,
+            "tn": 146,
+            "fn": 1
+          }
+        },
+        {
+          "episode_id": "CA-497c2bc51ed6",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-24b7fe17c83d",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": 194,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 181,
+          "window_counts": {
+            "tp": 7,
+            "fp": 0,
+            "tn": 169,
+            "fn": 5
+          }
+        },
+        {
+          "episode_id": "CA-03d8a4a54e27",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-159b3dc9b431",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-f8dffd3d9bce",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 196,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 184,
+          "window_counts": {
+            "tp": 8,
+            "fp": 0,
+            "tn": 171,
+            "fn": 5
+          }
+        },
+        {
+          "episode_id": "CA-66b728afa07c",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 147,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 134,
+          "window_counts": {
+            "tp": 12,
+            "fp": 10,
+            "tn": 112,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-897fc01a426b",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-74c98b547e24",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1ffbfd818d47",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-5376da10cf37",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-47ef54ffa78c",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 10,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 179,
+            "tn": 236,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-92f69a53abab",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 167,
+          "lead_minutes": 15,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 154,
+          "window_counts": {
+            "tp": 12,
+            "fp": 0,
+            "tn": 142,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-299bf4365eeb",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1422095de6a5",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": 219,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 205,
+          "window_counts": {
+            "tp": 11,
+            "fp": 18,
+            "tn": 176,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a144e654398a",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9bbb47a6e33b",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9738ccabefa2",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 154,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 141,
+          "window_counts": {
+            "tp": 12,
+            "fp": 3,
+            "tn": 126,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-275e814a8fdf",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 216,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 203,
+          "window_counts": {
+            "tp": 12,
+            "fp": 1,
+            "tn": 190,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2c40825b5245",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-86107171f0df",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2f63c1eab6a0",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-886061d24f78",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-e029d9348f99",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 180,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 167,
+          "window_counts": {
+            "tp": 12,
+            "fp": 2,
+            "tn": 153,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-5993dd923c66",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 210,
+          "lead_minutes": 7,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 198,
+          "window_counts": {
+            "tp": 5,
+            "fp": 0,
+            "tn": 185,
+            "fn": 8
+          }
+        },
+        {
+          "episode_id": "CA-72534ac2fbd5",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 5,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 12,
+            "tn": 403,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a8bdc5c5d3a0",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 13,
+            "tn": 402,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-5cf476a80ed6",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-09c0eb1ffe3d",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d4cf2a7afcbb",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 150,
+          "lead_minutes": 5,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 136,
+          "window_counts": {
+            "tp": 1,
+            "fp": 0,
+            "tn": 125,
+            "fn": 10
+          }
+        },
+        {
+          "episode_id": "CA-0fef9580df62",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 208,
+          "lead_minutes": 9,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 196,
+          "window_counts": {
+            "tp": 7,
+            "fp": 0,
+            "tn": 183,
+            "fn": 6
+          }
+        },
+        {
+          "episode_id": "CA-2e0d19e9ee2d",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 6,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 228,
+            "tn": 187,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bc6ce06e1598",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 13,
+            "tn": 402,
+            "fn": 0
+          }
+        }
+      ]
+    },
+    "temperature_95c": {
+      "overall": {
+        "episodes": 96,
+        "events": 31,
+        "detected_events": 30,
+        "event_recall": 0.967741935483871,
+        "median_lead_minutes": 10.0,
+        "lead_minutes_detected": [
+          12,
+          13,
+          14,
+          12,
+          14,
+          12,
+          6,
+          10,
+          6,
+          8,
+          9,
+          14,
+          9,
+          13,
+          10,
+          7,
+          7,
+          6,
+          11,
+          6,
+          10,
+          12,
+          5,
+          12,
+          11,
+          15,
+          6,
+          7,
+          8,
+          6
+        ],
+        "false_alert_episodes": 92,
+        "eligible_hours": 545.2166666666667,
+        "false_alert_episodes_per_eligible_hour": 0.16874025616727295,
+        "false_alert_minutes": 506,
+        "window_counts": {
+          "tp": 165,
+          "fp": 506,
+          "tn": 31855,
+          "fn": 187
+        }
+      },
+      "groups": {
+        "nominal": {
+          "episodes": 48,
+          "events": 14,
+          "detected_events": 14,
+          "event_recall": 1.0,
+          "median_lead_minutes": 12.0,
+          "lead_minutes_detected": [
+            12,
+            13,
+            14,
+            12,
+            14,
+            12,
+            6,
+            10,
+            6,
+            8,
+            9,
+            14,
+            9,
+            13
+          ],
+          "false_alert_episodes": 45,
+          "eligible_hours": 279.6666666666667,
+          "false_alert_episodes_per_eligible_hour": 0.1609058402860548,
+          "false_alert_minutes": 288,
+          "window_counts": {
+            "tp": 96,
+            "fp": 288,
+            "tn": 16329,
+            "fn": 67
+          }
+        },
+        "shifted": {
+          "episodes": 48,
+          "events": 17,
+          "detected_events": 16,
+          "event_recall": 0.9411764705882353,
+          "median_lead_minutes": 7.5,
+          "lead_minutes_detected": [
+            10,
+            7,
+            7,
+            6,
+            11,
+            6,
+            10,
+            12,
+            5,
+            12,
+            11,
+            15,
+            6,
+            7,
+            8,
+            6
+          ],
+          "false_alert_episodes": 47,
+          "eligible_hours": 265.55,
+          "false_alert_episodes_per_eligible_hour": 0.17699115044247787,
+          "false_alert_minutes": 218,
+          "window_counts": {
+            "tp": 69,
+            "fp": 218,
+            "tn": 15526,
+            "fn": 120
+          }
+        }
+      },
+      "per_episode": [
+        {
+          "episode_id": "CA-48651dda96b4",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a82ae6c9ecb6",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9600d3355e40",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 10,
+          "eligible_minutes": 414,
+          "window_counts": {
+            "tp": 0,
+            "fp": 61,
+            "tn": 353,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-70a6b2178fc8",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 225,
+          "lead_minutes": 12,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 212,
+          "window_counts": {
+            "tp": 6,
+            "fp": 0,
+            "tn": 200,
+            "fn": 6
+          }
+        },
+        {
+          "episode_id": "CA-bd888ce8db6d",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-126f268d22e6",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 2,
+            "tn": 413,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-3b3b6698b2f7",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bea705009729",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d366ca2e220b",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 298,
+          "lead_minutes": 13,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 245,
+          "window_counts": {
+            "tp": 7,
+            "fp": 1,
+            "tn": 232,
+            "fn": 5
+          }
+        },
+        {
+          "episode_id": "CA-b342e44e6b92",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 226,
+          "lead_minutes": 14,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 213,
+          "window_counts": {
+            "tp": 5,
+            "fp": 0,
+            "tn": 201,
+            "fn": 7
+          }
+        },
+        {
+          "episode_id": "CA-008484891afc",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4ac57f635fd3",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-fd4401661dcd",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-b733717005aa",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-6db9917462d2",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 8,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 72,
+            "tn": 343,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4fd0aff3738f",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 180,
+          "lead_minutes": 12,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 167,
+          "window_counts": {
+            "tp": 9,
+            "fp": 0,
+            "tn": 155,
+            "fn": 3
+          }
+        },
+        {
+          "episode_id": "CA-39ff72c47038",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2ed5c447a950",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 7,
+            "tn": 408,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-57deb9b014d5",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a907f10aa654",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-813ca18d7ff9",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 208,
+          "lead_minutes": 14,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 195,
+          "window_counts": {
+            "tp": 11,
+            "fp": 1,
+            "tn": 182,
+            "fn": 1
+          }
+        },
+        {
+          "episode_id": "CA-1115d04da8ff",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 194,
+          "lead_minutes": 12,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 182,
+          "window_counts": {
+            "tp": 7,
+            "fp": 0,
+            "tn": 169,
+            "fn": 6
+          }
+        },
+        {
+          "episode_id": "CA-1ff239ed10e5",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-18437188ef5d",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 137,
+          "lead_minutes": 6,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 124,
+          "window_counts": {
+            "tp": 3,
+            "fp": 0,
+            "tn": 112,
+            "fn": 9
+          }
+        },
+        {
+          "episode_id": "CA-0c7a9259f798",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d617a577b360",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bef525e16dab",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 3,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 19,
+            "tn": 396,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-deab5ac67860",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 197,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 184,
+          "window_counts": {
+            "tp": 7,
+            "fp": 0,
+            "tn": 172,
+            "fn": 5
+          }
+        },
+        {
+          "episode_id": "CA-478ec3f8615f",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-06d9a48f97c8",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 288,
+          "lead_minutes": 6,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 235,
+          "window_counts": {
+            "tp": 3,
+            "fp": 1,
+            "tn": 228,
+            "fn": 3
+          }
+        },
+        {
+          "episode_id": "CA-b708b22884d4",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-38d21673a17d",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-c0272b00144c",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 6,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 25,
+            "tn": 390,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4288c85c554d",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 163,
+          "lead_minutes": 8,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 150,
+          "window_counts": {
+            "tp": 5,
+            "fp": 0,
+            "tn": 138,
+            "fn": 7
+          }
+        },
+        {
+          "episode_id": "CA-3a33db3e9c0d",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-13d6b7744508",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-823583fa2b78",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-4ef0bb372908",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-c1a1780ebd2e",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": 217,
+          "lead_minutes": 9,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 204,
+          "window_counts": {
+            "tp": 6,
+            "fp": 1,
+            "tn": 191,
+            "fn": 6
+          }
+        },
+        {
+          "episode_id": "CA-769e87107e09",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 199,
+          "lead_minutes": 14,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 186,
+          "window_counts": {
+            "tp": 11,
+            "fp": 0,
+            "tn": 174,
+            "fn": 1
+          }
+        },
+        {
+          "episode_id": "CA-c71a2c29b1be",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-785f423c844b",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": 209,
+          "lead_minutes": 9,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 196,
+          "window_counts": {
+            "tp": 6,
+            "fp": 0,
+            "tn": 184,
+            "fn": 6
+          }
+        },
+        {
+          "episode_id": "CA-279b9b23c8ab",
+          "group": "nominal",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-52d718fceb27",
+          "group": "nominal",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-e4e47d4108c8",
+          "group": "nominal",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 10,
+          "eligible_minutes": 413,
+          "window_counts": {
+            "tp": 0,
+            "fp": 85,
+            "tn": 328,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-554542cea04b",
+          "group": "nominal",
+          "scenario": "severe_loss",
+          "event_index": 193,
+          "lead_minutes": 13,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 180,
+          "window_counts": {
+            "tp": 10,
+            "fp": 0,
+            "tn": 168,
+            "fn": 2
+          }
+        },
+        {
+          "episode_id": "CA-80842ad23643",
+          "group": "nominal",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d6188e8a0d06",
+          "group": "nominal",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 13,
+            "tn": 402,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-43711d917113",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-088451fd2c42",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-74ad6fbca85d",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 291,
+          "lead_minutes": 10,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 236,
+          "window_counts": {
+            "tp": 5,
+            "fp": 9,
+            "tn": 219,
+            "fn": 3
+          }
+        },
+        {
+          "episode_id": "CA-bc51f79f0127",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 280,
+          "lead_minutes": null,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 229,
+          "window_counts": {
+            "tp": 0,
+            "fp": 10,
+            "tn": 219,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-00882c52d124",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-8487e73ee6e1",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9d51baa5fae2",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-09c28a0c050f",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2d3c5a222ca1",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 225,
+          "lead_minutes": 7,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 212,
+          "window_counts": {
+            "tp": 4,
+            "fp": 0,
+            "tn": 200,
+            "fn": 8
+          }
+        },
+        {
+          "episode_id": "CA-cab1c9cf600e",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 136,
+          "lead_minutes": 7,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 123,
+          "window_counts": {
+            "tp": 4,
+            "fp": 0,
+            "tn": 111,
+            "fn": 8
+          }
+        },
+        {
+          "episode_id": "CA-8284a8b2eec8",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 7,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 28,
+            "tn": 387,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-42effed81d7a",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-75c84a8df2f8",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1f3eea95bbc6",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-58257a79d9c1",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 224,
+          "lead_minutes": 6,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 211,
+          "window_counts": {
+            "tp": 3,
+            "fp": 0,
+            "tn": 199,
+            "fn": 9
+          }
+        },
+        {
+          "episode_id": "CA-4927a4e9dc73",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 171,
+          "lead_minutes": 11,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 158,
+          "window_counts": {
+            "tp": 3,
+            "fp": 0,
+            "tn": 146,
+            "fn": 9
+          }
+        },
+        {
+          "episode_id": "CA-497c2bc51ed6",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-24b7fe17c83d",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": 194,
+          "lead_minutes": 6,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 181,
+          "window_counts": {
+            "tp": 3,
+            "fp": 0,
+            "tn": 169,
+            "fn": 9
+          }
+        },
+        {
+          "episode_id": "CA-03d8a4a54e27",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-159b3dc9b431",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-f8dffd3d9bce",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 196,
+          "lead_minutes": 10,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 184,
+          "window_counts": {
+            "tp": 6,
+            "fp": 0,
+            "tn": 171,
+            "fn": 7
+          }
+        },
+        {
+          "episode_id": "CA-66b728afa07c",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 147,
+          "lead_minutes": 12,
+          "false_alert_episodes": 2,
+          "eligible_minutes": 134,
+          "window_counts": {
+            "tp": 4,
+            "fp": 2,
+            "tn": 120,
+            "fn": 8
+          }
+        },
+        {
+          "episode_id": "CA-897fc01a426b",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-74c98b547e24",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1ffbfd818d47",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-5376da10cf37",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-47ef54ffa78c",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 6,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 36,
+            "tn": 379,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-92f69a53abab",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 167,
+          "lead_minutes": 5,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 154,
+          "window_counts": {
+            "tp": 2,
+            "fp": 0,
+            "tn": 142,
+            "fn": 10
+          }
+        },
+        {
+          "episode_id": "CA-299bf4365eeb",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-1422095de6a5",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": 219,
+          "lead_minutes": 12,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 205,
+          "window_counts": {
+            "tp": 4,
+            "fp": 7,
+            "tn": 187,
+            "fn": 7
+          }
+        },
+        {
+          "episode_id": "CA-a144e654398a",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9bbb47a6e33b",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-9738ccabefa2",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 154,
+          "lead_minutes": 11,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 141,
+          "window_counts": {
+            "tp": 8,
+            "fp": 0,
+            "tn": 129,
+            "fn": 4
+          }
+        },
+        {
+          "episode_id": "CA-275e814a8fdf",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 216,
+          "lead_minutes": 15,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 203,
+          "window_counts": {
+            "tp": 7,
+            "fp": 1,
+            "tn": 190,
+            "fn": 5
+          }
+        },
+        {
+          "episode_id": "CA-2c40825b5245",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-86107171f0df",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-2f63c1eab6a0",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-886061d24f78",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-e029d9348f99",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 180,
+          "lead_minutes": 6,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 167,
+          "window_counts": {
+            "tp": 3,
+            "fp": 0,
+            "tn": 155,
+            "fn": 9
+          }
+        },
+        {
+          "episode_id": "CA-5993dd923c66",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 210,
+          "lead_minutes": 7,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 198,
+          "window_counts": {
+            "tp": 5,
+            "fp": 0,
+            "tn": 185,
+            "fn": 8
+          }
+        },
+        {
+          "episode_id": "CA-72534ac2fbd5",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 9,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 15,
+            "tn": 400,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-a8bdc5c5d3a0",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 5,
+            "tn": 410,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-5cf476a80ed6",
+          "group": "shifted",
+          "scenario": "healthy",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-09c0eb1ffe3d",
+          "group": "shifted",
+          "scenario": "hot_ambient",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 415,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-d4cf2a7afcbb",
+          "group": "shifted",
+          "scenario": "gradual_loss",
+          "event_index": 150,
+          "lead_minutes": 8,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 136,
+          "window_counts": {
+            "tp": 4,
+            "fp": 0,
+            "tn": 125,
+            "fn": 7
+          }
+        },
+        {
+          "episode_id": "CA-0fef9580df62",
+          "group": "shifted",
+          "scenario": "severe_loss",
+          "event_index": 208,
+          "lead_minutes": 6,
+          "false_alert_episodes": 0,
+          "eligible_minutes": 196,
+          "window_counts": {
+            "tp": 4,
+            "fp": 0,
+            "tn": 183,
+            "fn": 9
+          }
+        },
+        {
+          "episode_id": "CA-2e0d19e9ee2d",
+          "group": "shifted",
+          "scenario": "partial_loss",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 15,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 94,
+            "tn": 321,
+            "fn": 0
+          }
+        },
+        {
+          "episode_id": "CA-bc6ce06e1598",
+          "group": "shifted",
+          "scenario": "recovery",
+          "event_index": null,
+          "lead_minutes": null,
+          "false_alert_episodes": 1,
+          "eligible_minutes": 415,
+          "window_counts": {
+            "tp": 0,
+            "fp": 11,
+            "tn": 404,
+            "fn": 0
+          }
+        }
+      ]
+    }
+  }
+}

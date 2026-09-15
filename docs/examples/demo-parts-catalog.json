@@ -1,0 +1,24 @@
+{
+  "parts": [
+    {
+      "part_number": "DEMO-BOOST-SENSOR",
+      "name": "演示增压压力传感器（非采购零件号）",
+      "component": "boost pressure sensor",
+      "models": [
+        "XE135U"
+      ],
+      "serial_numbers": [],
+      "applicability": "model_only",
+      "fault_codes": [
+        "ENG-BOOST-102-3"
+      ],
+      "checks": [
+        "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+      ],
+      "source_document": "机联智检人工编写演示目录，不是制造商资料",
+      "source_page": "演示条目1",
+      "revision": "demo-v1",
+      "provenance": "demo"
+    }
+  ]
+}
