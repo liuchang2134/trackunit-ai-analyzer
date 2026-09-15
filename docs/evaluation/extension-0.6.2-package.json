@@ -1,0 +1,24 @@
+{
+  "version": "0.6.2",
+  "path": "dist/jilian-extension-0.6.2.zip",
+  "bytes": 52658,
+  "sha256": "042965cb1c958c645dc7dc2a4b538adefa7c47ec6019ef6336ed4bd3f83da549",
+  "files": {
+    "manifest.json": "6155e9c1065c3f1cd0f9aaccd8625c481396fc061ffd7911143d7d27bccb6968",
+    "background.js": "bc00babb0c15fe6a98109150649995cade3d4abb8e8ece740c6a1a55cc250582",
+    "context.js": "ea4b1ab5e41b9150cd979434182503ec260a775597aeb777efaa5508a2d7a0bd",
+    "xgss-catalog.js": "03f4ad6b018f3573091184c584e82c66e78483dc3eae8fde249cba890fb58a3b",
+    "panel.js": "3255729587eec21fb181db63f6057a77918599e6935846a1d4671c1964496dd8",
+    "panel.html": "ec11ce26e85f5ce2ce6a371d4a54fc490a87857ee76459e0d24ba296762a944b",
+    "panel.css": "4140687990f725371c566a3463369ba14f0c5de283f5b920b8e2ccdd2f05bfc4",
+    "README.md": "c6f99b2e2329420b7b6740c43a75e604e55f33215267d69908d387110886c4d4",
+    "assets/xcmg-logo.png": "7d52dcbb08c670e0ad942e9ba80a5354f48814819ffc22e70e1dd8901c557dfc",
+    "assets/icon16.png": "4493bebf8b2c840b2d656d7b42f13c768f4326189fd024f272da8cb663c4be64",
+    "assets/icon32.png": "a231216eba5183a2d204eb5b84292caca4d87e3b93a4354ea319a1f80d3d26c6",
+    "assets/icon48.png": "1e46344a3fe5e59448e06dda7fce2300f18900544b3950d8d3cd926c498e40f1",
+    "assets/icon128.png": "03a5100cb9600a419b1aa78f33ab34662ecebfe9cde8b22883b8d299b88dfb9c",
+    "assets/SOURCES.md": "bd878d36bc3594e47cd43889086e61402180eac9404b4e1d6997317228d3e4f3"
+  },
+  "packaged_only": true,
+  "chrome_installation_verified": false
+}

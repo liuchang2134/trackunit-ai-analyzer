@@ -46,7 +46,8 @@ function harness({machines=[a1],hash=assetA,selection=a1.selection_id}={}){
       machines:context.machines,source:context.defaultSource,selectionId:get('machine').value,indexState:context.platformIndexState,pending:context.pendingPlatformContext})),
     notifyAssistantPanel:()=>{}};
   vm.runInNewContext(functions,context);
-  return {context,get,selectionEvents,notifications,requests};
+  const fact=label=>get('device-facts').children.find(row=>row.children[0]?.textContent===label)?.children[1]?.textContent;
+  return {context,get,fact,selectionEvents,notifications,requests};
 }
 const complete=(request,devices)=>request.resolve({devices,data_source:'trackunit_cache',warnings:[]});
 
@@ -70,8 +71,11 @@ test('refresh preserves the operator-selected version including a selection made
   h.selectionEvents.length=0;complete(h.requests[0],[a1,a2]);await loading;
   assert.equal(h.get('machine').value,a2.selection_id);assert.equal(h.get('observations').value,'version two');
   assert.deepEqual(h.selectionEvents,[a2.selection_id]);
-  assert.match(h.get('machine-note').textContent,/XE55U.*LOCAL-1.*2 个本地数据版本.*已保留/);
-  assert.match(h.get('machine').options()[1].textContent,/最近采样 2026-09-15T09:00:00Z/);
+  assert.equal(h.fact('机型'),'XE55U');assert.equal(h.fact('VIN / PIN'),'LOCAL-1');
+  assert.match(h.fact('版本选择'),/2 个数据版本.*已保留/);
+  assert.match(h.get('machine-note').textContent,/最近采样 2026-09-15T09:00:00Z.*12 条记录/);
+  assert.match(h.get('machine').options()[1].textContent,/XE55U.*LOCAL-1.*2026-09-15T09:00:00Z.*版本 2/);
+  assert.doesNotMatch(h.get('machine').options()[1].textContent,/历史工时|bbbbbb/);
 });
 
 test('same-asset acknowledgement preserves the report and draft without reselecting',()=>{
@@ -88,8 +92,8 @@ test('switching to a multi-version asset loads its default, while a missing asse
   h.context.location.hash='#trackunit-asset='+assetB;h.context.applyPlatformContext();
   assert.equal(h.get('machine').value,b1.selection_id);assert.equal(h.get('observations').value,'');
   assert.equal(h.notifications.at(-1).state,'matched');
-  assert.match(h.get('machine-note').textContent,/LOCAL-2.*2 个本地数据版本/);
-  assert.match(h.get('machine-note').textContent,/采样时间相同.*自动载入/);
+  assert.equal(h.fact('VIN / PIN'),'LOCAL-2');
+  assert.match(h.fact('版本选择'),/2 个数据版本.*采样时间相同.*自动载入/);
   assert.equal(h.get('demo-entry').hidden,true);
   h.context.location.hash='#trackunit-asset=00000000-0000-0000-0000-000000000003';h.context.applyPlatformContext();
   assert.equal(h.get('machine').value,'');assert.equal(h.notifications.at(-1).state,'missing');
@@ -104,7 +108,8 @@ test('first platform load automatically selects by actual telemetry time with no
   assert.deepEqual(h.selectionEvents,[newer.selection_id]);
   assert.equal(h.get('machine').options().length,2);
   assert.equal(h.notifications.at(-1).state,'matched');
-  assert.match(h.get('machine-note').textContent,/已自动载入最近采样版本.*2026-01-02T10:00:00Z/);
+  assert.match(h.fact('版本选择'),/已自动载入最近采样版本/);
+  assert.match(h.get('machine-note').textContent,/最近采样 2026-01-02T10:00:00Z/);
   assert.equal(h.get('case-open').disabled,false);
 });
 
@@ -113,7 +118,8 @@ test('unknown sampling dates still load a default and disclose the missing date'
   h.context.applyPlatformContext();
   assert.equal(h.get('machine').value,a1.selection_id);
   assert.equal(h.notifications.at(-1).state,'matched');
-  assert.match(h.get('machine-note').textContent,/默认版本.*采样时间待核实.*最近采样：未知/);
+  assert.match(h.fact('版本选择'),/默认版本.*采样时间待核实/);
+  assert.match(h.get('machine-note').textContent,/最近采样 未知/);
 });
 
 test('a late index response or error cannot overwrite a newer refresh',async()=>{
@@ -147,7 +153,8 @@ test('initial platform refresh overrides a stale demo even for an unknown machin
   const loading=h.context.refresh();complete(h.requests[0],[a1,b1]);await loading;
   assert.equal(h.context.activeView,'work');assert.equal(h.get('demo-view').hidden,true);
   assert.equal(h.get('machine').value,'');assert.equal(h.notifications.at(-1).state,'missing');
-  assert.match(h.get('machine-note').textContent,new RegExp(unknown));
+  assert.equal(h.fact('设备 ID'),unknown);
+  assert.equal(h.get('machine-note').textContent,'等待设备数据');
 });
 
 test('same-asset passive refresh preserves an intentional demo but new platform hash exits it',()=>{

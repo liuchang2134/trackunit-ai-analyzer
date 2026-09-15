@@ -1,1 +1,1 @@
-ASSISTANT_BUILD = '20260915.9-platform-follow'
+ASSISTANT_BUILD = '20260915.10-xcmg-workspace'

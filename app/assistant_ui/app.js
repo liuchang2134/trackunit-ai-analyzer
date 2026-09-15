@@ -8,8 +8,8 @@ let deviceIndexRequest = 0;
 let appliedPlatformHash = null;
 let activeView = 'work';
 const platformEquipmentHints = new Map();
-let aiRuntimeLabel = '正在读取 AI 配置';
-let aiFooterLabel = '辅助分析 · 报告保存在本机 · 数据来源可追溯';
+let aiRuntimeLabel = '正在连接 AI';
+let aiFooterLabel = '机联智检 · 工程机械运维助手';
 let aiProvider = null;
 let aiStatusTicket = 0;
 const investigationDrafts = new InvestigationDrafts();
@@ -20,11 +20,11 @@ const taskQuestions = {
   overview:'概述所选设备已知状态、最近记录和数据缺口。'
 };
 const taskHints = {
-  comprehensive:'直接开始即可；检查故障记录、运行趋势和本地备件目录。',
-  parts:'按故障证据查询本地备件候选；准确料号可通过 XGSS 整机图册核对。',
-  trends:'直接开始即可；分析有效区间工时和怠速占比。',
-  overview:'直接开始即可；整理已载入的设备状态与数据缺口。',
-  auto:'请填写具体问题；AI 将根据问题选择已有数据工具。'
+  comprehensive:'结合故障、运行趋势和备件资料，给出检查建议。',
+  parts:'按故障证据推荐候选部件，在 XGSS 核对料号。',
+  trends:'分析工时变化与怠速占比。',
+  overview:'整理设备概况与最近记录。',
+  auto:'输入你想了解的设备问题。'
 };
 function updateTask() {
   const free = $('task').value === 'auto';
@@ -33,7 +33,7 @@ function updateTask() {
   if(free) $('question-details').open = true;
   else if(!$('question').value.trim()) $('question-details').open = false;
   $('task-hint').textContent = taskHints[$('task').value];
-  if(!$('run').disabled){$('status').dataset.state='idle';$('status').setAttribute('role','status');$('status').textContent=free?'填写具体问题后开始分析。':'选择设备后可直接开始；补充问题选填。';}
+  if(!$('run').disabled){$('status').dataset.state='idle';$('status').setAttribute('role','status');$('status').textContent=free?'填写问题后开始分析。':'选择设备与任务后开始分析。';}
 }
 $('task').onchange=updateTask;
 updateTask();
@@ -46,12 +46,12 @@ async function api(path, options) {
   if (!r.ok) {
     let message=typeof data.detail === 'string' ? data.detail : `请求失败 (${r.status})，请检查输入格式。`;
       if(path==='/assistant/investigate' && ((data.provider_error && (data.ai_status?.provider||aiProvider)==='deepseek') || /DeepSeek|DEEPSEEK_API_KEY/.test(message)))message=formatDeepSeekFailure(data.provider_error);
-      else if(/GEMINI_API_KEY is not configured/.test(message))message='尚未配置 Gemini 密钥。请在本机 .env 中填写 GEMINI_API_KEY 并重启此后端；模拟数据、趋势图和预警演示仍可使用。';
+      else if(/GEMINI_API_KEY is not configured/.test(message))message='AI 服务尚未配置，请检查连接设置。设备资料与演示仍可使用。';
       else if(/Gemini returned HTTP 5\d\d/.test(message)){
         const attempts=message.match(/Attempts: (\d+)/)?.[1];
         message=`Gemini 服务暂时不可用${attempts?`，本次请求已尝试 ${attempts} 次`:''}。请稍后重试；本次未生成报告。`;
       }
-      else if(/Gemini investigation time limit/.test(message))message='本次排查已达到 120 秒时限，未生成报告。问题和设备数据已保留，可稍后重试。';
+      else if(/Gemini investigation time limit/.test(message))message='本次分析超时，未生成报告。输入已保留，请稍后重试。';
       else if(/Investigation reached its step limit/.test(message))message='AI 在限定步骤内未给出符合证据要求的报告。请缩小排查范围后重试。';
     else if(/Gemini.*(rate limit|quota)/i.test(message))message=formatGeminiQuotaFailure(data.provider_error)||'Gemini 调用频率或额度已达到限制。请核查 API 项目配额，暂不要反复重试。';
     else if(/Gemini.*(timed out|network|connect)/i.test(message))message='Gemini 请求超时或网络不可用。请检查网络后重试。';
@@ -61,7 +61,7 @@ async function api(path, options) {
 }
 function setView(view,{reason='initial'}={}) {
   activeView=view;
-  $('page-title').textContent={demo:'完整案例演示',queue:'待处理工作台',work:'设备排查',data:'资料管理',history:'诊断记录',states:'工况识别实验',cooling:'冷却预警实验'}[view];
+  $('page-title').textContent={demo:'案例演示',queue:'待处理',work:'设备排查',data:'资料管理',history:'诊断记录',states:'工况识别',cooling:'冷却预警'}[view];
   $('secondary-nav').open=false;
   $('demo-view').hidden = view !== 'demo';
   $('demo-entry').hidden = view !== 'work' || Boolean(PlatformContext.asset(location.hash));
@@ -106,7 +106,7 @@ function renderMetrics(trend) {
   }
   const windowNote=document.createElement('p'),quality=document.createElement('p');
   windowNote.textContent=`统计窗口（本机时间）：${displayDate(trend.window_start)} — ${displayDate(trend.window_end)}`;
-  quality.textContent=`程序计算 · 通过 ${trend.valid_intervals} 个区间 / 排除 ${trend.excluded_intervals} 个区间。有效区间工时不代表完整窗口总量；数据完整性未验证，未触发规则不等于无故障。`;
+  quality.textContent=`计入 ${trend.valid_intervals} 个有效区间，排除 ${trend.excluded_intervals} 个异常区间。统计可能不覆盖完整工况，未触发预警不代表无故障。`;
   root.append(grid,windowNote,quality);
 }
 function renderFaultFacts(evidence) {
@@ -128,7 +128,7 @@ function renderFaultFacts(evidence) {
     });wrap.append(table);root.append(wrap);
   }
   const note=document.createElement('p');note.className='muted';
-  note.textContent=`已载入 ${facts.total_loaded_events} 条，时点核验后保留 ${facts.valid_loaded_records} 条；展示 ${facts.groups.length}/${facts.total_fault_code_groups} 个故障码。按故障码和时间去重计数，不能据此认定独立故障次数或复发周期。来源：${ref}。没有记录不等于设备正常。`;
+  note.textContent=`载入 ${facts.total_loaded_events} 条，核验后保留 ${facts.valid_loaded_records} 条；展示 ${facts.groups.length}/${facts.total_fault_code_groups} 个故障码。记录数不等于故障次数；无记录不代表设备正常。来源：${ref}。`;
   root.append(note);
 }
 async function refresh(focusPlatformSelection=false) {
@@ -143,13 +143,13 @@ async function refresh(focusPlatformSelection=false) {
     const previousSelection = $('machine').value;
     defaultSource = index.data_source;
     machines = index.devices;deviceIndexWarnings=index.warnings;platformIndexState='ready';
-    $('source').textContent = defaultSource === 'mock' ? '模拟数据' : '本地真实缓存';
+    $('source').textContent = defaultSource === 'mock' ? '模拟数据' : 'Trackunit 数据';
     const groups = new Map();
     for(const m of machines) {
-      const group = m.dataset_id ? (m.provenance==='synthetic'?'模拟演示片段':'导入实测数据 · 未验证') : (defaultSource==='mock'?'示例设备':'车联网缓存');
+      const group = machineSourceLabel(m);
       if(!groups.has(group)){const el=document.createElement('optgroup');el.label=group;groups.set(group,el);}
       const o=document.createElement('option');o.value=m.selection_id;
-      o.textContent=`${m.model} · ${m.serial_number}${m.dataset_id?' · '+m.dataset_name+' · 版本 '+m.dataset_id.slice(0,6):''}`;
+      o.textContent=machineOptionLabel(m);
       groups.get(group).append(o);
     }
     $('catalog-status').textContent = `${catalog.total} 条目录，其中 ${catalog.demo} 条演示资料`;
@@ -165,6 +165,35 @@ async function refresh(focusPlatformSelection=false) {
     if(typeof enterWorklist==='function' && !$('queue-view').hidden)enterWorklist();
   } catch(e) { if(request!==deviceIndexRequest)return;platformIndexState='error';notifyPlatformContext();$('status').textContent=e.message; $('source').textContent='服务未连接'; }
 }
+function machineSampleTime(machine){
+  return Object.hasOwn(machine,'latest_telemetry_at')?machine.latest_telemetry_at:machine.last_seen_at;
+}
+function machineSourceLabel(machine){
+  if(machine?.provenance==='synthetic'||machine?.source==='mock'||machine?.source==='imported_synthetic')return '模拟数据';
+  if(machine?.dataset_id)return /^Trackunit\b/i.test(machine.source_document||'')?'Trackunit 数据':'导入数据';
+  return defaultSource==='mock'?'模拟数据':'Trackunit 数据';
+}
+function machineOptionLabel(machine){
+  const versions=machines.filter(row=>row.machine_id===machine.machine_id)
+    .map(row=>row.selection_id).sort();
+  const version=versions.length>1?' · 版本 '+(versions.indexOf(machine.selection_id)+1):'';
+  return `${machine.model} · ${machine.serial_number} · ${displayDate(machineSampleTime(machine))}${version}`;
+}
+function machineRecordNote(machine){
+  return machine?`最近采样 ${displayDate(machineSampleTime(machine))}${machine.dataset_id?' · '+machine.sample_count+' 条记录':''}`:'等待设备数据';
+}
+function renderDeviceFacts(machine,selectionNote='',platformId=''){
+  $('device-facts').replaceChildren();
+  const facts=machine?[['机型',machine.model],['VIN / PIN',machine.serial_number],
+    ['最近采样',displayDate(machineSampleTime(machine))],['数据来源',machineSourceLabel(machine)],
+    ['设备 ID',machine.machine_id],...(machine.dataset_id?[['数据版本',machine.dataset_id],['来源说明',machine.source_document]]:[])]:[];
+  if(selectionNote)facts.push(['版本选择',selectionNote]);
+  if(!machine&&platformId)facts.push(['设备 ID',platformId]);
+  for(const [label,value] of facts){
+    const cell=document.createElement('div'),term=document.createElement('dt'),definition=document.createElement('dd');
+    term.textContent=label;definition.textContent=value||'未知';cell.append(term,definition);$('device-facts').append(cell);
+  }
+}
 function selectMachine() {
   const m=selected();
   if(typeof faultReferenceDeviceChanged==='function')faultReferenceDeviceChanged(m,defaultSource);
@@ -176,15 +205,11 @@ function selectMachine() {
   $('question').value=draft.question;$('observations').value=draft.observations;
   $('task').value=draft.task;$('language').value=draft.language;priorRecordId=draft.priorRecordId;
   $('question-details').open=Boolean(draft.question);updateTask();clearReport();
-  $('device-facts').replaceChildren();
-  if(m) for(const [label,value] of [['机型',m.model],['序列号',m.serial_number],['最近上报',displayDate(m.last_seen_at)]]) {
-    const cell=document.createElement('div'),term=document.createElement('dt'),definition=document.createElement('dd');
-    term.textContent=label;definition.textContent=value || '未知';cell.append(term,definition);$('device-facts').append(cell);
-  }
-  $('status').textContent=!m?'暂无可分析设备，请先同步或导入数据。':draft.question||draft.observations?'已保留此设备与数据版本的当前输入；可在下方保存本机草稿。':$('task').value==='auto'?'请填写具体问题后开始分析。':'选择排查任务后可直接开始，无需编写提示词。';
+  renderDeviceFacts(m);
+  $('status').textContent=!m?'暂无设备数据，请同步或导入。':draft.question||draft.observations?'已恢复当前设备的分析输入。':$('task').value==='auto'?'填写问题后开始分析。':'选择任务后开始分析。';
   $('status').dataset.state='idle';$('status').setAttribute('role','status');
   updateSourceLabel();
-  $('machine-note').textContent=m ? `${m.dataset_id?'片段 / '+m.sample_count+' 条记录':'当前缓存'} · 数据时间：${displayDate(m.last_seen_at)}（本机时间）` : '暂无设备，请先导入或同步数据。';
+  $('machine-note').textContent=machineRecordNote(m);
   if(!$('history-view').hidden) refreshHistory();
   if(typeof refreshDeviceOverview==='function')refreshDeviceOverview();
   if(typeof refreshCoolingContext==='function')refreshCoolingContext();
@@ -194,7 +219,7 @@ function selectMachine() {
 }
 function updateSourceLabel() {
   const m=selected();
-  $('source').textContent=!$('demo-view').hidden?'模拟案例 · 预设回放':!$('queue-view').hidden?'本机排查工作台':!$('cooling-view').hidden?'独立模拟预警':!$('states-view').hidden?'独立模拟工况':m?.dataset_id ? (m.provenance==='synthetic'?'导入模拟数据':'导入实测 / 未验证') : (defaultSource==='mock'?'模拟数据':'本地真实缓存');
+  $('source').textContent=!$('demo-view').hidden?'模拟案例':!$('queue-view').hidden?'排查工作台':!$('cooling-view').hidden||!$('states-view').hidden?'模拟数据':machineSourceLabel(m);
 }
 function applyPlatformContext(focusSelection=false,refreshSelection=false) {
   if(!location.hash.startsWith('#trackunit-asset='))return;
@@ -205,17 +230,17 @@ function applyPlatformContext(focusSelection=false,refreshSelection=false) {
   const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
   const matches=valid?PlatformContext.candidates(machines,defaultSource,id):[];
   const choice=PlatformContext.selectDefault(machines,defaultSource,id,previousSelection);
-  const sampledAt=m=>Object.hasOwn(m,'latest_telemetry_at')?m.latest_telemetry_at:m.last_seen_at;
-  $('machine').replaceChildren(...matches.map(m=>{const o=document.createElement('option');o.value=m.selection_id;o.textContent=`${m.model} · ${m.serial_number} · ${m.dataset_name || '本地真实缓存'}${m.dataset_id?' · '+m.sample_count+' 条 · '+m.dataset_id.slice(0,8):''} · 最近采样 ${displayDate(sampledAt(m))}`;return o;}));
-  if(!matches.length){const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='该设备暂无本地实测数据';$('machine').append(placeholder);}
+  $('machine').replaceChildren(...matches.map(m=>{const o=document.createElement('option');o.value=m.selection_id;o.textContent=machineOptionLabel(m);return o;}));
+  if(!matches.length){const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='正在关联当前设备';$('machine').append(placeholder);}
   $('machine').value=choice.selected?.selection_id || '';
   const selectedVersion=choice.selected;
   if(refreshSelection||previousSelection!==$('machine').value)selectMachine();
   else notifyPlatformContext();
   const choiceNote={retained:'已保留当前版本',latest_sample:'已自动载入最近采样版本',equal_latest_sample:`${choice.tied} 个版本最近采样时间相同，已自动载入其中一个`,undated_default:'已自动载入默认版本，采样时间待核实'}[choice.reason];
-  $('machine-note').textContent=selectedVersion?`已定位 ${selectedVersion.model} · ${selectedVersion.serial_number}，共有 ${matches.length} 个本地数据版本。${choiceNote}${matches.length>1?'，可在上方切换':''}。最近采样：${displayDate(sampledAt(selectedVersion))}（本机时间）${selectedVersion.dataset_id?' · '+selectedVersion.sample_count+' 条记录':''}。`:`当前平台设备 ID：${valid?id:'格式无效'}。尚无对应数据，未选择其他设备替代。`;
-  $('status').textContent=!valid?'平台设备 ID 格式无效。':selectedVersion?'已载入当前平台设备的本地数据，可查看趋势或开始分析。':'平台设备未匹配到本地实测数据，请先同步或导入对应设备。';
-  if(!selectedVersion)$('source').textContent='平台设备 · 暂无实测数据';
+  $('machine-note').textContent=machineRecordNote(selectedVersion);
+  renderDeviceFacts(selectedVersion,selectedVersion?`${matches.length} 个数据版本 · ${choiceNote}`:'',valid?id:'格式无效');
+  $('status').textContent=!valid?'设备链接无效，请重新读取当前设备。':selectedVersion?'当前设备已关联，可开始分析。':'正在关联当前设备。';
+  if(!selectedVersion)$('source').textContent='等待设备数据';
   if(valid)$('demo-entry').hidden=true;
   if(focusSelection||platformChanged)setView('work',{reason:'platform'});
   if(focusSelection){$('machine').focus({preventScroll:true});document.querySelector('.device').scrollIntoView({block:'start'});}
@@ -568,13 +593,13 @@ async function refreshAIRuntime() {
       backend_build:runtime.backend_build,inference_location:runtime.inference_location,
       investigation_timeout_seconds:runtime.investigation_timeout_seconds,transient_attempt_limit:runtime.transient_attempt_limit});
     const copy=AIRequestStatus.runtimeView(runtime);
-    aiRuntimeLabel=copy.label;
-    aiFooterLabel=copy.footer;
+    aiRuntimeLabel=runtime.inference_location==='cloud'&&runtime.cloud_credentials_configured===false?'AI 待连接':'AI 辅助分析';
+    aiFooterLabel='机联智检 · 工程机械运维助手';
     updateRuntimeLabel();
     $('ai-data-note').textContent=copy.note;
   } catch (e) {
-    aiRuntimeLabel='AI 配置读取失败';updateRuntimeLabel();
-    $('ai-data-note').textContent='请确认后端已启动并刷新页面。';
+    aiRuntimeLabel='AI 未连接';updateRuntimeLabel();
+    $('ai-data-note').textContent='请检查服务连接后刷新。';
   }
   await refreshAIRequestStatus();
 }
@@ -597,7 +622,7 @@ async function refreshAIRequestStatus(){
 }
 $('ai-status-refresh').onclick=refreshAIRequestStatus;
 function updateRuntimeLabel(){
-  $('runtime-footer').textContent=!$('demo-view').hidden?'模拟案例 · 离线预设讲解 · 不调用外部接口':aiFooterLabel;
-  $('ai-runtime').textContent=!$('demo-view').hidden?'预设分析示例 · 不调用外部接口':!$('queue-view').hidden?'本机任务与记录 · 不调用 AI':!$('cooling-view').hidden?'本地预警模型 · 不消耗云端额度':!$('states-view').hidden?'本地工况分类模型':aiRuntimeLabel;
+  $('runtime-footer').textContent=aiFooterLabel;
+  $('ai-runtime').textContent=!$('demo-view').hidden?'模拟演示':!$('queue-view').hidden?'任务与记录':!$('cooling-view').hidden?'模拟预警':!$('states-view').hidden?'模拟工况':aiRuntimeLabel;
 }
 refreshAIRuntime();

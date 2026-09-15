@@ -22,18 +22,19 @@
     byId('demo-prev').disabled=index===0;
     byId('demo-next').textContent=index===scenario.stages.length-1?'从头演示':'下一步';
     byId('demo-steps').querySelectorAll('button').forEach((button,i)=>{if(i===index)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
-    body.append(node('p',stage.label,'demo-reference-label'),node('h3',stage.title),node('p',stage.summary,'demo-summary'),items(stage.details));
-    if(stage.id==='analysis')body.prepend(node('span','预设 AI 分析示例 · 未调用 AI API','demo-tag'));
+    const summary=stage.id==='analysis'?stage.summary.replace('这是预设分析示例，未调用 Gemini。',''):stage.summary;
+    body.append(node('p',stage.label,'demo-reference-label'),node('h3',stage.title),node('p',summary,'demo-summary'),items(stage.details));
+    if(stage.id==='analysis')body.prepend(node('span','预设分析 · 非实时 AI','demo-tag'));
     if(stage.id==='checks')for(const check of scenario.checks){
-      const card=node('article','','demo-check'),button=node('button',revealed.has(check.id)?'收起模拟结果':'查看模拟检查结果','quiet');button.type='button';
+      const card=node('article','','demo-check'),button=node('button',revealed.has(check.id)?'收起模拟结果':'查看模拟结果','quiet');button.type='button';
       const result=node('p',check.simulated_result,'demo-check-result');result.hidden=!revealed.has(check.id);
       button.setAttribute('aria-expanded',String(!result.hidden));
-      button.onclick=()=>{if(revealed.has(check.id))revealed.delete(check.id);else revealed.add(check.id);result.hidden=!revealed.has(check.id);button.textContent=result.hidden?'查看模拟检查结果':'收起模拟结果';button.setAttribute('aria-expanded',String(!result.hidden));};
+      button.onclick=()=>{if(revealed.has(check.id))revealed.delete(check.id);else revealed.add(check.id);result.hidden=!revealed.has(check.id);button.textContent=result.hidden?'查看模拟结果':'收起模拟结果';button.setAttribute('aria-expanded',String(!result.hidden));};
       card.append(node('h4',check.title),node('p',check.action),button,result);body.append(card);
     }
     if(stage.id==='conclusion'){
       body.append(node('h3','备件建议 · 按检查结果分流'));
-      for(const part of scenario.parts){const item=node('article','','demo-part');item.append(node('strong',part.name),node('p',part.reason),node('p',part.status),node('small','准确料号 / 库存：未提供，需按真实 VIN 在官方资料中核对。'));body.append(item);}
+      for(const part of scenario.parts){const item=node('article','','demo-part');item.append(node('strong',part.name),node('p',part.reason),node('p',part.status),node('small','料号与库存待按 VIN 核对。'));body.append(item);}
       body.append(node('p',scenario.conclusion.summary,'demo-summary'),items(scenario.conclusion.limitations));
     }
     const evidence=byId('demo-evidence');evidence.replaceChildren();
@@ -58,9 +59,9 @@
   window.enterDemoCase=()=>{
     if(scenario){requestAnimationFrame(drawChart);return Promise.resolve();}
     if(loading)return loading;
-    byId('demo-status').hidden=false;byId('demo-status').textContent='正在载入预设演示案例…';
+    byId('demo-status').hidden=false;byId('demo-status').textContent='正在载入模拟案例…';
     loading=api('/assistant/demo-case').then(data=>{scenario=data;render();}).catch(()=>{
-      byId('demo-status').replaceChildren(node('p','演示案例暂时无法载入。请确认后端已更新后重试。'));
+      byId('demo-status').replaceChildren(node('p','模拟案例暂时无法载入，请重试。'));
       const retry=node('button','重新载入','quiet');retry.type='button';retry.onclick=()=>window.enterDemoCase();byId('demo-status').append(retry);
     }).finally(()=>{loading=null;});return loading;
   };

@@ -90,7 +90,7 @@ if(typeof document!=='undefined') {
   }
   window.updateDeviceFinder=()=>{
     const item=selected(),summary=item?.fault_summary;
-    $('device-fault-summary').textContent=item?DeviceFinder.faultLabel(summary)+' · 仅据已载入记录':'';
+    $('device-fault-summary').textContent=item?DeviceFinder.faultLabel(summary):'';
     $('finder-open').disabled=$('machine').disabled;
     $('device-faults-jump').hidden=!summary?.valid_records;
     $('device-faults-jump').disabled=typeof overview==='undefined'||!overview||overview.machine_id!==item?.machine_id||

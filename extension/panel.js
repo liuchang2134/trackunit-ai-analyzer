@@ -31,13 +31,14 @@ function catalogError(message) { const error = new Error(message); error.catalog
 
 function contextText(message) {
   get('context').dataset.stale = String(pageChanged);
-  get('context').textContent = (pageChanged ? '当前页面尚未关联，下面保留上次设备。 ' : '') +
+  get('context').textContent = (pageChanged ? '当前页面尚未关联。 ' : '') +
     (!followEnabled && mode !== 'demo' ? '自动跟随已暂停。 ' : '') + message;
+  if (get('device-detail')) get('device-detail').textContent = assetId ? 'Trackunit 设备 ID：' + assetId : '尚未识别设备。';
 }
 function markPageChanged() {
   pageGeneration++; lookupTicket++;
   clearTimeout(contextDeadline);
-  if (assetId) { pageChanged = true; contextText('正在核对页面。上次设备 ID：' + assetId); }
+  if (assetId) { pageChanged = true; contextText('正在核对当前设备。'); }
 }
 function scheduleRead() {
   clearTimeout(followTimer);
@@ -48,7 +49,7 @@ function setFollow(enabled) {
   followEnabled = enabled;
   clearTimeout(followTimer); lookupTicket++;
   get('follow').setAttribute('aria-pressed', String(enabled));
-  get('follow').textContent = enabled ? '自动跟随：开' : '自动跟随：关';
+  get('follow').textContent = enabled ? '自动跟随 · 开' : '自动跟随 · 关';
 }
 chrome.tabs.onActivated?.addListener(info => {
   if (currentWindowId !== null && info.windowId !== currentWindowId) return;
@@ -90,10 +91,10 @@ function awaitContext() {
   clearTimeout(contextDeadline);
   if (!assetId || pageChanged) return;
   const expectedId = assetId, expectedConnection = connectionId;
-  contextText('已读取设备 ID，正在等待助手确认数据与版本。');
+  contextText('正在读取设备，等待数据确认。');
   contextDeadline = setTimeout(() => {
     if (assetId === expectedId && connectionId === expectedConnection)
-      contextText('尚未收到设备匹配确认，请核对工作区中的设备和数据版本。');
+      contextText('尚未收到设备匹配确认，请在下方重试。');
   }, 8000);
   requestContext(showWorkOnReady); showWorkOnReady = false;
 }
@@ -103,14 +104,14 @@ function failConnection() {
   setState('failed');
   frame.removeAttribute('src');
   get('connection').textContent = '未连接';
-  get('cover-title').textContent = '本机助手尚未连接';
-  get('cover-detail').textContent = '已检查端口 ' + failures.map(item => item.port).join('、') + '，未找到兼容的工作区。请启动更新后的本机服务再重试。';
+  get('cover-title').textContent = '设备助手尚未连接';
+  get('cover-detail').textContent = '未找到兼容的工作区，请启动设备助手后重新连接。';
   get('connection-detail').textContent = failures.map(item => item.port + '：' + item.reason).join('；');
   get('runtime').textContent = '尚未读取后端配置。';
   get('help').hidden = false;
   get('start-command').textContent = 'start_local.cmd --port ' + preferredPort;
   get('cover-retry').hidden = false;
-  if (assetId) contextText('保留上次读取的设备 ID；重新连接后再确认匹配。');
+  if (assetId) contextText('连接已断开，设备关联尚未确认。');
 }
 function attemptNext() {
   clearTimeout(deadline); clearTimeout(contextDeadline);
@@ -121,9 +122,9 @@ function attemptNext() {
   connectionId = String(Date.now()) + '-' + (++sequence);
   dataReady = false; runtime = null;
   setState('connecting');
-  get('connection').textContent = '连接中 · ' + port;
-  get('cover-title').textContent = '正在连接本机助手';
-  get('cover-detail').textContent = failures.length ? '正在尝试备用端口 ' + port + '…' : '正在检查本机端口 ' + port + '…';
+  get('connection').textContent = '连接中';
+  get('cover-title').textContent = '正在连接设备助手';
+  get('cover-detail').textContent = failures.length ? '正在尝试备用连接，请稍候…' : '请稍候，工作区即将就绪。';
   get('connection-detail').textContent = failures.length ? failures.map(item => item.port + '：' + item.reason).join('；') : '通过网页握手确认连接，不调用 AI 或设备接口。';
   get('runtime').textContent = '等待后端配置…';
   get('help').hidden = true; get('cover-retry').hidden = true;
@@ -146,13 +147,13 @@ function finishHandshake() {
   clearTimeout(deadline);
   setState('connected');
   const port = new URL(localOrigin).port;
-  get('connection').textContent = '已连接 · ' + port;
+  get('connection').textContent = '已连接';
   get('connection-detail').textContent = failures.length
     ? '优先端口未响应，已自动连接 ' + port + '。保存的端口偏好保持不变。'
-    : '本机界面与后端配置已确认。';
+    : '已连接本机服务，端口 ' + port + '。';
   get('runtime').textContent = runtime.provider + ' / ' + runtime.model + ' · ' + runtime.backend_build + '。模型可用性以实际分析结果为准。';
   if (assetId) awaitContext();
-  else contextText(mode === 'demo' ? '模拟案例 · 自动跟随已暂停；预设讲解不调用外部接口。' : '打开 Trackunit 设备详情页后自动读取；也可先查看演示案例。');
+  else contextText(mode === 'demo' ? '模拟案例 · 自动跟随已暂停。' : '打开 Trackunit 设备页，自动关联当前机器。');
 }
 window.addEventListener('message', event => {
   if (state === 'failed' || event.origin !== localOrigin || event.source !== frame.contentWindow) return;
@@ -169,7 +170,7 @@ window.addEventListener('message', event => {
     if (mode === 'demo') {
       setFollow(false); clearTimeout(contextDeadline); pageChanged = false;
       resetCatalogRequest('演示模式不读取真实图册。');
-      contextText('模拟案例 · 自动跟随已暂停；点击“读取当前设备”返回 Trackunit 机器。');
+      contextText('模拟案例 · 自动跟随已暂停。');
     } else if (data.reason === 'user' && wasDemo) {
       readCurrent(true);
     }
@@ -180,7 +181,10 @@ window.addEventListener('message', event => {
     if (state !== 'connected' || pageChanged || mode !== 'work') return;
     const label = trackunitContextLabel(data, assetId); if (label === null) return;
     matchedSelection = data.state === 'matched' ? {machine_id:data.machine_id,dataset_id:data.dataset_id} : null;
-    clearTimeout(contextDeadline); lastContextLabel = label; contextText(label + ' 设备 ID：' + assetId); return;
+    const displayLabel = {matched:'已关联当前设备。', loading:'正在读取当前设备数据…',
+      pending:'正在完成上一项操作，尚未切换设备。', unavailable:'设备读取失败，请在下方重试。',
+      missing:'当前设备暂无可用数据，请在下方读取。', choose_version:'数据版本尚未选定，请在下方选择。'}[data.state] || label;
+    clearTimeout(contextDeadline); lastContextLabel = displayLabel; contextText(displayLabel); return;
   }
   if (data.type === 'jilian:xgss-catalog-result') {
     if (!catalogRequest || data.request_id !== catalogRequest.request_id || catalogRequest.asset_id !== assetId ||
@@ -225,7 +229,7 @@ async function readCurrent(manual = false) {
   const button = get('identify');
   if (manual) {
     button.disabled = true; setFollow(true); mode = 'work'; showWorkOnReady = true;
-    contextText('正在读取当前 Trackunit 设备，准备返回设备排查…');
+    contextText('正在读取当前设备…');
   }
   const generation = pageGeneration, ticket = ++lookupTicket;
   try {
@@ -235,13 +239,13 @@ async function readCurrent(manual = false) {
     if (Number.isInteger(tab?.windowId)) currentWindowId = tab.windowId;
     if (tab?.status === 'loading' || tab?.pendingUrl) {
       if (assetId) pageChanged = true;
-      contextText('页面正在加载，完成后自动核对设备。' + (assetId ? ' 上次设备 ID：' + assetId : ''));
+      contextText('页面正在加载，完成后自动核对设备。');
       if (mode === 'demo') setFollow(false);
       return;
     }
     if (typeof XGSSCatalog !== 'undefined' && XGSSCatalog.isXGSS(tab?.url)) {
       pageChanged = false;
-      contextText(assetId ? '正在查看 XGSS，保留当前设备调查。读取图册时将核对 VIN。设备 ID：' + assetId : '请先在 Trackunit 选择设备，再读取对应 VIN 的 XGSS 图册。');
+      contextText(assetId ? '正在查看 XGSS，保留当前设备调查。' : '请先在 Trackunit 选择设备，再读取对应图册。');
       return;
     }
     const found = trackunitAssetId(tab?.url);
@@ -254,7 +258,7 @@ async function readCurrent(manual = false) {
     if (sameAsset && sameDocument) {
       // Sub-tabs, reloads and repeated events must not reset the work form or acknowledgement timer.
       if (wasChanged || manual || hintChanged) {
-        contextText((lastContextLabel || '已读取设备 ID，等待助手确认数据与版本。') + ' 设备 ID：' + assetId);
+        contextText(lastContextLabel || '正在读取设备，等待数据确认。');
         requestContext(manual || showWorkOnReady); showWorkOnReady = false;
       }
       return;
@@ -265,12 +269,12 @@ async function readCurrent(manual = false) {
       // A hash-only change preserves drafts/in-flight analysis. Device acknowledgement is renewed.
       frame.src = assistantUrl();
       if (state === 'connected') { get('standalone').href = assistantUrl(false); awaitContext(); }
-      else contextText('已读取设备 ID，正在等待本机工作区连接。');
+      else contextText('已识别设备，正在等待工作区连接。');
     } else if (state === 'failed' && !manual) {
-      contextText('已读取设备 ID；本机服务尚未连接，请点击重新连接。设备 ID：' + assetId);
+      contextText('设备已识别，本机服务尚未连接，请重新连接。');
     } else {
       // Every full navigation gets a new connection id and a complete readiness handshake.
-      contextText('已读取设备 ID，正在连接对应工作区。');
+      contextText('已识别设备，正在连接工作区。');
       connect(localOrigin ? new URL(localOrigin).port : preferredPort);
     }
   } catch (error) {
@@ -280,7 +284,7 @@ async function readCurrent(manual = false) {
     if (mode === 'demo') setFollow(false);
     const message = error?.message === '当前页面无法识别设备，请打开 Trackunit 设备详情页。'
       ? error.message : '无法读取当前页面，请检查插件的 Trackunit 站点访问权限后重试。';
-    contextText(message + (assetId ? ' 上次设备 ID：' + assetId : ''));
+    contextText(message);
   } finally { if (manual) button.disabled = false; }
 }
 get('identify').onclick = () => readCurrent(true);
@@ -319,7 +323,7 @@ if (get('capture-catalog')) get('capture-catalog').onclick = async () => {
 get('follow').onclick = () => {
   if (!followEnabled || mode === 'demo') return readCurrent(true);
   setFollow(false);
-  contextText(assetId ? '保留设备 ID：' + assetId : '点击“读取当前设备”可恢复自动跟随。');
+  contextText(assetId ? '保留当前设备。' : '点击“读取当前设备”可恢复自动跟随。');
 };
 connect();
 scheduleRead();

@@ -71,10 +71,17 @@ def sanitize_mock(entries):
 
 
 def collect_entries(root):
+    brand_assets = {
+        'app/assistant_ui/assets/xcmg-logo.png', 'app/assistant_ui/assets/icon16.png',
+        'app/assistant_ui/assets/SOURCES.md', 'extension/assets/xcmg-logo.png',
+        'extension/assets/icon16.png', 'extension/assets/icon32.png',
+        'extension/assets/icon48.png', 'extension/assets/icon128.png',
+        'extension/assets/SOURCES.md',
+    }
     root=Path(root).resolve(); paths=[]
     for directory in ('app','extension'):
         for path in (root/directory).rglob('*'):
-            if path.is_file() and '__pycache__' not in path.parts and (path.suffix in {'.py','.json','.js','.css','.html'} or path.name in {'LICENSE','NOTICE'}):
+            if path.is_file() and '__pycache__' not in path.parts and (path.suffix in {'.py','.json','.js','.css','.html'} or path.name in {'LICENSE','NOTICE'} or path.relative_to(root).as_posix() in brand_assets):
                 paths.append(path)
     paths += [root/name for name in ROOT_FILES]
     paths += [root/'docs'/name for name in DOCS]

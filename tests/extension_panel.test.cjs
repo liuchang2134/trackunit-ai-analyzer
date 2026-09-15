@@ -55,7 +55,7 @@ test('DeepSeek runtime is displayed without claiming a successful AI request',()
 test('failed default port falls back and partial or stale handshakes cannot combine',()=>{
  const p=setup(),old=new URL(p.elements.assistant.src);reply(p,'jilian:ready');p.tick();
  const current=new URL(p.elements.assistant.src);assert.equal(current.port,'8890');assert.notEqual(current.search,old.search);
- assert.match(p.elements['cover-detail'].textContent,/备用端口 8890/);assert.equal(p.elements['connection-cover'].hidden,false);
+ assert.match(p.elements['cover-detail'].textContent,/备用连接/);assert.equal(p.elements['connection-cover'].hidden,false);
  reply(p,'jilian:ready',{},old);reply(p,'jilian:runtime',cloud,old);reply(p,'jilian:runtime',cloud);
  assert.equal(state(p),'connecting');reply(p,'jilian:ready');assert.equal(state(p),'connected');
  assert.match(p.elements['connection-detail'].textContent,/自动连接 8890/);assert.equal(p.storage.size,0);
@@ -64,7 +64,7 @@ test('failed default port falls back and partial or stale handshakes cannot comb
 test('both timeouts unload error frame and expose a fresh retry',()=>{
  const p=setup();p.tick();const last=new URL(p.elements.assistant.src);p.tick();
  assert.equal(state(p),'failed');assert.equal(p.elements.assistant.src,undefined);assert.equal(p.elements.help.hidden,false);
- assert.equal(p.elements['cover-retry'].hidden,false);assert.match(p.elements['cover-detail'].textContent,/8892、8890/);
+ assert.equal(p.elements['cover-retry'].hidden,false);assert.match(p.elements['cover-detail'].textContent,/尚未|未找到/);
  assert.equal(p.elements['start-command'].textContent,'start_local.cmd --port 8892');
  reply(p,'jilian:ready',{},last);reply(p,'jilian:runtime',cloud,last);assert.equal(state(p),'failed');
  let blocked=false;p.elements.standalone.onclick({preventDefault:()=>blocked=true});assert.equal(blocked,true);
@@ -183,7 +183,7 @@ test('navigation during asynchronous tab lookup cannot commit a stale device',as
 
 test('manifest only permits exact Trackunit and XGSS sites and two loopback frames',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../extension/manifest.json'),'utf8'));
- assert.equal(manifest.version,'0.6.1');assert.deepEqual(manifest.permissions,['sidePanel','activeTab','scripting']);
+ assert.equal(manifest.version,'0.6.2');assert.deepEqual(manifest.permissions,['sidePanel','activeTab','scripting']);
  assert.deepEqual(manifest.host_permissions,['https://manager.trackunit.com/*','https://new.manager.trackunit.com/*','https://xgss.xcmg.com/*']);
  assert.equal(manifest.content_scripts,undefined);
  assert.match(manifest.content_security_policy.extension_pages,/frame-src http:\/\/127\.0\.0\.1:8890 http:\/\/127\.0\.0\.1:8892$/);
@@ -209,7 +209,7 @@ test('startup after readiness uses same iframe document and awaits exact local d
  const p=setup(assetURL(asset),undefined,true);ready(p);const before=new URL(p.elements.assistant.src);
  await p.follow();assert.equal(new URL(p.elements.assistant.src).search,before.search);
  assert.match(p.elements.context.textContent,/等待/);
- reply(p,'jilian:context',{asset_id:asset,state:'missing'});assert.match(p.elements.context.textContent,/没有对应的本地实测数据/);
+ reply(p,'jilian:context',{asset_id:asset,state:'missing'});assert.match(p.elements.context.textContent,/暂无可用数据/);
  assert.doesNotMatch(p.elements.context.textContent,/已关联/);
  reply(p,'jilian:context',{asset_id:asset,state:'choose_version'});assert.match(p.elements.context.textContent,/版本尚未选定/);
 });

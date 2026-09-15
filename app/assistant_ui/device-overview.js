@@ -15,8 +15,8 @@ async function refreshDeviceOverview() {
   resetFaultContext();
   $('overview-content').hidden=true;
   deviceChart?.clear();
-  if(!machine){$('overview-status').textContent='先选择设备或导入数据。';return;}
-  $('overview-status').textContent='正在读取所选设备的已有记录…';
+  if(!machine){$('overview-status').textContent='选择设备后查看运行概况。';return;}
+  $('overview-status').textContent='正在读取运行记录…';
   const params=new URLSearchParams({machine_id:machine.machine_id});
   if(machine.dataset_id)params.set('dataset_id',machine.dataset_id);
   try {
@@ -24,12 +24,12 @@ async function refreshDeviceOverview() {
     if(ticket!==overviewTicket)return;
     overview=data;
     const isDemo=['mock','imported_synthetic'].includes(data.source);
-    $('overview-status').textContent=`${isDemo?'模拟数据':'实测记录 · 未验证'} · ${data.valid_timestamp_samples} 个有效采样时点 · ${displayDate(data.trend.window_start)} — ${displayDate(data.trend.window_end)}`;
+    $('overview-status').textContent=`${isDemo?'模拟数据':machineSourceLabel(machine)} · ${data.valid_timestamp_samples} 条采样记录`;
     $('overview-metrics').replaceChildren();
     for(const [label,value] of [
-      ['有效区间工时',overviewNumber(data.trend.operating_hours_delta,' h')],
-      ['有效区间怠速占比',data.trend.idle_share==null?'数据不足':overviewNumber(data.trend.idle_share*100,'%')],
-      ['已载入故障记录',String(data.faults.valid_loaded_records)+' 条']
+      ['区间工时',overviewNumber(data.trend.operating_hours_delta,' h')],
+      ['怠速占比',data.trend.idle_share==null?'数据不足':overviewNumber(data.trend.idle_share*100,'%')],
+      ['故障记录',String(data.faults.valid_loaded_records)+' 条']
     ]) {
       const cell=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');
       dt.textContent=label;dd.textContent=value;cell.append(dt,dd);$('overview-metrics').append(cell);
@@ -52,15 +52,12 @@ function renderOverviewFindings() {
     high_idle_share:'怠速占比较高，可检查作业安排；40% 是本项目筛查假设，不是厂家故障阈值。',
     repeated_unresolved_events:'存在重复的未解决故障记录，需核实是否为同一持续故障。'};
   const codes=[...new Set(overview.trend.findings.map(item=>item.code))];
-  const note=document.createElement('p');note.className='muted';
-  note.textContent=`统计基于完整载入时段，不随图表缩放改变。通过 ${overview.trend.valid_intervals} 个工时区间，排除 ${overview.trend.excluded_intervals} 个区间；不是完整工况覆盖证明。`;
-  root.append(note);
   if(codes.length){const list=document.createElement('ul');list.className='evidence-notes';
     for(const code of codes){const li=document.createElement('li');li.textContent=names[code]||'存在需要核查的数据记录。';list.append(li);}root.append(list);}
 }
 function renderOverviewFaults() {
   const root=$('overview-faults');root.replaceChildren();
-  if(!overview.faults.events.length){root.textContent='本次载入数据没有可显示的故障事件；可能是无记录、未提供或接口不可用。';return;}
+  if(!overview.faults.events.length){root.textContent='暂无已载入的故障记录，设备健康状态待确认。';return;}
   const table=document.createElement('table'),head=table.createTHead().insertRow();
   for(const label of ['时间 / 故障码','记录内容','下一步']){const th=document.createElement('th');th.scope='col';th.textContent=label;head.append(th);}
   const body=table.createTBody(),statuses={open:'未解决',resolved:'已解决（历史记录）',acknowledged:'已确认记录'};
@@ -88,10 +85,10 @@ function renderDeviceChart() {
   if(overview.dataset_id)exportParams.set('dataset_id',overview.dataset_id);
   $('overview-export').href='/assistant/device-overview.csv?'+exportParams;
   $('overview-export').hidden=!chartRows.length;
-  $('overview-export').textContent=`下载 ${chartRows.length} 个时点的 CSV`;
-  $('chart-note').textContent=`显示 ${chartRows.length} 个时点${overview.sampled_for_display?'（从有效记录抽取，包含起止点）':''}。缺失值留空；可拖动下方滑块查看时段。`;
+  $('overview-export').textContent='导出当前数据';
+  $('chart-note').textContent=`${chartRows.length} 条采样${overview.sampled_for_display?' · 抽样显示':''} · 拖动滑块查看时段`;
   $('device-chart').hidden=!chartRows.some(row=>row[field]!=null);
-  if($('device-chart').hidden)$('chart-note').textContent='此时段没有该指标的有效测量值。可切换指标或时段；缺失值不会按零显示。';
+  if($('device-chart').hidden)$('chart-note').textContent='此时段暂无该指标，切换指标或时间范围查看。';
   if(window.echarts && !$('device-chart').hidden){
     deviceChart ||= echarts.init($('device-chart'));
     const events=overview.faults.events.filter(f=>Date.parse(f.occurred_at)>=start && Date.parse(f.occurred_at)<=end);
@@ -109,12 +106,14 @@ function renderDeviceChart() {
           data:events.map(f=>({name:f.fault_code,xAxis:f.occurred_at}))}}]
     },true);
     deviceChart.resize();
-  } else if(!window.echarts){$('chart-note').textContent+=' 图表组件未加载，可在下方查看数据表。';}
+  } else if(!window.echarts){$('chart-note').textContent='图表暂不可用，可展开数据详情查看。';}
   const table=document.createElement('table'),head=table.createTHead().insertRow();
   for(const label of ['采样时间（本机时区）',meta.name+'（'+meta.unit+'）']){const th=document.createElement('th');th.scope='col';th.textContent=label;head.append(th);}
   const body=table.createTBody();
   for(const row of chartRows){const tr=body.insertRow();tr.insertCell().textContent=displayDate(row.recorded_at);tr.insertCell().textContent=row[field]==null?'缺失':String(row[field]);}
-  $('overview-table').replaceChildren(table);
+  const scope=document.createElement('p');scope.className='muted';
+  scope.textContent=`统计时段：${displayDate(overview.trend.window_start)} — ${displayDate(overview.trend.window_end)}。计入 ${overview.trend.valid_intervals} 个有效区间，排除 ${overview.trend.excluded_intervals} 个区间；不随图表缩放改变。缺失值留空，统计可能不覆盖完整工况。`;
+  $('overview-table').replaceChildren(scope,table);
   $('overview-table').tabIndex=0;
   $('overview-table').setAttribute('role','region');
   $('overview-table').setAttribute('aria-label','绘图数据表，可用方向键滚动');

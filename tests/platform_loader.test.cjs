@@ -26,7 +26,7 @@ test('unseen platform asset is read once, failure stays visible and does not pol
 test('metadata-only result displays identity without creating selectable or simulated data',async()=>{
   const h=setup();h.requests[0].resolve({asset_id:a,state:'unavailable',status:'metadata_only',message:'仅有设备信息',
     machine:{model:'XC918PRO',serial_number:'TEST-IDENTITY'}});await flush();
-  assert.match(h.get('platform-load-identity').textContent,/XC918PRO.*TEST-IDENTITY.*未生成工时样本/);
+  assert.match(h.get('platform-load-identity').textContent,/XC918PRO.*TEST-IDENTITY.*暂无运行样本.*故障记录未读取/);
   assert.equal(h.context.machines.length,0);assert.equal(h.refreshes.length,0);
 });
 test('loaded asset refreshes index once; late other-asset reply cannot select or refresh current machine',async()=>{

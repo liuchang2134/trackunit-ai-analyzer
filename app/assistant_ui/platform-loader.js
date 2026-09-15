@@ -37,16 +37,16 @@
     const status=document.createElement('p');status.id='platform-load-status';status.className='muted';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
     const identity=document.createElement('p');identity.id='platform-load-identity';identity.className='muted';
     const retry=document.createElement('button');retry.id='platform-load-retry';retry.className='quiet';retry.type='button';retry.textContent='重试读取当前设备';retry.onclick=()=>load(true);
-    root.append(status,identity,retry);byId('machine-note').after(root);return root;
+    root.append(status,identity,retry);document.querySelector('.device').append(root);return root;
   }
   function render(){
     const root=panel(),entry=state.entry();root.hidden=!currentAsset()||activeView==='demo'||!noLocalData();
     if(root.hidden)return;
     const result=entry?.result;
-    byId('platform-load-status').textContent=entry?.pending?'正在从 Trackunit 读取当前设备资料…':result?.message?result.message+(result.retry_after_seconds?` 可在 ${result.retry_after_seconds} 秒后手动重试。`:''):
-      (busy()?'当前分析结束后读取新设备。':!hintContext().confirmed?'正在等待插件确认当前设备的查找信息。':platformIndexState==='ready'?'当前设备尚未导入，准备读取 Trackunit 资料。':'正在核对本地设备资料。');
+    byId('platform-load-status').textContent=entry?.pending?'正在读取 Trackunit 设备数据…':result?.message?result.message+(result.retry_after_seconds?' 请稍后重试。':''):
+      (busy()?'当前分析结束后切换设备。':!hintContext().confirmed?'正在识别当前设备…':platformIndexState==='ready'?'正在连接 Trackunit…':'正在载入设备资料…');
     byId('platform-load-identity').textContent=result?.machine
-      ? `已识别：${result.machine.model||'机型待确认'} · VIN/PIN：${result.machine.serial_number||'未提供'}。${result.status==='metadata_only'?'仅有设备资料，未生成工时样本。':''}本次未读取故障事件。`:'';
+      ? `${result.machine.model||'机型待确认'} · ${result.machine.serial_number||'VIN 待确认'}${result.status==='metadata_only'?' · 暂无运行样本':''} · 故障记录未读取`:'';
     byId('platform-load-retry').hidden=!result;
     byId('platform-load-retry').disabled=!permitted()||entry?.pending||refreshPending;
   }

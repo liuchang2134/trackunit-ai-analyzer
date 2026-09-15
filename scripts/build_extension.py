@@ -6,7 +6,9 @@ import re
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
-FILES=('manifest.json','background.js','context.js','xgss-catalog.js','panel.js','panel.html','panel.css','README.md')
+FILES=('manifest.json','background.js','context.js','xgss-catalog.js','panel.js','panel.html','panel.css','README.md',
+       'assets/xcmg-logo.png','assets/icon16.png','assets/icon32.png','assets/icon48.png','assets/icon128.png',
+       'assets/SOURCES.md')
 
 
 def build():
@@ -28,7 +30,7 @@ def build():
     with zipfile.ZipFile(output) as archive:
         assert archive.testzip() is None and set(archive.namelist())==set(FILES)
         assert all(archive.read(name)==content for name,content in entries.items())
-    result=dict(version=version,path=str(output),bytes=output.stat().st_size,
+    result=dict(version=version,path=output.relative_to(ROOT).as_posix(),bytes=output.stat().st_size,
         sha256=hashlib.sha256(output.read_bytes()).hexdigest(),
         files={name:hashlib.sha256(content).hexdigest() for name,content in entries.items()},
         packaged_only=True,chrome_installation_verified=False)
