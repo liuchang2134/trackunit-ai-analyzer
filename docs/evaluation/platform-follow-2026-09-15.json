@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-15",
+  "web_build": "20260915.9-platform-follow",
+  "extension_version": "0.6.1",
+  "root_causes": [
+    "Demo view and extension follow state were not synchronized",
+    "Missing local assets were not automatically loaded from Trackunit"
+  ],
+  "live_verification": {
+    "assets_v2_http_status": 401,
+    "aemp_single_equipment_success": true,
+    "models": [
+      {"model": "XC918PRO", "snapshot_sample_count": 2, "uuid_exact_match": true, "chrome_workbench_verified": true},
+      {"model": "XC948U", "snapshot_sample_count": 3, "uuid_exact_match": true, "chrome_workbench_verified": true}
+    ],
+    "sample_interpretation": "Distinct timestamped snapshot channels, not continuous history or fault events",
+    "private_identifiers_omitted": true,
+    "fault_events_requested": false,
+    "ai_requested_this_change": false,
+    "xgss_requested_this_change": false
+  },
+  "checks": {
+    "python_passed": 665,
+    "python_warnings": 6,
+    "node_passed": 144,
+    "independent_loader_review": "No blocking findings",
+    "initial_platform_hash_overrides_demo_verified_in_chrome": true,
+    "chrome_extension_reload_and_live_sidepanel_switch_verified": false
+  },
+  "remaining": [
+    "Reload the installed extension to 0.6.1 and verify actual sidepanel switching",
+    "Existing fault API access and XGSS part-number validation remain unresolved"
+  ]
+}

@@ -1,7 +1,8 @@
-/* Exact Trackunit hosts expose only the active URL. Connection probes use loopback frames, never fetch. */
+/* Read the active Trackunit URL and equipment title only. Connection probes use loopback frames, never fetch. */
 const PORTS = ['8892', '8890'];
 const HANDSHAKE_TIMEOUT = 6500;
 const FOLLOW_DELAY = 150;
+const MINIMUM_BACKEND = [20260915, 9];
 const get = id => document.getElementById(id);
 const frame = get('assistant'), portSelector = get('service-port');
 let preferredPort = '8892';
@@ -12,6 +13,14 @@ let dataReady = false, runtime = null, state = 'connecting', mode = 'work', rema
 let pageChanged = false, pageGeneration = 0, currentTabId = null, currentWindowId = null;
 let followEnabled = true, followTimer, lookupTicket = 0, lastContextLabel = '';
 let matchedSelection = null, catalogRequest = null, catalogDeadline;
+let showWorkOnReady = false;
+let equipmentIdHint = null;
+
+function supportsDeviceFollowing(build) {
+  const match = /^(\d{8})\.(\d+)-/.exec(build || '');
+  return Boolean(match && (Number(match[1]) > MINIMUM_BACKEND[0] ||
+    Number(match[1]) === MINIMUM_BACKEND[0] && Number(match[2]) >= MINIMUM_BACKEND[1]));
+}
 
 function resetCatalogRequest(message) {
   clearTimeout(catalogDeadline); catalogRequest = null;
@@ -44,19 +53,21 @@ function setFollow(enabled) {
 chrome.tabs.onActivated?.addListener(info => {
   if (currentWindowId !== null && info.windowId !== currentWindowId) return;
   if (Number.isInteger(info.tabId)) currentTabId = info.tabId;
+  if (mode === 'demo') return;
   markPageChanged(); scheduleRead();
 });
 chrome.tabs.onUpdated?.addListener((id, change) => {
-  if (id !== currentTabId || !(change.url || change.status === 'loading' || change.status === 'complete')) return;
+  if (id !== currentTabId || !(change.url || change.title || change.status === 'loading' || change.status === 'complete')) return;
+  if (mode === 'demo') return;
   markPageChanged();
-  if (change.url || change.status === 'complete') scheduleRead();
+  if (change.url || change.title || change.status === 'complete') scheduleRead();
 });
 
 function assistantUrl(withPanel = true) {
   const query = new URLSearchParams();
   if (withPanel) query.set('panel', connectionId);
   if (mode === 'demo') query.set('demo', '1');
-  return localOrigin + '/assistant-ui/' + (query.size ? '?' + query : '') + (assetId ? '#trackunit-asset=' + assetId : '');
+  return localOrigin + '/assistant-ui/' + (query.size ? '?' + query : '') + (assetId && mode === 'work' ? '#trackunit-asset=' + assetId : '');
 }
 function setState(next) {
   state = next;
@@ -68,9 +79,11 @@ function setState(next) {
   if (next === 'connected') get('standalone').href = assistantUrl(false);
   else get('standalone').removeAttribute('href');
 }
-function requestContext() {
+function requestContext(showWork = false) {
   if (assetId && !pageChanged && state === 'connected') frame.contentWindow.postMessage({
-    type: 'jilian:context-request', protocol: 1, connection_id: connectionId, asset_id: assetId
+    type: 'jilian:context-request', protocol: 1, connection_id: connectionId, asset_id: assetId,
+    equipment_id_hint: equipmentIdHint,
+    ...(showWork ? {show_work:true} : {})
   }, localOrigin);
 }
 function awaitContext() {
@@ -82,7 +95,7 @@ function awaitContext() {
     if (assetId === expectedId && connectionId === expectedConnection)
       contextText('尚未收到设备匹配确认，请核对工作区中的设备和数据版本。');
   }, 8000);
-  requestContext();
+  requestContext(showWorkOnReady); showWorkOnReady = false;
 }
 function failConnection() {
   clearTimeout(deadline); clearTimeout(contextDeadline);
@@ -91,7 +104,7 @@ function failConnection() {
   frame.removeAttribute('src');
   get('connection').textContent = '未连接';
   get('cover-title').textContent = '本机助手尚未连接';
-  get('cover-detail').textContent = '已检查端口 ' + failures.map(item => item.port).join('、') + '，未完成连接。请启动本机服务后重试。';
+  get('cover-detail').textContent = '已检查端口 ' + failures.map(item => item.port).join('、') + '，未找到兼容的工作区。请启动更新后的本机服务再重试。';
   get('connection-detail').textContent = failures.map(item => item.port + '：' + item.reason).join('；');
   get('runtime').textContent = '尚未读取后端配置。';
   get('help').hidden = false;
@@ -145,6 +158,24 @@ window.addEventListener('message', event => {
   if (state === 'failed' || event.origin !== localOrigin || event.source !== frame.contentWindow) return;
   const data = event.data;
   if (data?.protocol !== 1 || data.connection_id !== connectionId) return;
+  if (data.type === 'jilian:asset-hint-request') {
+    if (mode === 'work' && state === 'connected' && data.asset_id === assetId) requestContext();
+    return;
+  }
+  if (data.type === 'jilian:view') {
+    if (!['demo','work'].includes(data.view) || !['user','platform','initial'].includes(data.reason) || data.asset_id !== assetId) return;
+    const wasDemo = mode === 'demo';
+    mode = data.view;
+    if (mode === 'demo') {
+      setFollow(false); clearTimeout(contextDeadline); pageChanged = false;
+      resetCatalogRequest('演示模式不读取真实图册。');
+      contextText('模拟案例 · 自动跟随已暂停；点击“读取当前设备”返回 Trackunit 机器。');
+    } else if (data.reason === 'user' && wasDemo) {
+      readCurrent(true);
+    }
+    if (state === 'connected') get('standalone').href = assistantUrl(false);
+    return;
+  }
   if (data.type === 'jilian:context') {
     if (state !== 'connected' || pageChanged || mode !== 'work') return;
     const label = trackunitContextLabel(data, assetId); if (label === null) return;
@@ -158,7 +189,14 @@ window.addEventListener('message', event => {
     resetCatalogRequest(message); return;
   }
   if (data.type === 'jilian:ready') dataReady = true;
-  else if (data.type === 'jilian:runtime' && ['provider', 'model', 'backend_build'].every(key => typeof data[key] === 'string' && data[key].length > 0 && data[key].length <= 160)) runtime = data;
+  else if (data.type === 'jilian:runtime' && ['provider', 'model', 'backend_build'].every(key => typeof data[key] === 'string' && data[key].length > 0 && data[key].length <= 160)) {
+    if (!supportsDeviceFollowing(data.backend_build)) {
+      if (state !== 'connecting') return;
+      failures.push({port:new URL(localOrigin).port,reason:'服务版本较旧，不支持当前设备关联；请更新后重启'});
+      attemptNext(); return;
+    }
+    runtime = data;
+  }
   else return;
   finishHandshake();
 });
@@ -176,7 +214,7 @@ get('service-form').onsubmit = event => {
 get('open-demo').onclick = () => {
   if (mode === 'demo' && state === 'connected') return;
   if (mode === 'work' && state === 'connected' && !window.confirm('打开演示案例会重新载入工作区，未保存的输入可能丢失。请先保存本机草稿。继续打开演示吗？')) return;
-  setFollow(false); mode = 'demo'; assetId = null; pageChanged = false; lastContextLabel = '';
+  setFollow(false); mode = 'demo'; assetId = null; equipmentIdHint = null; pageChanged = false; lastContextLabel = '';
   matchedSelection = null; resetCatalogRequest();
   contextText('正在打开模拟案例…');
   connect(localOrigin ? new URL(localOrigin).port : preferredPort);
@@ -185,7 +223,10 @@ async function readCurrent(manual = false) {
   if (!manual && (!followEnabled || mode === 'demo')) return;
   clearTimeout(followTimer);
   const button = get('identify');
-  if (manual) { button.disabled = true; setFollow(true); }
+  if (manual) {
+    button.disabled = true; setFollow(true); mode = 'work'; showWorkOnReady = true;
+    contextText('正在读取当前 Trackunit 设备，准备返回设备排查…');
+  }
   const generation = pageGeneration, ticket = ++lookupTicket;
   try {
     const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
@@ -205,14 +246,16 @@ async function readCurrent(manual = false) {
     }
     const found = trackunitAssetId(tab?.url);
     if (!found) throw new Error('当前页面无法识别设备，请打开 Trackunit 设备详情页。');
-    const sameDocument = mode === 'work' && state !== 'failed';
+    const nextHint = trackunitEquipmentHint(tab?.title), hintChanged = equipmentIdHint !== nextHint;
+    const frameIsDemo = frame.src && new URL(frame.src).searchParams.get('demo') === '1';
+    const sameDocument = mode === 'work' && state !== 'failed' && !frameIsDemo;
     const sameAsset = mode === 'work' && assetId === found, wasChanged = pageChanged;
-    assetId = found; pageChanged = false; mode = 'work';
+    assetId = found; equipmentIdHint = nextHint; pageChanged = false; mode = 'work';
     if (sameAsset && sameDocument) {
       // Sub-tabs, reloads and repeated events must not reset the work form or acknowledgement timer.
-      if (wasChanged || manual) {
+      if (wasChanged || manual || hintChanged) {
         contextText((lastContextLabel || '已读取设备 ID，等待助手确认数据与版本。') + ' 设备 ID：' + assetId);
-        requestContext();
+        requestContext(manual || showWorkOnReady); showWorkOnReady = false;
       }
       return;
     }
@@ -274,10 +317,9 @@ if (get('capture-catalog')) get('capture-catalog').onclick = async () => {
   }
 };
 get('follow').onclick = () => {
-  if (!followEnabled && mode === 'demo') return readCurrent(true);
-  setFollow(!followEnabled);
-  if (followEnabled) scheduleRead();
-  else contextText(assetId ? '保留设备 ID：' + assetId : '点击“读取当前设备”可恢复自动跟随。');
+  if (!followEnabled || mode === 'demo') return readCurrent(true);
+  setFollow(false);
+  contextText(assetId ? '保留设备 ID：' + assetId : '点击“读取当前设备”可恢复自动跟随。');
 };
 connect();
 scheduleRead();

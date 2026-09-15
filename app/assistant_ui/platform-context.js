@@ -2,6 +2,12 @@
 const PlatformContext=(()=>{
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
   function asset(hash){const value=hash.startsWith('#trackunit-asset=')?hash.slice('#trackunit-asset='.length):'';return uuid.test(value)?value:null;}
+  function initialDemo(search,hash){return !hash.startsWith('#trackunit-asset=')&&new URLSearchParams(search).get('demo')==='1';}
+  function equipmentHint(value){
+    if(value==null||value==='')return null;
+    if(typeof value!=='string'||value.length>100||!/^[A-Za-z0-9._ -]+$/.test(value))return undefined;
+    return value.trim()||null;
+  }
   function candidates(machines,source,id){
     return typeof id==='string'&&uuid.test(id)?machines.filter(m=>m.machine_id===id&&(m.dataset_id?m.provenance==='user_supplied':source==='trackunit_cache')):[];
   }
@@ -48,6 +54,6 @@ const PlatformContext=(()=>{
     return {...base,state:'matched',machine_id:selected.machine_id,selection_id:selected.selection_id,
       dataset_id:selected.dataset_id||null,source:selected.dataset_id?'imported_user_supplied':'trackunit_cache'};
   }
-  return {asset,candidates,selectDefault,snapshot};
+  return {asset,candidates,selectDefault,snapshot,initialDemo,equipmentHint};
 })();
 if(typeof module!=='undefined')module.exports=PlatformContext;

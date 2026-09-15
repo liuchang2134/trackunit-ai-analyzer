@@ -55,3 +55,5 @@ section{background:#fff;border:1px solid var(--line);border-radius:3px;padding:1
 .engineering-overview-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.engineering-overview-actions button{white-space:normal}#engineering-fault-panel{scroll-margin-top:16px}
 .engineering-reference .engineering-excerpt{margin:10px 0;padding-left:12px;border-left:2px solid #b9cbe1;color:#4f6174}
 .engineering-hypothesis .engineering-feedback-effect{background:#edf4ff;border-left:3px solid #0055d9;padding:8px 10px;font-size:12px}
+
+#platform-load{grid-column:1/-1;margin-top:8px;border-top:1px solid var(--line);padding-top:8px}#platform-load p{margin:4px 0;overflow-wrap:anywhere}#platform-load-retry{margin-top:7px}

@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
 const asset='00000000-0000-0000-0000-000000000001';
-const cloud={provider:'gemini',model:'gemini-flash-latest',backend_build:'build-test'};
+const cloud={provider:'gemini',model:'gemini-flash-latest',backend_build:'20260915.9-platform-follow'};
 function setup(url='https://example.com',savedPort,auto=false){
  const outgoing=[],tabHandlers={},confirmations=[];
  const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','open-demo','follow','capture-catalog','catalog-status'];
@@ -46,7 +46,7 @@ test('initial frame stays covered until runtime and readiness both arrive',()=>{
 
 test('DeepSeek runtime is displayed without claiming a successful AI request',()=>{
  const p=setup();reply(p,'jilian:ready');
- reply(p,'jilian:runtime',{provider:'deepseek',model:'deepseek-flash',backend_build:'deepseek-build',
+ reply(p,'jilian:runtime',{provider:'deepseek',model:'deepseek-flash',backend_build:cloud.backend_build,
   inference_location:'cloud',investigation_timeout_seconds:120,transient_attempt_limit:3});
  assert.equal(state(p),'connected');assert.match(p.elements.runtime.textContent,/deepseek-flash/);
  assert.match(p.elements.runtime.textContent,/实际分析结果/);assert.doesNotMatch(p.elements.runtime.textContent,/Gemini|认证成功|调用成功/);
@@ -93,7 +93,7 @@ test('only exact frame source, origin, protocol and nonce may establish connecti
 test('malformed runtime is rejected and local configuration does not block offline work',()=>{
  const p=setup();reply(p,'jilian:ready');
  for(const invalid of [{...cloud,provider:''},{...cloud,model:1},{...cloud,backend_build:'x'.repeat(161)}])reply(p,'jilian:runtime',invalid);
- assert.equal(state(p),'connecting');reply(p,'jilian:runtime',{provider:'ollama',model:'local-model',backend_build:'old'});
+ assert.equal(state(p),'connecting');reply(p,'jilian:runtime',{provider:'ollama',model:'local-model',backend_build:cloud.backend_build});
  assert.equal(state(p),'connected');assert.match(p.elements.runtime.textContent,/ollama/);assert.match(p.elements.runtime.textContent,/实际分析结果/);
 });
 
@@ -183,7 +183,7 @@ test('navigation during asynchronous tab lookup cannot commit a stale device',as
 
 test('manifest only permits exact Trackunit and XGSS sites and two loopback frames',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../extension/manifest.json'),'utf8'));
- assert.equal(manifest.version,'0.6.0');assert.deepEqual(manifest.permissions,['sidePanel','activeTab','scripting']);
+ assert.equal(manifest.version,'0.6.1');assert.deepEqual(manifest.permissions,['sidePanel','activeTab','scripting']);
  assert.deepEqual(manifest.host_permissions,['https://manager.trackunit.com/*','https://new.manager.trackunit.com/*','https://xgss.xcmg.com/*']);
  assert.equal(manifest.content_scripts,undefined);
  assert.match(manifest.content_security_policy.extension_pages,/frame-src http:\/\/127\.0\.0\.1:8890 http:\/\/127\.0\.0\.1:8892$/);
@@ -379,4 +379,100 @@ test('catalog read does not expose raw browser errors and rejects mid-read devic
  resolve([{result:capture}]);await pending;
  assert.match(p.elements['catalog-status'].textContent,/设备或数据版本已切换/);
  assert.equal(p.outgoing.some(item=>item.data.type==='jilian:xgss-catalog-capture'),false);
+});
+
+test('old running backend cannot masquerade as a compatible connection',()=>{
+ const p=setup();reply(p,'jilian:ready');const old=new URL(p.elements.assistant.src);
+ reply(p,'jilian:runtime',{...cloud,backend_build:'20260915.8-xe55u-components'});
+ assert.equal(new URL(p.elements.assistant.src).port,'8890');assert.equal(state(p),'connecting');
+ assert.match(p.elements['connection-detail'].textContent,/服务版本较旧/);
+ reply(p,'jilian:runtime',cloud,old);assert.equal(state(p),'connecting');
+ ready(p);assert.equal(state(p),'connected');
+ const noCompatible=setup();reply(noCompatible,'jilian:runtime',{...cloud,backend_build:'unknown'});
+ reply(noCompatible,'jilian:runtime',{...cloud,backend_build:'20260914.99-old'});
+ assert.equal(state(noCompatible),'failed');assert.match(noCompatible.elements['cover-detail'].textContent,/兼容/);
+});
+
+test('iframe demo navigation synchronizes pause and manual read really returns to the same asset',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ reply(p,'jilian:view',{view:'demo',reason:'user',asset_id:asset});
+ assert.equal(p.elements.follow.attributes['aria-pressed'],'false');assert.match(p.elements.context.textContent,/模拟案例.*暂停/);
+ const before=p.elements.assistant.src;
+ p.tabHandlers.updated(10,{status:'complete'});assert.equal(p.elements.assistant.src,before);
+ await p.elements.follow.onclick();
+ assert.equal(p.elements.follow.attributes['aria-pressed'],'true');
+ assert.doesNotMatch(p.elements.context.textContent,/自动跟随已暂停/);
+ ready(p);assert.equal(new URL(p.elements.assistant.src).searchParams.has('demo'),false);
+ assert.equal(p.outgoing.at(-1).data.show_work,true);
+});
+
+test('resuming paused following removes stale paused copy immediately and requests work view for same asset',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ p.elements.follow.onclick();assert.match(p.elements.context.textContent,/已暂停/);
+ const resumed=p.elements.follow.onclick();
+ assert.equal(p.elements.follow.attributes['aria-pressed'],'true');assert.doesNotMatch(p.elements.context.textContent,/已暂停/);
+ await resumed;assert.equal(p.outgoing.at(-1).data.show_work,true);
+ assert.equal(new URL(p.elements.assistant.src).hash,'#trackunit-asset='+asset);
+});
+
+test('view sync rejects wrong frame, asset and unsupported reasons',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ reply(p,'jilian:view',{view:'demo',reason:'user',asset_id:otherAsset});
+ reply(p,'jilian:view',{view:'demo',reason:'untrusted',asset_id:asset});
+ const url=new URL(p.elements.assistant.src);
+ p.handlers.message({origin:url.origin,source:{},data:{type:'jilian:view',protocol:1,connection_id:url.searchParams.get('panel'),view:'demo',reason:'user',asset_id:asset}});
+ assert.equal(p.elements.follow.attributes['aria-pressed'],'true');
+ reply(p,'jilian:view',{view:'demo',reason:'user',asset_id:asset});
+ reply(p,'jilian:view',{view:'work',reason:'user',asset_id:asset});await flush();
+ assert.equal(p.elements.follow.attributes['aria-pressed'],'true');assert.equal(p.outgoing.at(-1).data.show_work,true);
+});
+
+test('ordinary history or data navigation within work mode is not forced back to diagnosis',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ const before=p.outgoing.length,frame=p.elements.assistant.src;
+ let queries=0;p.box.chrome.tabs.query=async()=>{queries++;return [tab(asset)];};
+ reply(p,'jilian:view',{view:'work',reason:'user',asset_id:asset});await flush();
+ assert.equal(queries,0);assert.equal(p.outgoing.length,before);assert.equal(p.elements.assistant.src,frame);
+});
+
+test('resume from demo during page loading completes automatically after navigation',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ reply(p,'jilian:view',{view:'demo',reason:'user',asset_id:asset});
+ p.box.chrome.tabs.query=async()=>[{...tab(asset),status:'loading',pendingUrl:assetURL(asset)}];
+ await p.elements.follow.onclick();
+ assert.equal(p.elements.follow.attributes['aria-pressed'],'true');assert.match(p.elements.context.textContent,/页面正在加载/);
+ p.box.chrome.tabs.query=async()=>[tab(asset)];p.tabHandlers.updated(10,{status:'complete'});await p.follow();
+ assert.equal(p.outgoing.at(-1).data.show_work,true);assert.equal(p.elements.follow.attributes['aria-pressed'],'true');
+});
+
+test('only the active Trackunit title identifier is forwarded as a same-asset lookup hint',async()=>{
+ const p=setup(assetURL(asset));ready(p);
+ p.box.chrome.tabs.query=async()=>[{...tab(asset),title:'10046254 - Trackunit Manager'}];
+ await p.elements.identify.onclick();
+ assert.equal(p.outgoing.at(-1).data.equipment_id_hint,'10046254');
+ assert.equal(new URL(p.elements.assistant.src).search.includes('10046254'),false);
+ p.box.chrome.tabs.query=async()=>[{...tab(otherAsset),title:'XUG-TEST-B - Trackunit Manager'}];
+ await p.elements.identify.onclick();assert.equal(p.outgoing.at(-1).data.asset_id,otherAsset);
+ assert.equal(p.outgoing.at(-1).data.equipment_id_hint,'XUG-TEST-B');
+ p.box.chrome.tabs.query=async()=>[{...tab(otherAsset),title:'https://private.test/?token=SECRET - Trackunit Manager'}];
+ await p.elements.identify.onclick();assert.equal(p.outgoing.at(-1).data.equipment_id_hint,null);
+ assert.equal(JSON.stringify(p.outgoing).includes('SECRET'),false);
+});
+
+test('late SPA title update supplies its lookup hint without reloading the current investigation',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ const before=p.elements.assistant.src;
+ p.box.chrome.tabs.query=async()=>[{...tab(asset),title:'10046254 - Trackunit Manager'}];
+ p.tabHandlers.updated(10,{title:'10046254 - Trackunit Manager'});await p.follow();
+ assert.equal(p.elements.assistant.src,before);assert.equal(p.outgoing.at(-1).data.equipment_id_hint,'10046254');
+});
+
+test('newly ready asset frame can request the current hint without an acknowledgement loop',async()=>{
+ const p=setup(assetURL(asset));ready(p);
+ p.box.chrome.tabs.query=async()=>[{...tab(asset),title:'10046254 - Trackunit Manager'}];
+ await p.elements.identify.onclick();const before=p.outgoing.length;
+ reply(p,'jilian:asset-hint-request',{asset_id:otherAsset});assert.equal(p.outgoing.length,before);
+ reply(p,'jilian:asset-hint-request',{asset_id:asset});assert.equal(p.outgoing.length,before+1);
+ assert.equal(p.outgoing.at(-1).data.equipment_id_hint,'10046254');
+ reply(p,'jilian:context',{asset_id:asset,state:'missing'});assert.equal(p.outgoing.length,before+1);
 });

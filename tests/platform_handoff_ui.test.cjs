@@ -36,11 +36,11 @@ function harness({machines=[a1],hash=assetA,selection=a1.selection_id}={}){
   get('task').value='comprehensive';get('language').value='zh';
   const context={machines,defaultSource:'trackunit_cache',location:{hash:'#trackunit-asset='+hash},
     document:{createElement:tag=>new Element(tag),querySelector:()=>new Element()},$:get,
-    platformIndexState:'ready',deviceIndexRequest:0,deviceIndexWarnings:[],pendingPlatformContext:false,report:{summary:'old report'},priorRecordId:null,
+    appliedPlatformHash:null,activeView:'work',platformIndexState:'ready',deviceIndexRequest:0,deviceIndexWarnings:[],pendingPlatformContext:false,report:{summary:'old report'},priorRecordId:null,
     investigationDrafts:new InvestigationDrafts(),PlatformContext,
     api:route=>route==='/assistant/catalog'?Promise.resolve({total:3,demo:1}):new Promise((resolve,reject)=>requests.push({resolve,reject})),
     selected:()=>context.machines.find(m=>m.selection_id===get('machine').value),
-    clearReport:()=>{context.report=null;},updateTask:()=>{},displayDate:value=>value||'未知',setView:()=>{},
+    clearReport:()=>{context.report=null;},updateTask:()=>{},displayDate:value=>value||'未知',setView:(view)=>{context.activeView=view;get('demo-view').hidden=view!=='demo';get('work-view').hidden=view!=='work';},
     refreshDeviceOverview:()=>selectionEvents.push(get('machine').value),
     notifyPlatformContext:()=>notifications.push(PlatformContext.snapshot({hash:context.location.hash,
       machines:context.machines,source:context.defaultSource,selectionId:get('machine').value,indexState:context.platformIndexState,pending:context.pendingPlatformContext})),
@@ -138,4 +138,22 @@ test('an already-loading index cannot switch device while AI is using its eviden
   h.get('form').setAttribute('aria-busy','false');h.context.pendingPlatformContext=false;
   const afterAnalysis=h.context.refresh(true);complete(h.requests[1],[a1,b1]);await afterAnalysis;
   assert.equal(h.get('machine').value,b1.selection_id);assert.deepEqual(h.selectionEvents,[b1.selection_id]);
+});
+
+
+test('initial platform refresh overrides a stale demo even for an unknown machine',async()=>{
+  const unknown='00000000-0000-0000-0000-000000000003';
+  const h=harness({hash:unknown});h.context.activeView='demo';h.get('demo-view').hidden=false;
+  const loading=h.context.refresh();complete(h.requests[0],[a1,b1]);await loading;
+  assert.equal(h.context.activeView,'work');assert.equal(h.get('demo-view').hidden,true);
+  assert.equal(h.get('machine').value,'');assert.equal(h.notifications.at(-1).state,'missing');
+  assert.match(h.get('machine-note').textContent,new RegExp(unknown));
+});
+
+test('same-asset passive refresh preserves an intentional demo but new platform hash exits it',()=>{
+  const h=harness({machines:[a1,b1]});h.context.applyPlatformContext();
+  h.context.activeView='demo';h.get('demo-view').hidden=false;
+  h.context.applyPlatformContext();assert.equal(h.context.activeView,'demo');
+  h.context.location.hash='#trackunit-asset='+assetB;h.context.applyPlatformContext();
+  assert.equal(h.context.activeView,'work');assert.equal(h.get('machine').value,b1.selection_id);
 });

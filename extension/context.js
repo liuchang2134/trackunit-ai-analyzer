@@ -21,4 +21,12 @@ function trackunitContextLabel(data,expectedId){
     return '已关联此平台设备 · 导入实测版本 '+data.dataset_id.slice(0,8)+'（未验证）。';
   return null;
 }
-if(typeof module!=='undefined')module.exports={trackunitAssetId,trackunitContextLabel};
+/* A visible tab title is only a lookup hint; backend must independently match the UUID. */
+function trackunitEquipmentHint(title){
+  if(typeof title!=='string')return null;
+  const suffix=' - Trackunit Manager';
+  if(!title.endsWith(suffix))return null;
+  const value=title.slice(0,-suffix.length).trim();
+  return /^[A-Za-z0-9._ -]{1,100}$/.test(value)?value:null;
+}
+if(typeof module!=='undefined')module.exports={trackunitAssetId,trackunitContextLabel,trackunitEquipmentHint};

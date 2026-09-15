@@ -9,6 +9,7 @@ from app.nl_query import answer_question
 from app.scheduler import start_auto_sync, stop_auto_sync
 from app.trackunit_sync import sync_fleet_snapshot
 from app.api import routes_assistant, routes_drafts, routes_cases, routes_xgss, routes_fault_reference, routes_demo, routes_xgss_context
+from app.api import routes_platform_asset
 
 
 app = FastAPI(
@@ -32,6 +33,7 @@ for router in (
     routes_fault_reference.router,
     routes_xgss.router,
     routes_xgss_context.router,
+    routes_platform_asset.router,
     routes_cases.router,
     routes_drafts.router,
     routes_assistant.router,

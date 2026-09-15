@@ -5,6 +5,9 @@ let historyRequest = 0;
 let deviceIndexWarnings = [];
 let platformIndexState = 'loading';
 let deviceIndexRequest = 0;
+let appliedPlatformHash = null;
+let activeView = 'work';
+const platformEquipmentHints = new Map();
 let aiRuntimeLabel = '正在读取 AI 配置';
 let aiFooterLabel = '辅助分析 · 报告保存在本机 · 数据来源可追溯';
 let aiProvider = null;
@@ -56,7 +59,8 @@ async function api(path, options) {
   }
   return data;
 }
-function setView(view) {
+function setView(view,{reason='initial'}={}) {
+  activeView=view;
   $('page-title').textContent={demo:'完整案例演示',queue:'待处理工作台',work:'设备排查',data:'资料管理',history:'诊断记录',states:'工况识别实验',cooling:'冷却预警实验'}[view];
   $('secondary-nav').open=false;
   $('demo-view').hidden = view !== 'demo';
@@ -79,8 +83,10 @@ function setView(view) {
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
   window.scrollTo({top:0});
   if(view==='work' && typeof resizeDeviceOverview==='function')requestAnimationFrame(resizeDeviceOverview);
+  notifyPanelView(reason);
+  if(typeof platformLoaderChanged==='function')platformLoaderChanged();
 }
-document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view,{reason:'user'}));
 function clearReport() { report=null; $('current-feedback')?.remove(); $('result').hidden=true; $('empty-result').hidden=false; }
 function displayDate(value) {
   const date = new Date(value);
@@ -192,6 +198,8 @@ function updateSourceLabel() {
 }
 function applyPlatformContext(focusSelection=false,refreshSelection=false) {
   if(!location.hash.startsWith('#trackunit-asset='))return;
+  const platformChanged=appliedPlatformHash!==location.hash;
+  appliedPlatformHash=location.hash;
   const previousSelection=$('machine').value;
   const id=location.hash.slice('#trackunit-asset='.length);
   const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
@@ -205,11 +213,13 @@ function applyPlatformContext(focusSelection=false,refreshSelection=false) {
   if(refreshSelection||previousSelection!==$('machine').value)selectMachine();
   else notifyPlatformContext();
   const choiceNote={retained:'已保留当前版本',latest_sample:'已自动载入最近采样版本',equal_latest_sample:`${choice.tied} 个版本最近采样时间相同，已自动载入其中一个`,undated_default:'已自动载入默认版本，采样时间待核实'}[choice.reason];
-  $('machine-note').textContent=selectedVersion?`已定位 ${selectedVersion.model} · ${selectedVersion.serial_number}，共有 ${matches.length} 个本地数据版本。${choiceNote}${matches.length>1?'，可在上方切换':''}。最近采样：${displayDate(sampledAt(selectedVersion))}（本机时间）${selectedVersion.dataset_id?' · '+selectedVersion.sample_count+' 条记录':''}。`:'尚无对应数据，未选择其他设备替代。';
+  $('machine-note').textContent=selectedVersion?`已定位 ${selectedVersion.model} · ${selectedVersion.serial_number}，共有 ${matches.length} 个本地数据版本。${choiceNote}${matches.length>1?'，可在上方切换':''}。最近采样：${displayDate(sampledAt(selectedVersion))}（本机时间）${selectedVersion.dataset_id?' · '+selectedVersion.sample_count+' 条记录':''}。`:`当前平台设备 ID：${valid?id:'格式无效'}。尚无对应数据，未选择其他设备替代。`;
   $('status').textContent=!valid?'平台设备 ID 格式无效。':selectedVersion?'已载入当前平台设备的本地数据，可查看趋势或开始分析。':'平台设备未匹配到本地实测数据，请先同步或导入对应设备。';
   if(!selectedVersion)$('source').textContent='平台设备 · 暂无实测数据';
   if(valid)$('demo-entry').hidden=true;
-  if(focusSelection){setView('work');$('machine').focus({preventScroll:true});document.querySelector('.device').scrollIntoView({block:'start'});}
+  if(focusSelection||platformChanged)setView('work',{reason:'platform'});
+  if(focusSelection){$('machine').focus({preventScroll:true});document.querySelector('.device').scrollIntoView({block:'start'});}
+  if(typeof platformLoaderChanged==='function')platformLoaderChanged();
 }
 window.addEventListener('hashchange',()=>{if($('run').disabled){pendingPlatformContext=true;notifyPlatformContext();$('status').textContent='正在等待当前操作完成，随后应用新的平台设备上下文。';return;}if(location.hash.startsWith('#trackunit-asset='))applyPlatformContext(true);else refresh();});
 $('refresh').onclick=refresh;
@@ -513,6 +523,14 @@ function notifyAssistantPanel(type,fields={}) {
   if(window.parent!==window)window.parent.postMessage({type,protocol:1,
     connection_id:new URLSearchParams(window.location.search).get('panel'),...fields},'*');
 }
+function notifyPanelView(reason='initial') {
+  if(document.readyState==='loading'||window.parent===window)return;
+  const origin=location.ancestorOrigins?.[0],connectionId=new URLSearchParams(location.search).get('panel');
+  if(!connectionId||!/^chrome-extension:\/\/[a-p]{32}$/.test(origin||''))return;
+  window.parent.postMessage({type:'jilian:view',protocol:1,connection_id:connectionId,
+    view:activeView==='demo'?'demo':'work',asset_id:PlatformContext.asset(location.hash),reason},origin);
+}
+document.addEventListener('DOMContentLoaded',()=>notifyPanelView('initial'),{once:true});
 function notifyPlatformContext(){
   if(window.parent===window)return;
   const origin=location.ancestorOrigins?.[0];
@@ -522,12 +540,26 @@ function notifyPlatformContext(){
   if(context)window.parent.postMessage({type:'jilian:context',protocol:1,
     connection_id:new URLSearchParams(location.search).get('panel'),...context},origin);
 }
-window.addEventListener('message',event=>{
+function getPlatformEquipmentHint(assetId){return {...(platformEquipmentHints.get(assetId)||{confirmed:false,value:null})};}
+function handlePlatformContextRequest(event){
   const origin=location.ancestorOrigins?.[0],data=event.data;
   if(window.parent===window||event.source!==window.parent||event.origin!==origin||!/^chrome-extension:\/\/[a-p]{32}$/.test(origin||''))return;
   if(data?.type!=='jilian:context-request'||data.protocol!==1||data.connection_id!==new URLSearchParams(location.search).get('panel')||data.asset_id!==PlatformContext.asset(location.hash))return;
+  if(!PlatformContext.asset(location.hash))return;
+  const hint=PlatformContext.equipmentHint(data.equipment_id_hint);
+  if(hint===undefined)return;
+  platformEquipmentHints.set(data.asset_id,{confirmed:true,value:hint});
+  if(data.show_work===true){
+    if($('run').disabled||$('form').getAttribute('aria-busy')==='true'){
+      pendingPlatformContext=true;notifyPlatformContext();
+      $('status').textContent='当前分析完成后将返回平台设备排查。';return;
+    }
+    applyPlatformContext(true);
+  }
   notifyPlatformContext();
-});
+  if(typeof platformLoaderChanged==='function')platformLoaderChanged();
+}
+window.addEventListener('message',handlePlatformContextRequest);
 async function refreshAIRuntime() {
   try {
     const runtime=await api('/assistant/runtime');

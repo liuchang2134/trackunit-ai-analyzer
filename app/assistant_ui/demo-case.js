@@ -68,5 +68,5 @@
   byId('demo-next').onclick=()=>{index=(index+1)%scenario.stages.length;renderStage(true);};
   byId('demo-reset').onclick=()=>{index=0;revealed.clear();renderStage(true);};
   window.addEventListener('resize',()=>{if(chart&&!byId('demo-view').hidden)chart.resize();});
-  if(new URLSearchParams(location.search).get('demo')==='1')setView('demo');
+  if(PlatformContext.initialDemo(location.search,location.hash))setView('demo',{reason:'initial'});
 })();

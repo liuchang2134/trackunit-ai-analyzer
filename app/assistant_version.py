@@ -1,1 +1,1 @@
-ASSISTANT_BUILD = '20260915.8-xe55u-components'
+ASSISTANT_BUILD = '20260915.9-platform-follow'
