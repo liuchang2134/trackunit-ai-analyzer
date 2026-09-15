@@ -1,15 +1,15 @@
 from app import ai_provider
 
 
-def test_default_ai_provider_is_gemini(monkeypatch):
+def test_default_ai_provider_is_deepseek(monkeypatch):
     monkeypatch.delenv("AI_PROVIDER", raising=False)
-    monkeypatch.setenv("GEMINI_MODEL", "gemini-flash-latest")
-    monkeypatch.setattr(ai_provider, "generate_with_gemini", lambda prompt: "cloud model report")
+    monkeypatch.setenv("DEEPSEEK_MODEL", "deepseek-flash")
+    monkeypatch.setattr(ai_provider, "generate_with_deepseek", lambda prompt: "cloud model report")
 
     result = ai_provider.generate_machine_report("sample prompt")
 
-    assert result["provider"] == "gemini"
-    assert result["model"] == "gemini-flash-latest"
+    assert result["provider"] == "deepseek"
+    assert result["model"] == "deepseek-flash"
     assert result["report_markdown"] == "cloud model report"
     assert result["error"] is None
 
@@ -74,3 +74,15 @@ def test_unknown_provider_is_not_supported(monkeypatch):
     assert result["provider"] == "unsupported_provider"
     assert result["report_markdown"] == ""
     assert "Unsupported AI_PROVIDER" in result["error"]
+
+
+def test_deepseek_fleet_override_and_failure_have_no_fallback(monkeypatch):
+    monkeypatch.setenv('AI_PROVIDER', 'gemini')
+    monkeypatch.setenv('DEEPSEEK_MODEL', 'deepseek-flash')
+    def fail(prompt):
+        raise ai_provider.DeepSeekError('DeepSeek account balance is insufficient.', kind='insufficient_balance')
+    monkeypatch.setattr(ai_provider, 'generate_with_deepseek', fail)
+    monkeypatch.setattr(ai_provider, 'generate_with_gemini', lambda prompt: (_ for _ in ()).throw(AssertionError('No fallback')))
+    result = ai_provider.generate_fleet_report('synthetic fleet', provider_override='deepseek')
+    assert result['provider'] == 'deepseek' and result['model'] == 'deepseek-flash'
+    assert result['report_markdown'] == '' and 'balance' in result['error']

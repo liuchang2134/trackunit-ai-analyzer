@@ -16,13 +16,22 @@ def check(demo_only: bool = False) -> dict:
     if not missing:
         from dotenv import load_dotenv
         load_dotenv(ROOT / ".env", override=True)
-    provider = os.getenv('AI_PROVIDER', 'gemini')
+    provider = os.getenv('AI_PROVIDER', 'deepseek')
     python_supported = (3,11) <= sys.version_info < (3,14)
     local_ready = python_supported and not missing
     common = {'provider':provider, 'python_supported':python_supported,
               'supported_python':'3.11–3.13', 'missing_dependencies':missing,
               'local_ready':local_ready, 'mode':'local_demo' if demo_only else 'configured_ai',
               'authentication_verified':False}
+    if provider == 'deepseek':
+        configured = bool(os.getenv('DEEPSEEK_API_KEY', '').strip())
+        official = os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com').rstrip('/') in {
+            'https://api.deepseek.com', 'https://api.deepseek.com/v1'}
+        ai_ready = local_ready and configured and official
+        return {**common, 'model': os.getenv('DEEPSEEK_MODEL', 'deepseek-flash'),
+                'api_key_configured': configured, 'official_endpoint': official, 'thinking_enabled': False,
+                'requires_internet': not demo_only, 'ollama': 'not_required', 'ai_ready': ai_ready,
+                'ready': bool(local_ready and official and (demo_only or configured))}
     if provider == 'gemini':
         configured = bool(os.getenv('GEMINI_API_KEY', '').strip())
         official = os.getenv('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta').rstrip('/') == 'https://generativelanguage.googleapis.com/v1beta'

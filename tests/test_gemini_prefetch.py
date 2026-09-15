@@ -3,11 +3,12 @@ import pytest
 from app import local_assistant as agent
 from app.models import Machine
 from app.gemini_client import GeminiError
+from app.deepseek_client import DeepSeekError
 
 
-@pytest.fixture
-def cloud_data(monkeypatch):
-    monkeypatch.setenv('AI_PROVIDER','gemini')
+@pytest.fixture(params=['gemini', 'deepseek'])
+def cloud_data(monkeypatch, request):
+    monkeypatch.setenv('AI_PROVIDER',request.param)
     monkeypatch.setattr(agent,'find_machine',lambda _:Machine(machine_id='SIM-PREFETCH',serial_number='S1',model='DEMO-EXC',
         machine_type='excavator',customer='demo',location='demo',last_seen_at='2026-09-14T00:00:00Z'))
     monkeypatch.setattr(agent,'find_telemetry',lambda _:[])
@@ -69,6 +70,6 @@ def test_cloud_overall_deadline_prevents_further_model_requests(cloud_data,monke
         now[0]=121
         return agent.Decision(action='finish',summary='设备运行状态正常。',evidence_ids=['tool:1:snapshot'])
     monkeypatch.setattr(agent,'model_step',step)
-    with pytest.raises(GeminiError,match='time limit'):
+    with pytest.raises((GeminiError, DeepSeekError),match='time limit'):
         agent.investigate(agent.InvestigationRequest(machine_id='SIM-PREFETCH',question='设备状态',task='overview'))
     assert len(calls)==1

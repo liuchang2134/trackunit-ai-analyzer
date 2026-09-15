@@ -12,3 +12,4 @@ def isolated_ai_configuration(monkeypatch, tmp_path):
     monkeypatch.setattr(ai_request_status, 'STATUS_PATH', tmp_path / 'ai-request-status.json')
     monkeypatch.setenv('AI_PROVIDER', 'ollama_local')
     monkeypatch.delenv('GEMINI_API_KEY', raising=False)
+    monkeypatch.delenv('DEEPSEEK_API_KEY', raising=False)

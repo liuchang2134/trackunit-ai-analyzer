@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 from app.local_assistant import InvestigationRequest, investigate
 from app.ollama_client import OllamaError
 from app.gemini_client import GeminiError
+from app.deepseek_client import DeepSeekError
 from app.parts_catalog import CatalogImport, import_catalog, load_catalog
 from pydantic import BaseModel, ConfigDict, Field
 from app.inspection_feedback import InspectionFeedback
@@ -180,9 +181,9 @@ def run_investigation(request: InvestigationRequest):
         raise HTTPException(422, str(exc), headers={'Cache-Control': 'no-store'}) from None
     except ValueError as exc:
         raise HTTPException(404, str(exc)) from None
-    except GeminiError as exc:
+    except (GeminiError, DeepSeekError) as exc:
         from fastapi.responses import JSONResponse
-        return JSONResponse({'detail': str(exc), 'provider_error': exc.provider_error,
+        return JSONResponse({'detail': str(exc), 'provider_error': exc.provider_error or {'kind': exc.kind},
                              'ai_status': record_outcome(context, 'failed', error=exc)}, status_code=503,
                             headers={'Cache-Control': 'no-store'})
     except OllamaError as exc:

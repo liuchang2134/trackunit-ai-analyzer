@@ -20,6 +20,7 @@ from app.fault_evidence import assess_fault_events
 from app import fault_reference
 from app.ollama_client import OllamaError, get_ollama_base_url, get_ollama_model
 from app.gemini_client import GeminiError, get_gemini_model, generate_structured_with_gemini
+from app.deepseek_client import DeepSeekError, get_deepseek_model, generate_structured_with_deepseek
 from app.parts_catalog import search_parts
 from app.local_datasets import load_dataset
 from app.telemetry_evidence import assess_history
@@ -139,15 +140,19 @@ def unsupported_health_claim(prose: str) -> bool:
 
 
 def assistant_runtime() -> dict:
-    provider = os.getenv('AI_PROVIDER', 'gemini')
+    provider = os.getenv('AI_PROVIDER', 'deepseek')
+    cloud = provider in {'gemini', 'deepseek'}
+    model = {'gemini': get_gemini_model, 'deepseek': get_deepseek_model,
+             'ollama_local': get_ollama_model}.get(provider)
     return {'provider': provider,
             'backend_build': ASSISTANT_BUILD,
-            'model': get_gemini_model() if provider == 'gemini' else get_ollama_model(),
-            'inference_location': 'cloud' if provider == 'gemini' else 'local',
-            'cloud_credentials_configured': bool(os.getenv('GEMINI_API_KEY','').strip()) if provider == 'gemini' else None,
+            'model': model() if model else None,
+            'inference_location': 'cloud' if cloud else ('local' if provider == 'ollama_local' else 'unknown'),
+            'cloud_credentials_configured': bool(os.getenv(provider.upper() + '_API_KEY', '').strip()) if cloud else None,
             'automatic_fallback': False,
-            'investigation_timeout_seconds': 120 if provider == 'gemini' else None,
-            'transient_attempt_limit': 3 if provider == 'gemini' else 1}
+            'thinking_mode': 'disabled' if provider == 'deepseek' else None,
+            'investigation_timeout_seconds': 120 if cloud else None,
+            'transient_attempt_limit': 3 if cloud else 1}
 
 
 def model_step(messages: list[dict], allowed_actions: list[str] | None = None, timeout_seconds: float | None = None) -> Decision:
@@ -164,22 +169,25 @@ def model_step(messages: list[dict], allowed_actions: list[str] | None = None, t
         else:schema['properties'][field]['maxItems']=0
     wire_messages=[{'role':message['role'],'content':message['content']} for message in messages]
     provider = assistant_runtime()['provider']
-    if provider == 'gemini':
+    if provider in {'gemini', 'deepseek'}:
         from app.assistant_prompts import cloud_messages
+        generate = generate_structured_with_deepseek if provider == 'deepseek' else generate_structured_with_gemini
+        error_type = DeepSeekError if provider == 'deepseek' else GeminiError
+        provider_name = 'DeepSeek' if provider == 'deepseek' else 'Gemini'
         wire_messages = cloud_messages(messages, can_finish=not allowed_actions or 'finish' in allowed_actions)
         try:
             kwargs = {} if timeout_seconds is None else {'timeout_seconds': timeout_seconds}
-            decision = Decision.model_validate_json(generate_structured_with_gemini(wire_messages, schema, **kwargs))
+            decision = Decision.model_validate_json(generate(wire_messages, schema, **kwargs))
         except ValueError:
-            raise GeminiError('Gemini returned invalid structured output.', kind='invalid_response') from None
+            raise error_type(f'{provider_name} returned invalid structured output.', kind='invalid_response') from None
         if allowed_actions and decision.action not in allowed_actions:
-            raise GeminiError('Gemini selected an unavailable action.', kind='invalid_response')
+            raise error_type(f'{provider_name} selected an unavailable action.', kind='invalid_response')
         for field, values in options.items():
             if field in {'evidence_ids', 'next_check_ids'} and any(v not in values for v in getattr(decision, field)):
-                raise GeminiError('Gemini selected an unavailable evidence or check ID.', kind='invalid_response')
+                raise error_type(f'{provider_name} selected an unavailable evidence or check ID.', kind='invalid_response')
         return decision
     if provider != 'ollama_local':
-        raise GeminiError('Unsupported AI provider configuration.', kind='configuration_invalid')
+        raise DeepSeekError('Unsupported AI provider configuration.', kind='configuration_invalid')
     url = get_ollama_base_url()
     if urlparse(url).hostname not in {"localhost", "127.0.0.1", "::1"}:
         raise OllamaError("Local assistant requires a loopback Ollama address")
@@ -198,7 +206,10 @@ def model_step(messages: list[dict], allowed_actions: list[str] | None = None, t
 def investigate(request: InvestigationRequest) -> dict:
     started_at = datetime.now(timezone.utc)
     started_clock = time.monotonic()
-    cloud = assistant_runtime()['provider'] == 'gemini'
+    provider = assistant_runtime()['provider']
+    cloud = provider in {'gemini', 'deepseek'}
+    error_type = DeepSeekError if provider == 'deepseek' else (GeminiError if cloud else OllamaError)
+    provider_name = 'DeepSeek' if provider == 'deepseek' else 'Gemini'
     deadline = started_clock + 120
     model_decisions = 0
     replay_at = None
@@ -359,10 +370,10 @@ def investigate(request: InvestigationRequest) -> dict:
         if cloud:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise GeminiError('Gemini investigation time limit reached. No report was generated.', kind='timeout')
+                raise error_type(f'{provider_name} investigation time limit reached. No report was generated.', kind='timeout')
             decision = model_step(messages + [control], allowed, timeout_seconds=min(60.0, remaining))
             if time.monotonic() >= deadline:
-                raise GeminiError('Gemini investigation time limit reached. No report was generated.', kind='timeout')
+                raise error_type(f'{provider_name} investigation time limit reached. No report was generated.', kind='timeout')
         else:
             decision = model_step(messages + [control], allowed)
         model_decisions += 1
@@ -451,5 +462,4 @@ def investigate(request: InvestigationRequest) -> dict:
                     "limitations": ["AI hypotheses require inspection; no remaining-life estimate.",
                                     "Catalog applicability is user supplied and is not manufacturer certification."]}
         execute_query(decision.action, decision.component)
-    error_type = GeminiError if cloud else OllamaError
     raise error_type("Investigation reached its step limit without a supported answer; narrow the question")

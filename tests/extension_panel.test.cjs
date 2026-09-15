@@ -41,6 +41,14 @@ test('initial frame stays covered until runtime and readiness both arrive',()=>{
  const link=new URL(p.elements.standalone.href);assert.equal(link.port,'8892');assert.equal(link.searchParams.has('panel'),false);
 });
 
+test('DeepSeek runtime is displayed without claiming a successful AI request',()=>{
+ const p=setup();reply(p,'jilian:ready');
+ reply(p,'jilian:runtime',{provider:'deepseek',model:'deepseek-flash',backend_build:'deepseek-build',
+  inference_location:'cloud',investigation_timeout_seconds:120,transient_attempt_limit:3});
+ assert.equal(state(p),'connected');assert.match(p.elements.runtime.textContent,/deepseek-flash/);
+ assert.match(p.elements.runtime.textContent,/实际分析结果/);assert.doesNotMatch(p.elements.runtime.textContent,/Gemini|认证成功|调用成功/);
+});
+
 test('failed default port falls back and partial or stale handshakes cannot combine',()=>{
  const p=setup(),old=new URL(p.elements.assistant.src);reply(p,'jilian:ready');p.tick();
  const current=new URL(p.elements.assistant.src);assert.equal(current.port,'8890');assert.notEqual(current.search,old.search);
@@ -172,7 +180,7 @@ test('navigation during asynchronous tab lookup cannot commit a stale device',as
 
 test('manifest remains restricted to two loopback frames with no extra permissions',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../extension/manifest.json'),'utf8'));
- assert.equal(manifest.version,'0.4.1');assert.deepEqual(manifest.permissions,['sidePanel','activeTab']);assert.equal(manifest.host_permissions,undefined);
+ assert.equal(manifest.version,'0.4.2');assert.deepEqual(manifest.permissions,['sidePanel','activeTab']);assert.equal(manifest.host_permissions,undefined);
  assert.match(manifest.content_security_policy.extension_pages,/frame-src http:\/\/127\.0\.0\.1:8890 http:\/\/127\.0\.0\.1:8892$/);
  assert.equal(manifest.content_security_policy.extension_pages.includes('*'),false);
 });

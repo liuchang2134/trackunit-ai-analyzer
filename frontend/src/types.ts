@@ -126,7 +126,7 @@ export type AiReportResponse = {
   error: string | null;
 };
 
-export type AiProvider = "ollama_local" | "gemini";
+export type AiProvider = "deepseek" | "gemini" | "ollama_local";
 
 export type ViewKey =
   | "dashboard"

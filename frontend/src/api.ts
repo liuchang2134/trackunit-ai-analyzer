@@ -101,7 +101,7 @@ export function generateFleetAiReport(aiProvider: AiProvider): Promise<AiReportR
   });
 }
 
-export function askFleetAssistant(question: string, language: "zh" | "en" | "auto" = "auto", aiProvider: AiProvider = "ollama_local"): Promise<AskResponse> {
+export function askFleetAssistant(question: string, language: "zh" | "en" | "auto" = "auto", aiProvider: AiProvider = "deepseek"): Promise<AskResponse> {
   return request<AskResponse>("/ask", {
     method: "POST",
     headers: {

@@ -18,13 +18,16 @@ def entries():
 def sealed_version_entries(entries):
  # Controlled serialization fixture, not a reconstruction of the sealed artifact.
  # The actual recipe must continue rejecting newer development under the v10 name.
- return {**entries,'app/assistant_version.py':f"ASSISTANT_BUILD = '{verifier.BUILD}'\n".encode()}
+ extension=json.loads(entries['extension/manifest.json'])
+ extension['version']=verifier.EXTENSION_VERSION
+ return {**entries,'app/assistant_version.py':f"ASSISTANT_BUILD = '{verifier.BUILD}'\n".encode(),
+         'extension/manifest.json':json.dumps(extension,ensure_ascii=False).encode()}
 
 
 def test_current_release_includes_both_deliverables_without_runtime_data(entries):
  assert verifier.REQUIRED<=set(entries)
  assert not any('/local/' in n or '/cache/' in n or n=='.env' or n.endswith('.sqlite3') for n in entries)
- assert json.loads(entries['extension/manifest.json'])['version']=='0.4.0'
+ assert entries['extension/manifest.json']==(builder.ROOT/'extension/manifest.json').read_bytes()
  assert b'GEMINI_API_KEY=\n' in entries['.env.example']
  for name,content in entries.items():
   if not name.endswith('.md'):continue

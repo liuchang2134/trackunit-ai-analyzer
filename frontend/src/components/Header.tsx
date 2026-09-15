@@ -43,6 +43,12 @@ export default function Header({
         <DataSourceBadge source={cacheStatus?.data_source} fresh={cacheStatus?.fresh} language={language} />
         <div className="provider-toggle" role="group" aria-label="AI provider">
           <button
+            className={aiProvider === "deepseek" ? "toggle-active" : "secondary-button"}
+            onClick={() => onChangeProvider("deepseek")}
+          >
+            DeepSeek
+          </button>
+          <button
             className={aiProvider === "ollama_local" ? "toggle-active" : "secondary-button"}
             onClick={() => onChangeProvider("ollama_local")}
           >

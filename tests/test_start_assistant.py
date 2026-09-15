@@ -44,6 +44,14 @@ def test_start_uses_current_python_and_loopback_only(local_ready, monkeypatch):
                       '--host', '127.0.0.1', '--port', '8890'], {'cwd': launcher.ROOT})]
 
 
+def test_deepseek_check_displays_current_provider_without_network(local_ready, capsys):
+    local_ready.update(provider='deepseek', api_key_configured=True)
+    assert launcher.main(['--port', '8892', '--check-only']) == 0
+    output = capsys.readouterr().out
+    assert 'DeepSeek is configured locally' in output
+    assert 'were not tested' in output and 'Gemini' not in output
+
+
 def test_missing_local_dependencies_never_start(local_ready, capsys):
     local_ready.update(local_ready=False, missing_dependencies=['uvicorn'])
     assert launcher.main([]) == 1

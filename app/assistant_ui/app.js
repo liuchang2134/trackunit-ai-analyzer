@@ -6,6 +6,7 @@ let deviceIndexWarnings = [];
 let platformIndexState = 'loading';
 let aiRuntimeLabel = '正在读取 AI 配置';
 let aiFooterLabel = '辅助分析 · 报告保存在本机 · 数据来源可追溯';
+let aiProvider = null;
 let aiStatusTicket = 0;
 const investigationDrafts = new InvestigationDrafts();
 const taskQuestions = {
@@ -40,7 +41,8 @@ async function api(path, options) {
   if(path==='/assistant/investigate' && data.ai_status)applyAIRequestStatus(data.ai_status);
   if (!r.ok) {
     let message=typeof data.detail === 'string' ? data.detail : `请求失败 (${r.status})，请检查输入格式。`;
-      if(/GEMINI_API_KEY is not configured/.test(message))message='尚未配置 Gemini 密钥。请在本机 .env 中填写 GEMINI_API_KEY 并重启此后端；模拟数据、趋势图和预警演示仍可使用。';
+      if(path==='/assistant/investigate' && ((data.provider_error && (data.ai_status?.provider||aiProvider)==='deepseek') || /DeepSeek|DEEPSEEK_API_KEY/.test(message)))message=formatDeepSeekFailure(data.provider_error);
+      else if(/GEMINI_API_KEY is not configured/.test(message))message='尚未配置 Gemini 密钥。请在本机 .env 中填写 GEMINI_API_KEY 并重启此后端；模拟数据、趋势图和预警演示仍可使用。';
       else if(/Gemini returned HTTP 5\d\d/.test(message)){
         const attempts=message.match(/Attempts: (\d+)/)?.[1];
         message=`Gemini 服务暂时不可用${attempts?`，本次请求已尝试 ${attempts} 次`:''}。请稍后重试；本次未生成报告。`;
@@ -503,18 +505,15 @@ window.addEventListener('message',event=>{
 async function refreshAIRuntime() {
   try {
     const runtime=await api('/assistant/runtime');
+    aiProvider=runtime.provider;
     notifyAssistantPanel('jilian:runtime',{provider:runtime.provider,model:runtime.model,
       backend_build:runtime.backend_build,inference_location:runtime.inference_location,
       investigation_timeout_seconds:runtime.investigation_timeout_seconds,transient_attempt_limit:runtime.transient_attempt_limit});
-    aiRuntimeLabel=runtime.provider==='gemini' && runtime.cloud_credentials_configured===false
-      ? 'Gemini 密钥未配置 · 本地演示可用'
-      : (runtime.inference_location==='cloud'?'云端推理 · ':'本机推理 · ')+runtime.model;
-    aiFooterLabel=runtime.inference_location==='cloud'?'Gemini 云端推理 · 只读辅助分析 · 报告保存在本机':'本机推理 · 只读辅助分析 · 报告保存在本机';
+    const copy=AIRequestStatus.runtimeView(runtime);
+    aiRuntimeLabel=copy.label;
+    aiFooterLabel=copy.footer;
     updateRuntimeLabel();
-    $('ai-data-note').textContent=runtime.inference_location==='cloud'
-        ? '分析时会将所选设备的证据、问题和检查反馈发送至 Gemini。密钥由后端保管，报告保存在本机。'
-          +(runtime.investigation_timeout_seconds===120&&runtime.transient_attempt_limit===3?'临时服务错误最多尝试 3 次，整次排查限时 120 秒。':'当前后端尚未加载新版时限与重试逻辑。')
-      : '分析与模型推理运行于本机。';
+    $('ai-data-note').textContent=copy.note;
   } catch (e) {
     aiRuntimeLabel='AI 配置读取失败';updateRuntimeLabel();
     $('ai-data-note').textContent='请确认后端已启动并刷新页面。';

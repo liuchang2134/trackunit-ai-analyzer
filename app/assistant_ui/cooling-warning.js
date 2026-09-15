@@ -1,4 +1,4 @@
-/* Independent synthetic early warning. Requests never run Gemini automatically. */
+/* Independent synthetic early warning. Requests never run cloud AI automatically. */
 (() => {
   const el=id=>document.getElementById(id);
   const labels={warning:'提前预警',watch:'观察中 · 尚未连续触发',below_threshold:'未触发预警',unknown:'暂时无法判断',stopped:'停机 · 不作预测',current_high:'当前已达到实验温度阈值'};
@@ -101,7 +101,7 @@
       el('task').value='overview';el('question').value=prepared.question;updateTask();
       if(typeof refreshLocalDraftControls==='function')refreshLocalDraftControls();
       el('question-details').open=true;setView('work');el('question').focus();
-      el('status').textContent='已带入对应模拟设备、温度观测和预警证据。点击“开始分析”才会请求 Gemini。';
+      el('status').textContent='已带入对应模拟设备、温度观测和预警证据。点击“开始分析”才会请求当前配置的 AI。';
     }catch(error){if(mine===sequence)el('cooling-status').textContent=error.message;}
     finally{busy(false);if(mine===sequence)el('cooling-handoff').disabled=!current;}
   };

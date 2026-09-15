@@ -81,10 +81,11 @@ def main(argv=None):
             missing = ', '.join(readiness['missing_dependencies']) or 'supported Python 3.11-3.13'
             raise StartupError(f'Local prerequisites missing: {missing}. Nothing was installed or started.')
         print('Local data features are available.')
-        if readiness['provider'] == 'gemini' and not readiness.get('api_key_configured'):
-            print('Gemini key is not configured; AI analysis remains unavailable.')
-        elif readiness['provider'] == 'gemini' and readiness.get('official_endpoint'):
-            print('Gemini is configured locally; live availability and quota were not tested.')
+        cloud_name = {'gemini': 'Gemini', 'deepseek': 'DeepSeek'}.get(readiness['provider'])
+        if cloud_name and not readiness.get('api_key_configured'):
+            print(f'{cloud_name} key is not configured; AI analysis remains unavailable.')
+        elif cloud_name and readiness.get('official_endpoint'):
+            print(f'{cloud_name} is configured locally; live availability and quota were not tested.')
         else:
             print('AI configuration is not verified; only local prerequisites were checked.')
         if args.check_only:

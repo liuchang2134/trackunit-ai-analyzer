@@ -14,6 +14,7 @@ STATUS_PATH = Path(__file__).resolve().parents[1] / 'data/local/ai-request-statu
 _lock = RLock()
 FailureKind = Literal['daily_quota', 'minute_quota', 'quota_unavailable', 'quota_unknown',
                       'configuration_missing', 'configuration_invalid', 'authentication',
+                      'insufficient_balance', 'rate_limit',
                       'service_unavailable', 'network', 'timeout', 'invalid_response', 'analysis_incomplete']
 
 
@@ -33,7 +34,7 @@ class Failure(BaseModel):
 class Attempt(BaseModel):
     model_config = ConfigDict(extra='forbid')
     schema_version: Literal[1] = 1
-    provider: Literal['gemini', 'ollama_local']
+    provider: Literal['gemini', 'deepseek', 'ollama_local']
     context_id: str | None = Field(default=None, pattern=r'^[0-9a-f]{64}$')
     finished_at: AwareDatetime
     outcome: Literal['report_saved', 'report_unsaved', 'failed']
@@ -56,10 +57,13 @@ def now_utc():
 def capture_context() -> dict:
     from app.local_assistant import assistant_runtime
     runtime = assistant_runtime()
-    values = [runtime['provider'], runtime['model'], os.getenv('GEMINI_BASE_URL', ''),
-              os.getenv('GEMINI_API_KEY', ''), os.getenv('OLLAMA_BASE_URL', '')]
+    provider = runtime['provider']
+    cloud = provider in {'gemini', 'deepseek'}
+    prefix = provider.upper() if cloud else 'OLLAMA'
+    values = [provider, runtime['model'], os.getenv(prefix + '_BASE_URL', ''),
+              os.getenv(prefix + '_API_KEY', '') if cloud else '', runtime.get('thinking_mode')]
     return {'provider': runtime['provider'], 'model': runtime['model'],
-            'configured': runtime['cloud_credentials_configured'] if runtime['provider'] == 'gemini' else True,
+            'configured': runtime['cloud_credentials_configured'] if cloud else provider == 'ollama_local',
             'context_id': sha256(json.dumps(values, ensure_ascii=False).encode()).hexdigest()}
 
 
@@ -123,7 +127,7 @@ def _failure(error):
 
 
 def record_outcome(context: dict, outcome: str, *, error=None) -> dict:
-    if context['provider'] not in {'gemini', 'ollama_local'}:
+    if context['provider'] not in {'gemini', 'deepseek', 'ollama_local'}:
         return {**_public(None, context, now_utc(), 'unsupported_configuration'), 'recording_saved': False}
     written = False
     temporary = None

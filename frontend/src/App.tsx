@@ -50,7 +50,7 @@ import type {
 export default function App() {
   const [activeView, setActiveView] = useState<ViewKey>("dashboard");
   const [language, setLanguage] = useState<"zh" | "en">("zh");
-  const [aiProvider, setAiProvider] = useState<AiProvider>("ollama_local");
+  const [aiProvider, setAiProvider] = useState<AiProvider>("deepseek");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null);
   const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(null);

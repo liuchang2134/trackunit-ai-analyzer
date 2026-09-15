@@ -1,10 +1,10 @@
 # 机联智检
 
-辅助已有车联网平台处理设备故障的工具：网页工作区 + Chrome 侧栏插件。真实分析使用 Gemini API；设备资料、草稿和检查记录保存在本机。
+辅助已有车联网平台处理设备故障的工具：网页工作区 + Chrome 侧栏插件。AI 分析默认使用 DeepSeek API，关闭深度思考；设备资料、草稿和检查记录保存在本机。Gemini 和本地 Ollama 仍可手动配置。
 
 ## 直接展示一个案例
 
-当前构建：`20260915.4-xcmg-workbench`。
+当前构建：`20260915.5-deepseek`。
 
 启动后打开 [完整演示案例](http://127.0.0.1:8892/assistant-ui/?demo=1)，或在网页选择「演示案例」。
 
@@ -16,7 +16,7 @@
 4. 展开模拟检查结果，查看线束问题和复测记录。
 5. 按检查依据给出备件类型建议，导出演示讲解。
 
-这是用户要求编写的展示案例。除注明出处的代码定义外，设备、工况数值、检查和结论均为虚构。演示不调用 Trackunit、Gemini 或 XGSS，不消耗 API 配额，不写入真实设备或诊断历史；不是实机效果证明。14分钟是压缩演示时间，不是实际维修工时。数据在 `data/demo_case.json`。
+这是用户要求编写的展示案例。除注明出处的代码定义外，设备、工况数值、检查和结论均为虚构。演示不调用 Trackunit、DeepSeek、Gemini 或 XGSS，不消耗 API 配额，不写入真实设备或诊断历史；不是实机效果证明。14分钟是压缩演示时间，不是实际维修工时。数据在 `data/demo_case.json`。
 
 ## 启动
 
@@ -29,7 +29,7 @@ copy .env.example .env
 start_local.cmd --port 8892
 ```
 
-已有环境直接运行 `start_local.cmd --port 8892`。本机检查用 `start_local.cmd --port 8892 --check-only`；不会停止或重启已有进程。演示无需填写密钥；真实 AI 分析需要在 `.env` 配置 Gemini。
+已有环境直接运行 `start_local.cmd --port 8892`。本机检查用 `start_local.cmd --port 8892 --check-only`；不会停止或重启已有进程。演示无需填写密钥；真实 AI 分析需要在 `.env` 配置 `DEEPSEEK_API_KEY`。默认 `AI_PROVIDER=deepseek`、`DEEPSEEK_MODEL=deepseek-flash`，只连接 DeepSeek 官方地址。修改配置后重启后端；网页和插件共用后端密钥，无需分别填写。
 
 网页入口：[设备排查](http://127.0.0.1:8892/assistant-ui/)。Chrome 插件直接加载项目中的 `extension` 文件夹，连接设置选择8892，详见 [插件说明](extension/README.md)。不需要单独编译当前网页和插件。
 
@@ -41,7 +41,8 @@ start_local.cmd --port 8892
 | 设备数据与故障资料 | 搜索、数据版本选择、趋势及 CSV 导出 |
 | 排查任务与草稿 | 创建任务、记录检查、归档、草稿恢复及冲突检查 |
 | TV12U 查码 | 本机可读取72条私有参考资料；完整原表和提取文件不随 Git 分发。演示所需 H10101 定义独立提供 |
-| Gemini | 接入已实现，最近完整请求受每日额度限制；完整真实链路仍待验收 |
+| DeepSeek | 默认 AI 服务，支持结构化排查、证据校验、云端状态及失败提示；详见当前验收状态 |
+| Gemini / Ollama | 保留手动配置；不会在 DeepSeek 失败时自动切换 |
 | Trackunit | 已验证工时接口；故障事件访问仍返回401 |
 | XGSS | 获准 VIN 的官方整机图和物料明细已在浏览器显示；故障参数和真实设备交接仍待联调 |
 | Chrome 侧栏 | 源码及消息逻辑测试已有；真实安装、Trackunit 登录与设备关联仍待验收 |

@@ -6,7 +6,8 @@ from scripts import check_local_runtime as runtime
 def isolated_environment(tmp_path,monkeypatch):
     monkeypatch.setattr(runtime,'ROOT',tmp_path)
     monkeypatch.setattr(runtime.importlib.util,'find_spec',lambda _:object())
-    for key in ('GEMINI_API_KEY','GEMINI_BASE_URL','GEMINI_MODEL','OLLAMA_BASE_URL','OLLAMA_MODEL'):
+    for key in ('GEMINI_API_KEY','GEMINI_BASE_URL','GEMINI_MODEL','OLLAMA_BASE_URL','OLLAMA_MODEL',
+                'DEEPSEEK_API_KEY','DEEPSEEK_BASE_URL','DEEPSEEK_MODEL'):
         monkeypatch.delenv(key,raising=False)
     monkeypatch.setenv('AI_PROVIDER','gemini')
     monkeypatch.setattr(runtime,'urlopen',lambda *args,**kw:pytest.fail('Readiness must not contact a provider'))
@@ -53,3 +54,23 @@ def test_explicit_local_demo_does_not_query_legacy_ollama(monkeypatch):
     monkeypatch.setenv('AI_PROVIDER','ollama_local')
     report=runtime.check(demo_only=True)
     assert report['ready'] and not report['ai_ready'] and report['ollama']=='not_checked'
+
+
+def test_deepseek_default_allows_demo_without_claiming_cloud_authentication(monkeypatch):
+    monkeypatch.delenv('AI_PROVIDER')
+    result = runtime.check()
+    assert result['provider'] == 'deepseek' and result['model'] == 'deepseek-flash'
+    assert not result['ready'] and not result['authentication_verified']
+    assert runtime.check(demo_only=True)['ready']
+    monkeypatch.setenv('DEEPSEEK_API_KEY', 'unit-test-placeholder')
+    result = runtime.check()
+    assert result['ready'] and result['thinking_enabled'] is False
+    assert not result['authentication_verified'] and 'unit-test-placeholder' not in str(result)
+
+
+@pytest.mark.parametrize('base', ['https://unapproved.example', 'http://api.deepseek.com',
+                                 'https://api.deepseek.com.evil.example', 'https://api.deepseek.com/?x=1'])
+def test_deepseek_unapproved_endpoint_is_never_ready(monkeypatch, base):
+    monkeypatch.setenv('AI_PROVIDER', 'deepseek')
+    monkeypatch.setenv('DEEPSEEK_BASE_URL', base)
+    assert runtime.check(demo_only=True)['ready'] is False

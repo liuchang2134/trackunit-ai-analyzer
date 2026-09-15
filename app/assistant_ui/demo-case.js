@@ -23,7 +23,7 @@
     byId('demo-next').textContent=index===scenario.stages.length-1?'从头演示':'下一步';
     byId('demo-steps').querySelectorAll('button').forEach((button,i)=>{if(i===index)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');});
     body.append(node('p',stage.label,'demo-reference-label'),node('h3',stage.title),node('p',stage.summary,'demo-summary'),items(stage.details));
-    if(stage.id==='analysis')body.prepend(node('span','预设 AI 分析示例 · 未调用 Gemini','demo-tag'));
+    if(stage.id==='analysis')body.prepend(node('span','预设 AI 分析示例 · 未调用 AI API','demo-tag'));
     if(stage.id==='checks')for(const check of scenario.checks){
       const card=node('article','','demo-check'),button=node('button',revealed.has(check.id)?'收起模拟结果':'查看模拟检查结果','quiet');button.type='button';
       const result=node('p',check.simulated_result,'demo-check-result');result.hidden=!revealed.has(check.id);
