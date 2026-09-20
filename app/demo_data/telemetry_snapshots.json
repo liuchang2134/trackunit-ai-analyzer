@@ -1,0 +1,182 @@
+[
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1240.45,
+  "idle_hours": 348.12,
+  "fuel_remaining_percent": 72.0,
+  "engine_status": "stopped",
+  "latitude": 34.2712,
+  "longitude": 117.1832,
+  "recorded_at": "2026-09-20T21:12:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1240.9,
+  "idle_hours": 348.24,
+  "fuel_remaining_percent": 70.4,
+  "engine_status": "running",
+  "latitude": 34.2713,
+  "longitude": 117.1833,
+  "recorded_at": "2026-09-20T21:22:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1241.35,
+  "idle_hours": 348.36,
+  "fuel_remaining_percent": 68.8,
+  "engine_status": "running",
+  "latitude": 34.2714,
+  "longitude": 117.1834,
+  "recorded_at": "2026-09-20T21:32:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1241.8,
+  "idle_hours": 348.48,
+  "fuel_remaining_percent": 67.2,
+  "engine_status": "running",
+  "latitude": 34.2715,
+  "longitude": 117.1835,
+  "recorded_at": "2026-09-20T21:42:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1242.25,
+  "idle_hours": 348.6,
+  "fuel_remaining_percent": 65.6,
+  "engine_status": "stopped",
+  "latitude": 34.2716,
+  "longitude": 117.1836,
+  "recorded_at": "2026-09-20T21:52:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1242.7,
+  "idle_hours": 348.72,
+  "fuel_remaining_percent": 64.0,
+  "engine_status": "running",
+  "latitude": 34.2717,
+  "longitude": 117.1837,
+  "recorded_at": "2026-09-20T22:02:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1243.15,
+  "idle_hours": 348.84,
+  "fuel_remaining_percent": 62.4,
+  "engine_status": "running",
+  "latitude": 34.2718,
+  "longitude": 117.1838,
+  "recorded_at": "2026-09-20T22:12:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1243.6,
+  "idle_hours": 348.96,
+  "fuel_remaining_percent": 60.8,
+  "engine_status": "running",
+  "latitude": 34.2719,
+  "longitude": 117.1839,
+  "recorded_at": "2026-09-20T22:22:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1244.05,
+  "idle_hours": 349.08,
+  "fuel_remaining_percent": 59.2,
+  "engine_status": "stopped",
+  "latitude": 34.272,
+  "longitude": 117.184,
+  "recorded_at": "2026-09-20T22:32:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1244.5,
+  "idle_hours": 349.2,
+  "fuel_remaining_percent": 57.6,
+  "engine_status": "running",
+  "latitude": 34.2721,
+  "longitude": 117.1841,
+  "recorded_at": "2026-09-20T22:42:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1244.95,
+  "idle_hours": 349.32,
+  "fuel_remaining_percent": 56.0,
+  "engine_status": "running",
+  "latitude": 34.2722,
+  "longitude": 117.1842,
+  "recorded_at": "2026-09-20T22:52:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ },
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "operating_hours": 1245.4,
+  "idle_hours": 349.44,
+  "fuel_remaining_percent": 54.4,
+  "engine_status": "running",
+  "latitude": 34.2723,
+  "longitude": 117.1843,
+  "recorded_at": "2026-09-20T23:02:26Z",
+  "raw_payload": {
+   "scenario": "synthetic_scenario"
+  }
+ }
+]

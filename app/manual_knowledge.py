@@ -1,7 +1,16 @@
-"""Version-scoped, locally supplied manufacturer excerpts for investigations.
+"""Version-scoped manufacturer excerpts for investigations.
 
-The repository contains the loader, not private manuals. Entries are evidence,
-never executable instructions, and selecting a configuration is not certification.
+Two locations are read, in order:
+
+1. `data/local/manual-knowledge/` — the machine's own material, gitignored, normally the
+   richer set.
+2. `data/demo/manual-knowledge/` — a small distributable copy covering the pages the demo
+   scenario cites, so a machine with no private material can still show what grounding an
+   answer looks like.
+
+The first existing file wins, so a machine holding the full material never silently falls
+back to the subset. Entries are evidence, never executable instructions, and selecting a
+configuration is not certification.
 """
 import json
 from pathlib import Path
@@ -10,8 +19,18 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+_ROOT = Path(__file__).resolve().parents[1]
+_PRIVATE_KNOWLEDGE = _ROOT / 'data/local/manual-knowledge/xe55u.json'
+_PUBLIC_KNOWLEDGE = _ROOT / 'data/demo/manual-knowledge/xe55u.json'
 
-KNOWLEDGE_PATH = Path(__file__).resolve().parents[1] / 'data/local/manual-knowledge/xe55u.json'
+
+def knowledge_path() -> Path:
+    """The knowledge file to read, preferring the machine's own material."""
+    return _PRIVATE_KNOWLEDGE if _PRIVATE_KNOWLEDGE.is_file() else _PUBLIC_KNOWLEDGE
+
+
+# Kept for callers that read the path directly; resolved at import.
+KNOWLEDGE_PATH = knowledge_path()
 Configuration = Literal['unknown', 'XE55U.00III', 'XE55U.00VI']
 
 
@@ -66,11 +85,14 @@ def retrieve_manuals(fault: EngineeringFault, machine_model: str) -> dict:
     result = {'method': 'version_scoped_manual_retrieval_v1', 'records': [],
               'applicability': applicability, 'configuration': fault.configuration,
               'status': 'knowledge_unavailable'}
-    if not KNOWLEDGE_PATH.is_file():
+    # Read the module constant, not a fresh resolve: tests replace it to supply their own
+    # knowledge file, and resolving again here would ignore that and read the real one.
+    path = KNOWLEDGE_PATH
+    if not path.is_file():
         return result
-    if KNOWLEDGE_PATH.stat().st_size > 4_000_000:
+    if path.stat().st_size > 4_000_000:
         raise ValueError('Manual knowledge file exceeds supported size')
-    payload = json.loads(KNOWLEDGE_PATH.read_text(encoding='utf-8-sig'))
+    payload = json.loads(path.read_text(encoding='utf-8-sig'))
     if payload.get('schema_version') != 1 or not isinstance(payload.get('records'), list):
         raise ValueError('Unsupported manual knowledge format')
     seen = set()

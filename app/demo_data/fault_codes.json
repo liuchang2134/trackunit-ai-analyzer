@@ -1,0 +1,18 @@
+[
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "spn": 639,
+  "fmi": 9,
+  "fault_code": "E4030",
+  "description": "J1939 总线故障（合成演示事件，非平台上报）",
+  "severity": "medium",
+  "occurred_at": "2026-09-20T22:27:26Z",
+  "status": "open",
+  "raw_payload": {
+   "scenario": "synthetic_scenario",
+   "not_a_trackunit_report": true
+  }
+ }
+]

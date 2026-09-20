@@ -90,7 +90,27 @@ def main(argv=None) -> int:
     except (urllib.error.URLError, OSError, ValueError) as error:
         problems.append(f'设备索引不可用（{error}）；第 1 步无法演示')
 
-    # Step 2–3: the replay tab needs at least one run that really called a model.
+    # The walkthrough needs a machine that can reach the manual step. A real fleet has no
+    # broken machines and the other mock machines are not the model the excerpts cover, so
+    # this scenario is what keeps the fault step from being empty.
+    try:
+        from scripts.prepare_demo_scenario import DEMO_MACHINE_ID, DEMO_MODEL, scenario_present
+        state = scenario_present()
+        print(f'  演示场景: {DEMO_MACHINE_ID} · {DEMO_MODEL}')
+        for label, key, hint in (
+            ('设备', 'machine', '第 1 步无法选中演示设备'),
+            ('遥测', 'telemetry', '趋势图为空'),
+            ('故障事件', 'fault', '第 2 步没有故障码可读'),
+            ('手册摘录', 'manual_published', 'AI 无法给出手册页码'),
+        ):
+            ready = state.get(key)
+            print(f"           {'就绪' if ready else '缺失'}: {label}")
+            if not ready:
+                problems.append(f'演示场景的{label}缺失（{hint}）；运行 scripts/prepare_demo_scenario.py')
+    except ImportError as error:
+        problems.append(f'无法读取演示场景：{error}')
+
+    # The replay tab needs at least one run that really called a model.
     total, replayable, unreadable = count_replayable()
     print(f'  本机记录: {total} 条，其中真的跑过模型 {replayable} 条'
           + (f'（另有 {unreadable} 条无法读取，未计入）' if unreadable else ''))

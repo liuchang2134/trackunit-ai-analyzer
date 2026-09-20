@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "records": [
+    {
+      "reference_id": "xe55u-iii-ewmen55u-a02-e4030-286",
+      "title": "XE55U HYDRAULIC EXCAVATOR SHOP MANUAL",
+      "model": "XE55U",
+      "configuration": "XE55U.00III",
+      "version": "EWMEN55U-A02 / 2024.6.21",
+      "pdf_pages": [
+        286
+      ],
+      "section": "5.5.8 Fault Diagnosis - E4030 J1939 Bus Fault (printed 5-102)",
+      "fault_codes": [
+        "E4030"
+      ],
+      "text": "Fault code: E4030. Fault name: J1939 bus fault. Fault symptom: Loss of communication between the main controller and the engine is detected, and the subject of the diagnostic implementation is the controller. Vehicle response: —. Fault phenomenon: Loss of communication between the controller and the engine; the instrument displays fault code E4030.\nPossible cause 1: Fuse blow. Fault diagnosis: Check whether the ECU fuse is blown. The table lists replacement of the fuse as the corresponding operation, not as proof that every E4030 needs a new fuse.\nPossible cause 2: Lead wire is break circuit. The table requires the starter switch in the power-off position. Measure resistance between ECU CANH2 and CANL2: about 60 ohms. For ECU power-supply and grounding-line resistance measurements, the table additionally requires disconnecting the ECU. Each stated normal value is less than 1 ohm.\nPossible cause 3: Lead wire is short circuit. The table requires the starter switch in the power-off position and disconnecting the controller and ECM. Measure ECU power-supply wire and CAN wire resistance to ground; the stated normal value is greater than 2 megaohms. This row continues on PDF page 287.\nScope: This excerpt belongs only to the XE55U.00III manual identified above. Component names are diagnostic directions, not purchasing part numbers. These measurements must retain the source conditions and are not universal thresholds for every machine configuration. Use the full applicable manual for work on the machine.",
+      "source_url": "https://xcmgnorthamerica.sharepoint.com/sites/ARCSRD/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FARCSRD%2FShared%20Documents%2FGeneral%2FProduct%20Literature%20Library%2FExcavators%2FXE55U-two-way%20blade%2Fworkshop%20manual%2FYPS00014262_EWMEN55U-A02_XE55U%E6%B6%B2%E5%8E%8B%E6%8C%96%E6%8E%98%E6%9C%BA%E8%A3%85%E4%BF%AE%E6%89%8B%E5%86%8C(XE55U.00%E2%85%A2)_%E8%8B%B1%E6%96%87_2024.6.21.pdf",
+      "provenance": {
+        "kind": "manufacturer_manual_verified_excerpt",
+        "file_name": "YPS00014262_EWMEN55U-A02_XE55U液压挖掘机装修手册(XE55U.00Ⅲ)_英文_2024.6.21.pdf",
+        "collection_method": "SharePoint PDF preview: accessible text read and table visually checked; normalized excerpt with explicit scope notes, not a full PDF import",
+        "verified_at": "2026-09-15",
+        "translation": false,
+        "original_pdf_downloaded": false
+      }
+    },
+    {
+      "reference_id": "xe55u-iii-ewmen55u-a02-e4030-287",
+      "title": "XE55U HYDRAULIC EXCAVATOR SHOP MANUAL",
+      "model": "XE55U",
+      "configuration": "XE55U.00III",
+      "version": "EWMEN55U-A02 / 2024.6.21",
+      "pdf_pages": [
+        287
+      ],
+      "section": "5.5.8 Fault Diagnosis - E4030 J1939 Bus Fault (continued)",
+      "fault_codes": [
+        "E4030"
+      ],
+      "text": "Continuation of the E4030 diagnosis table on PDF page 286. The short-circuit row finishes: use a multimeter to check whether they are conductive to ground.\nPossible cause 4: Lead wire connector fault. Circuit connection may be faulty. The inspection items listed in the manual are: connector loosens or seal is damaged; pin is rusted, bent, damaged or expanded; connector gets in water, accumulates dust, or has an insulation problem. The corresponding operation in the table is replacement of the faulty connector, after a fault is identified.\nPossible cause 5: ECU failure. Fault diagnosis: Check whether ECU is faulty. The corresponding table operation is replacement of the ECU for fault determination.\nPossible cause 6: Controller fault. Fault diagnosis: Check controller itself for any fault. The corresponding table operations are refreshing the controller program and replacement of the controller for fault judgment.\nScope: The table lists alternative causes, not a confirmed diagnosis or a directive to replace all listed components. A visual connector check does not establish continuity, insulation resistance, ECU health or controller health. This excerpt is from XE55U.00III; serial/configuration applicability remains separate. No official spare-part numbers are given on this page. Carry out actual maintenance under the complete applicable manufacturer procedure.",
+      "source_url": "https://xcmgnorthamerica.sharepoint.com/sites/ARCSRD/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FARCSRD%2FShared%20Documents%2FGeneral%2FProduct%20Literature%20Library%2FExcavators%2FXE55U-two-way%20blade%2Fworkshop%20manual%2FYPS00014262_EWMEN55U-A02_XE55U%E6%B6%B2%E5%8E%8B%E6%8C%96%E6%8E%98%E6%9C%BA%E8%A3%85%E4%BF%AE%E6%89%8B%E5%86%8C(XE55U.00%E2%85%A2)_%E8%8B%B1%E6%96%87_2024.6.21.pdf",
+      "provenance": {
+        "kind": "manufacturer_manual_verified_excerpt",
+        "file_name": "YPS00014262_EWMEN55U-A02_XE55U液压挖掘机装修手册(XE55U.00Ⅲ)_英文_2024.6.21.pdf",
+        "collection_method": "SharePoint PDF preview: visually checked rows 4-6 and continuation; normalized excerpt with explicit scope notes, not a full PDF import",
+        "verified_at": "2026-09-15",
+        "translation": false,
+        "original_pdf_downloaded": false
+      }
+    }
+  ]
+}

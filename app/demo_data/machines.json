@@ -1,0 +1,13 @@
+[
+ {
+  "machine_id": "DEMO-XE55U-001",
+  "trackunit_asset_id": "DEMO-XE55U-001",
+  "equipment_id": "SIM-DEMO-XE55U-001",
+  "serial_number": "SIM-DEMO-XE55U-001",
+  "model": "XE55U",
+  "machine_type": "excavator",
+  "customer": "演示场景（合成设备）",
+  "location": "演示场地",
+  "last_seen_at": "2026-09-20T23:06:26Z"
+ }
+]

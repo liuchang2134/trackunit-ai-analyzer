@@ -123,7 +123,16 @@ def cache_status(ttl_seconds: int | None = None) -> dict[str, Any]:
 
 
 def get_data_source() -> str:
+    """Which store the loaders read.
+
+    `demo` is a third source rather than a flag on the mock fleet: the demonstration ships
+    its own machine, and adding it to `app/mock_data/` would change the fixture every other
+    test and the offline walkthrough depend on — including tests that pick a machine by
+    model, which a second XE55U would silently make ambiguous.
+    """
     configured = os.getenv("DATA_SOURCE", "mock")
+    if configured == "demo":
+        return "demo"
     if configured == "trackunit_cache" and cache_exists():
         return "trackunit_cache"
     if cache_exists() and configured != "mock":
@@ -131,19 +140,34 @@ def get_data_source() -> str:
     return "mock"
 
 
+DEMO_DIR = ROOT / "app" / "demo_data"
+DEMO_MACHINES = DEMO_DIR / "machines.json"
+DEMO_TELEMETRY = DEMO_DIR / "telemetry_snapshots.json"
+DEMO_FAULTS = DEMO_DIR / "fault_codes.json"
+
+
 def load_machines() -> list[Machine]:
-    if get_data_source() == "trackunit_cache":
+    source = get_data_source()
+    if source == "trackunit_cache":
         return [Machine(**item) for item in _read_json(MACHINES_CACHE)]
+    if source == "demo":
+        return [Machine(**item) for item in _read_json(DEMO_MACHINES)]
     return load_mock_machines()
 
 
 def load_telemetry() -> list[TelemetrySnapshot]:
-    if get_data_source() == "trackunit_cache":
+    source = get_data_source()
+    if source == "trackunit_cache":
         return [TelemetrySnapshot(**item) for item in _read_json(TELEMETRY_CACHE)]
+    if source == "demo":
+        return [TelemetrySnapshot(**item) for item in _read_json(DEMO_TELEMETRY)]
     return load_mock_telemetry()
 
 
 def load_faults() -> list[FaultCode]:
-    if get_data_source() == "trackunit_cache":
+    source = get_data_source()
+    if source == "trackunit_cache":
         return [FaultCode(**item) for item in _read_json(FAULTS_CACHE)]
+    if source == "demo":
+        return [FaultCode(**item) for item in _read_json(DEMO_FAULTS)]
     return load_mock_faults()
