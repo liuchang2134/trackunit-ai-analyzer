@@ -1,0 +1,63 @@
+{
+  "checked_at": "2026-09-14T11:22:27+00:00",
+  "window_start": "2026-09-07T11:22:27+00:00",
+  "window_end": "2026-09-14T11:22:27+00:00",
+  "selected_registered_assets": 1,
+  "model": "XE55U",
+  "requested_scopes": [
+    "account.event.view",
+    "api.iso15143.snapshot",
+    "api.iso15143.timeseries",
+    "asset.view"
+  ],
+  "data_requests": [
+    {
+      "name": "operating_hours_control",
+      "method": "GET",
+      "http_status": 200,
+      "bearer_challenge_present": false,
+      "expected_collection_present": true,
+      "record_count": 36
+    },
+    {
+      "name": "machine_fault_events",
+      "method": "POST",
+      "http_status": 401,
+      "bearer_challenge_present": false
+    }
+  ],
+  "external_writes": false,
+  "automatic_retries": false,
+  "token_acquired": true,
+  "token_claims_required_scopes_present": [
+    "account.event.view",
+    "api.iso15143.snapshot",
+    "api.iso15143.timeseries",
+    "asset.view"
+  ],
+  "token_claims_note": "Decoded only; successful API responses, not local decoding, establish access.",
+  "finished_at": "2026-09-14T11:22:28.556941+00:00",
+  "official_spec": "https://developers.trackunit.com/openapi/asset-event-api.json",
+  "spec_sha256": "d9b234d75e0616ecd6a6d2245be8f5a2cced6aace8a1fe9c3e4d8233a9df9b7b",
+  "event_endpoint": "https://iris.trackunit.com/public/api/eventlog/v3/asset-event/log",
+  "event_filter": {
+    "asset_count": 1,
+    "type": [
+      "MACHINE_FAULT"
+    ],
+    "page": 0,
+    "size": 1000
+  },
+  "root_cause": "unconfirmed; same-token AEMP access succeeded, event API authentication/access rejected",
+  "application_code_changed": false,
+  "gemini_requested": false,
+  "xgss_requested": false,
+  "browser_verified": {
+    "page": "数据与备件库",
+    "displayed_local_time": "2026/9/14 07:22:28",
+    "operating_hours": "HTTP 200 / 36",
+    "idle_hours": "not_checked",
+    "fault_events": "HTTP 401",
+    "new_provider_request_during_browser_check": false
+  }
+}

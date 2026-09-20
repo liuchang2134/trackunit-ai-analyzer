@@ -1,0 +1,2353 @@
+{
+  "generated_at": "2026-09-14T05:02:24.011548+00:00",
+  "model": "qwen3:8b",
+  "scope": "Selected synthetic workflow smoke cases, one run each; not real-machine accuracy or a latency benchmark",
+  "code_hashes": {
+    "app/local_assistant.py": "557fd6b77ae85910a5d3d0631b6ba34c655159cf0c26a3c40ed8d46719579c09",
+    "app/parts_catalog.py": "ab1b288a8edc832e44b6902d2f5b41de8d28649f75125ca0814e43d60094ab0b",
+    "app/telemetry_evidence.py": "d98a15ff08037bd8ee44b9807632fcb804380fb50ca91b3bb5214449f33d99a4",
+    "app/check_options.py": "2670396ca6c8b034de9c4ca4839bb35424c62fd96c1d58f9ec7c04c58a1d8204",
+    "app/fault_evidence.py": "8af85e800eb018578aebd18d16cf86e62ade658ce6df6ba409036e465fdd7a00"
+  },
+  "cases": [
+    {
+      "name": "one_sample",
+      "input": {
+        "name": "演示：增压信号告警与备件排查",
+        "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+        "provenance": "synthetic",
+        "machine": {
+          "machine_id": "SIM-PARTS-REPLAY-001",
+          "trackunit_asset_id": null,
+          "equipment_id": null,
+          "serial_number": "SIM-PARTS-REPLAY-001",
+          "model": "XE135U",
+          "machine_type": "excavator",
+          "customer": "SYNTHETIC DEMO",
+          "location": "Synthetic site",
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": "2026-06-29T08:45:00+00:00"
+        },
+        "telemetry": [
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          }
+        ],
+        "faults": [],
+        "replay_at": "2026-06-29T08:55:00Z"
+      },
+      "catalog": {
+        "parts": [
+          {
+            "part_number": "DEMO-BOOST-SENSOR",
+            "name": "演示增压压力传感器（非采购零件号）",
+            "component": "boost pressure sensor",
+            "models": [
+              "XE135U"
+            ],
+            "serial_numbers": [],
+            "applicability": "model_only",
+            "fault_codes": [
+              "ENG-BOOST-102-3"
+            ],
+            "checks": [
+              "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+            ],
+            "source_document": "机联智检人工编写演示目录，不是制造商资料",
+            "source_page": "演示条目1",
+            "revision": "demo-v1",
+            "provenance": "demo"
+          }
+        ]
+      },
+      "request": {
+        "machine_id": "SIM-PARTS-REPLAY-001",
+        "dataset_id": "3a0d0a1a640837d475794f4ed890cb550833c8a5765008983186e278fd44f6f0",
+        "question": "分析工时增量和怠速占比；资料不足时明确说明。",
+        "language": "zh",
+        "observations": "",
+        "task": "trends"
+      },
+      "checks": {
+        "required_queries_executed": true,
+        "all_citations_exist": true,
+        "has_supported_checks": true,
+        "check_sources_exist": true,
+        "check_text_is_source_selected": true,
+        "no_invented_counter_results": true
+      },
+      "structural_pass": true,
+      "model_decisions": [
+        {
+          "allowed_actions": [
+            "snapshot",
+            "faults",
+            "trends"
+          ],
+          "control": "Allowed next actions: [\"snapshot\", \"faults\", \"trends\"]. Completed queries must not be repeated. If sufficient evidence has been read, finish now. Required unfinished queries: [\"snapshot\", \"trends\"]Use EXACT evidence_ids from this list: []. Check options (select exact check_id values for next_check_ids): []. When nonempty, include at least one of these matched-catalog check IDs: []. Do not use machine IDs as evidence IDs. Final summary must be nonempty, in zh",
+          "previous_message": "{\"question\": \"分析工时增量和怠速占比；资料不足时明确说明。\", \"machine\": \"SIM-PARTS-REPLAY-001\", \"source\": \"imported_synthetic\", \"observations\": \"\"}",
+          "decision": {
+            "action": "snapshot",
+            "component": "",
+            "summary": "",
+            "evidence_ids": [
+              "snapshot-SIM-PARTS-REPLAY-001-2023-10-01T00:00:00"
+            ],
+            "next_check_ids": []
+          }
+        },
+        {
+          "allowed_actions": [
+            "faults",
+            "trends"
+          ],
+          "control": "Allowed next actions: [\"faults\", \"trends\"]. Completed queries must not be repeated. If sufficient evidence has been read, finish now. Required unfinished queries: [\"trends\"]Use EXACT evidence_ids from this list: [\"tool:1:snapshot\"]. Check options (select exact check_id values for next_check_ids): [{\"check_id\": \"check:snapshot\", \"text\": \"核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。\", \"evidence_ids\": [\"tool:1:snapshot\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}]. When nonempty, include at least one of these matched-catalog check IDs: []. Do not use machine IDs as evidence IDs. Final summary must be nonempty, in zh",
+          "previous_message": "{\"tool_result\": {\"machine\": {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"serial_number\": \"SIM-PARTS-REPLAY-001\", \"model\": \"XE135U\", \"machine_type\": \"excavator\", \"customer\": \"SYNTHETIC DEMO\", \"location\": \"Synthetic site\", \"latitude\": null, \"longitude\": null, \"last_seen_at\": \"2026-06-29T08:45:00+00:00\"}, \"total_telemetry_records\": 1, \"displayed_latest_records_limit\": 8, \"telemetry\": [{\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}], \"source\": \"imported_synthetic\", \"replay_at\": \"2026-06-29T08:55:00+00:00\", \"source_document\": \"人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则\", \"limitation\": \"May be stale or incomplete; inspect recorded_at and last_seen_at.\"}, \"source_id\": \"tool:1:snapshot\"}",
+          "decision": {
+            "action": "trends",
+            "component": "",
+            "summary": "未获取到趋势数据，无法分析工时增量和怠速占比。请检查数据完整性和时间范围。",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "next_check_ids": [
+              "check:snapshot"
+            ]
+          }
+        },
+        {
+          "allowed_actions": [
+            "faults",
+            "finish"
+          ],
+          "control": "Allowed next actions: [\"faults\", \"finish\"]. Completed queries must not be repeated. If sufficient evidence has been read, finish now. Required unfinished queries: []Use EXACT evidence_ids from this list: [\"tool:1:snapshot\", \"tool:2:trends\"]. Check options (select exact check_id values for next_check_ids): [{\"check_id\": \"check:snapshot\", \"text\": \"核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。\", \"evidence_ids\": [\"tool:1:snapshot\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}, {\"check_id\": \"check:trend-coverage\", \"text\": \"补充并核对工时、怠速计数的时间戳与连续性；排除重置和冲突区间，满足有效运行时长后再计算窗口指标。\", \"evidence_ids\": [\"tool:2:trends\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}]. When nonempty, include at least one of these matched-catalog check IDs: []. Do not use machine IDs as evidence IDs. Final summary must be nonempty, in zh",
+          "previous_message": "{\"tool_result\": {\"method\": \"time_window_rules_v1\", \"as_of\": \"2026-06-29T08:55:00+00:00\", \"sample_count\": 1, \"completeness\": \"not_verified\", \"fault_coverage\": \"unknown\", \"window_duration_hours\": null, \"excluded_samples\": {\"duplicate\": 0}, \"window_start\": \"2026-06-29T08:45:00+00:00\", \"window_end\": \"2026-06-29T08:45:00+00:00\", \"valid_intervals\": 0, \"excluded_intervals\": 0, \"operating_hours_delta\": null, \"idle_hours_delta\": null, \"paired_idle_intervals\": 0, \"idle_counter_coverage\": \"missing_or_invalid\", \"operating_counter_window_start\": \"2026-06-29T08:45:00+00:00\", \"operating_counter_window_end\": \"2026-06-29T08:45:00+00:00\", \"idle_share\": null, \"latest_age_hours\": 0.17, \"findings\": [], \"findings_total\": 0, \"limitations\": [\"No remaining-life or calibrated failure probability is estimated.\", \"Only supplied records are assessed; absent findings do not prove health.\", \"Counter deltas assume aligned sample timestamps and cumulative engine-running/idle counters.\", \"Idle share requires at least 0.5 valid operating hours and aligned idle counters across every accepted operating interval. Operating increments are sums of valid intervals, not proof of full-window coverage.\"], \"source\": \"imported_synthetic\"}, \"source_id\": \"tool:2:trends\"}",
+          "decision": {
+            "action": "finish",
+            "component": "",
+            "summary": "未获取到有效的趋势数据，无法计算工时增量和怠速占比。当前数据仅包含单条记录，时间窗口未覆盖完整运行周期。建议检查数据完整性及时间范围，确保覆盖有效运行时段后再进行分析。",
+            "evidence_ids": [
+              "tool:1:snapshot",
+              "tool:2:trends"
+            ],
+            "next_check_ids": [
+              "check:snapshot"
+            ]
+          }
+        }
+      ],
+      "report": {
+        "status": "completed",
+        "provider": "ollama_local",
+        "model": "qwen3:8b",
+        "machine_id": "SIM-PARTS-REPLAY-001",
+        "source": "imported_synthetic",
+        "dataset_id": "3a0d0a1a640837d475794f4ed890cb550833c8a5765008983186e278fd44f6f0",
+        "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+        "replay_at": "2026-06-29T08:55:00+00:00",
+        "summary": "未获取到有效的趋势数据，无法计算工时增量和怠速占比。当前数据仅包含单条记录，时间窗口未覆盖完整运行周期。建议检查数据完整性及时间范围，确保覆盖有效运行时段后再进行分析。",
+        "next_checks": [
+          "核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。"
+        ],
+        "check_recommendations": [
+          {
+            "check_id": "check:snapshot",
+            "text": "核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "provenance": "application_rule",
+            "source_document": "机联智检数据核验规则 v1",
+            "limitation": "资料与适用性需核实；不是制造商认证的维修结论。"
+          }
+        ],
+        "check_selection_method": "model_selected_source_text_v1",
+        "citations": [
+          "tool:1:snapshot",
+          "tool:2:trends"
+        ],
+        "evidence": {
+          "tool:1:snapshot": {
+            "machine": {
+              "machine_id": "SIM-PARTS-REPLAY-001",
+              "trackunit_asset_id": null,
+              "equipment_id": null,
+              "serial_number": "SIM-PARTS-REPLAY-001",
+              "model": "XE135U",
+              "machine_type": "excavator",
+              "customer": "SYNTHETIC DEMO",
+              "location": "Synthetic site",
+              "latitude": null,
+              "longitude": null,
+              "last_seen_at": "2026-06-29T08:45:00+00:00"
+            },
+            "total_telemetry_records": 1,
+            "displayed_latest_records_limit": 8,
+            "telemetry": [
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              }
+            ],
+            "source": "imported_synthetic",
+            "replay_at": "2026-06-29T08:55:00+00:00",
+            "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+            "limitation": "May be stale or incomplete; inspect recorded_at and last_seen_at."
+          },
+          "tool:2:trends": {
+            "method": "time_window_rules_v1",
+            "as_of": "2026-06-29T08:55:00+00:00",
+            "sample_count": 1,
+            "completeness": "not_verified",
+            "fault_coverage": "unknown",
+            "window_duration_hours": null,
+            "excluded_samples": {
+              "duplicate": 0
+            },
+            "window_start": "2026-06-29T08:45:00+00:00",
+            "window_end": "2026-06-29T08:45:00+00:00",
+            "valid_intervals": 0,
+            "excluded_intervals": 0,
+            "operating_hours_delta": null,
+            "idle_hours_delta": null,
+            "paired_idle_intervals": 0,
+            "idle_counter_coverage": "missing_or_invalid",
+            "operating_counter_window_start": "2026-06-29T08:45:00+00:00",
+            "operating_counter_window_end": "2026-06-29T08:45:00+00:00",
+            "idle_share": null,
+            "latest_age_hours": 0.17,
+            "findings": [],
+            "findings_total": 0,
+            "limitations": [
+              "No remaining-life or calibrated failure probability is estimated.",
+              "Only supplied records are assessed; absent findings do not prove health.",
+              "Counter deltas assume aligned sample timestamps and cumulative engine-running/idle counters.",
+              "Idle share requires at least 0.5 valid operating hours and aligned idle counters across every accepted operating interval. Operating increments are sums of valid intervals, not proof of full-window coverage."
+            ],
+            "source": "imported_synthetic"
+          }
+        },
+        "parts_candidates": [],
+        "tool_trace": [
+          {
+            "action": "snapshot",
+            "source_id": "tool:1:snapshot"
+          },
+          {
+            "action": "trends",
+            "source_id": "tool:2:trends"
+          }
+        ],
+        "generated_at": "2026-09-14T05:02:28.876413+00:00",
+        "task": "trends",
+        "required_queries": [
+          "snapshot",
+          "trends"
+        ],
+        "limitations": [
+          "AI hypotheses require inspection; no remaining-life estimate.",
+          "Catalog applicability is user supplied and is not manufacturer certification."
+        ]
+      },
+      "elapsed_seconds": 4.78
+    },
+    {
+      "name": "comprehensive",
+      "input": {
+        "name": "演示：增压信号告警与备件排查",
+        "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+        "provenance": "synthetic",
+        "machine": {
+          "machine_id": "SIM-PARTS-REPLAY-001",
+          "trackunit_asset_id": null,
+          "equipment_id": null,
+          "serial_number": "SIM-PARTS-REPLAY-001",
+          "model": "XE135U",
+          "machine_type": "excavator",
+          "customer": "SYNTHETIC DEMO",
+          "location": "Synthetic site",
+          "latitude": null,
+          "longitude": null,
+          "last_seen_at": "2026-06-29T08:45:00+00:00"
+        },
+        "telemetry": [
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.5458,
+            "idle_hours": 608.247,
+            "fuel_remaining_percent": 76.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:01:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.5625,
+            "idle_hours": 608.2637,
+            "fuel_remaining_percent": 76.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:02:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.5791,
+            "idle_hours": 608.2803,
+            "fuel_remaining_percent": 76.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:03:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.5958,
+            "idle_hours": 608.297,
+            "fuel_remaining_percent": 76.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:04:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.6125,
+            "idle_hours": 608.3137,
+            "fuel_remaining_percent": 76.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:05:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.6291,
+            "idle_hours": 608.3303,
+            "fuel_remaining_percent": 76.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:06:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.6458,
+            "idle_hours": 608.347,
+            "fuel_remaining_percent": 76.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:07:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.6625,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 76.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:08:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.6791,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 76.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:09:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.6958,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 76.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:10:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.7125,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 76.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:11:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.7291,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 76.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:12:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.7458,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 76.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:13:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.7625,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 76.0,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:14:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.7791,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 75.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:15:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.7958,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 75.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:16:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.8125,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 75.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:17:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.8291,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 75.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:18:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.8458,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 75.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:19:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.8625,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 75.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:20:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.8791,
+            "idle_hours": 608.3526,
+            "fuel_remaining_percent": 75.3,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:21:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.8958,
+            "idle_hours": 608.3595,
+            "fuel_remaining_percent": 75.3,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:22:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.9125,
+            "idle_hours": 608.3762,
+            "fuel_remaining_percent": 75.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:23:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.9291,
+            "idle_hours": 608.3873,
+            "fuel_remaining_percent": 75.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:24:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.9458,
+            "idle_hours": 608.397,
+            "fuel_remaining_percent": 75.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:25:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.9625,
+            "idle_hours": 608.4137,
+            "fuel_remaining_percent": 75.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:26:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.9791,
+            "idle_hours": 608.4303,
+            "fuel_remaining_percent": 75.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:27:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4856.9958,
+            "idle_hours": 608.4387,
+            "fuel_remaining_percent": 75.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:28:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.0125,
+            "idle_hours": 608.4387,
+            "fuel_remaining_percent": 75.0,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:29:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.0291,
+            "idle_hours": 608.4387,
+            "fuel_remaining_percent": 74.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:30:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.0458,
+            "idle_hours": 608.4456,
+            "fuel_remaining_percent": 74.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:31:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.0625,
+            "idle_hours": 608.4595,
+            "fuel_remaining_percent": 74.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:32:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.0791,
+            "idle_hours": 608.4595,
+            "fuel_remaining_percent": 74.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:33:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.0958,
+            "idle_hours": 608.4595,
+            "fuel_remaining_percent": 74.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:34:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.1125,
+            "idle_hours": 608.4595,
+            "fuel_remaining_percent": 74.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:35:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.1291,
+            "idle_hours": 608.4748,
+            "fuel_remaining_percent": 74.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:36:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.1458,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 74.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:37:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.1625,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 74.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:38:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.1791,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 74.3,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:39:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.1958,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 74.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:40:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.2125,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 74.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:41:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.2291,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 74.0,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:42:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.2458,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 73.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:43:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.2625,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 73.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:44:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.2791,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 73.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.2958,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 73.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:46:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.3125,
+            "idle_hours": 608.4914,
+            "fuel_remaining_percent": 73.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:47:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.3291,
+            "idle_hours": 608.4984,
+            "fuel_remaining_percent": 73.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:48:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.3458,
+            "idle_hours": 608.5151,
+            "fuel_remaining_percent": 73.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:49:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.3625,
+            "idle_hours": 608.5303,
+            "fuel_remaining_percent": 73.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:50:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.3791,
+            "idle_hours": 608.5303,
+            "fuel_remaining_percent": 73.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:51:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.3958,
+            "idle_hours": 608.5317,
+            "fuel_remaining_percent": 73.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:52:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.4125,
+            "idle_hours": 608.5484,
+            "fuel_remaining_percent": 73.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:53:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.4291,
+            "idle_hours": 608.5651,
+            "fuel_remaining_percent": 73.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:54:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.4458,
+            "idle_hours": 608.5803,
+            "fuel_remaining_percent": 73.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:55:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.4625,
+            "idle_hours": 608.5803,
+            "fuel_remaining_percent": 73.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:56:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.4791,
+            "idle_hours": 608.5803,
+            "fuel_remaining_percent": 73.0,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:57:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.4958,
+            "idle_hours": 608.5803,
+            "fuel_remaining_percent": 72.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:58:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.5125,
+            "idle_hours": 608.5803,
+            "fuel_remaining_percent": 72.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T07:59:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.5291,
+            "idle_hours": 608.5803,
+            "fuel_remaining_percent": 72.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:00:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.5458,
+            "idle_hours": 608.5942,
+            "fuel_remaining_percent": 72.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:01:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.5625,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 72.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:02:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.5791,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 72.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:03:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.5958,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 72.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:04:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.6125,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 72.3,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:05:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.6291,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 72.3,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:06:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.6458,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 72.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:07:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.6625,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 72.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:08:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.6791,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 72.0,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:09:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.6958,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 71.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:10:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.7125,
+            "idle_hours": 608.6095,
+            "fuel_remaining_percent": 71.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:11:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.7291,
+            "idle_hours": 608.6151,
+            "fuel_remaining_percent": 71.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:12:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.7458,
+            "idle_hours": 608.6317,
+            "fuel_remaining_percent": 71.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:13:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.7625,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 71.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:14:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.7791,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 71.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:15:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.7958,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 71.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:16:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.8125,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 71.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:17:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.8291,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 71.3,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:18:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.8458,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 71.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:19:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.8625,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 71.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:20:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.8791,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 71.0,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:21:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.8958,
+            "idle_hours": 608.6387,
+            "fuel_remaining_percent": 70.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:22:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.9125,
+            "idle_hours": 608.6401,
+            "fuel_remaining_percent": 70.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:23:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.9291,
+            "idle_hours": 608.6567,
+            "fuel_remaining_percent": 70.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:24:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.9458,
+            "idle_hours": 608.6609,
+            "fuel_remaining_percent": 70.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:25:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.9625,
+            "idle_hours": 608.6609,
+            "fuel_remaining_percent": 70.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:26:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.9791,
+            "idle_hours": 608.6623,
+            "fuel_remaining_percent": 70.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:27:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4857.9958,
+            "idle_hours": 608.6789,
+            "fuel_remaining_percent": 70.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:28:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.0125,
+            "idle_hours": 608.6956,
+            "fuel_remaining_percent": 70.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:29:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.0291,
+            "idle_hours": 608.7123,
+            "fuel_remaining_percent": 70.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:30:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.0458,
+            "idle_hours": 608.7276,
+            "fuel_remaining_percent": 70.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:31:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.0625,
+            "idle_hours": 608.7276,
+            "fuel_remaining_percent": 70.3,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:32:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.0791,
+            "idle_hours": 608.7276,
+            "fuel_remaining_percent": 70.3,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:33:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.0958,
+            "idle_hours": 608.7276,
+            "fuel_remaining_percent": 70.2,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:34:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.1125,
+            "idle_hours": 608.7276,
+            "fuel_remaining_percent": 70.1,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:35:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.1291,
+            "idle_hours": 608.7276,
+            "fuel_remaining_percent": 70.0,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:36:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.1458,
+            "idle_hours": 608.7276,
+            "fuel_remaining_percent": 69.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:37:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.1625,
+            "idle_hours": 608.7345,
+            "fuel_remaining_percent": 69.9,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:38:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.1791,
+            "idle_hours": 608.7512,
+            "fuel_remaining_percent": 69.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:39:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.1958,
+            "idle_hours": 608.7664,
+            "fuel_remaining_percent": 69.8,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:40:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2125,
+            "idle_hours": 608.7664,
+            "fuel_remaining_percent": 69.7,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:41:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2291,
+            "idle_hours": 608.7664,
+            "fuel_remaining_percent": 69.6,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:42:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2458,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.5,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:43:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2625,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:44:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "operating_hours": 4858.2791,
+            "idle_hours": 608.7748,
+            "fuel_remaining_percent": 69.4,
+            "engine_status": "running",
+            "latitude": null,
+            "longitude": null,
+            "recorded_at": "2026-06-29T08:45:00+00:00",
+            "raw_payload": null
+          }
+        ],
+        "faults": [
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "spn": null,
+            "fmi": null,
+            "fault_code": "ENG-BOOST-102-3",
+            "description": "人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。",
+            "severity": "medium",
+            "occurred_at": "2026-06-29T08:20:00+00:00",
+            "status": "open",
+            "raw_payload": null
+          },
+          {
+            "machine_id": "SIM-PARTS-REPLAY-001",
+            "trackunit_asset_id": null,
+            "equipment_id": null,
+            "spn": null,
+            "fmi": null,
+            "fault_code": "ENG-BOOST-102-3",
+            "description": "人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。",
+            "severity": "medium",
+            "occurred_at": "2026-06-29T08:45:00+00:00",
+            "status": "open",
+            "raw_payload": null
+          }
+        ],
+        "replay_at": "2026-06-29T08:55:00Z"
+      },
+      "catalog": {
+        "parts": [
+          {
+            "part_number": "DEMO-BOOST-SENSOR",
+            "name": "演示增压压力传感器（非采购零件号）",
+            "component": "boost pressure sensor",
+            "models": [
+              "XE135U"
+            ],
+            "serial_numbers": [],
+            "applicability": "model_only",
+            "fault_codes": [
+              "ENG-BOOST-102-3"
+            ],
+            "checks": [
+              "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+            ],
+            "source_document": "机联智检人工编写演示目录，不是制造商资料",
+            "source_page": "演示条目1",
+            "revision": "demo-v1",
+            "provenance": "demo"
+          }
+        ]
+      },
+      "request": {
+        "machine_id": "SIM-PARTS-REPLAY-001",
+        "dataset_id": "926fa6c37d60fd358f94bb9697a53f3ba5be20820b413cbab14af3656896a147",
+        "question": "综合检查这个模拟片段，说明事件间隔、备件匹配依据和对应资料中的检查步骤。",
+        "language": "zh",
+        "observations": "",
+        "task": "comprehensive"
+      },
+      "checks": {
+        "required_queries_executed": true,
+        "all_citations_exist": true,
+        "has_supported_checks": true,
+        "check_sources_exist": true,
+        "check_text_is_source_selected": true,
+        "expected_catalog_candidates": true,
+        "event_interval_25_minutes": true,
+        "selected_matched_catalog_procedure": true
+      },
+      "structural_pass": true,
+      "model_decisions": [
+        {
+          "allowed_actions": [
+            "snapshot",
+            "faults",
+            "trends"
+          ],
+          "control": "Allowed next actions: [\"snapshot\", \"faults\", \"trends\"]. Completed queries must not be repeated. If sufficient evidence has been read, finish now. Required unfinished queries: [\"faults\", \"parts\", \"snapshot\", \"trends\"]Use EXACT evidence_ids from this list: []. Check options (select exact check_id values for next_check_ids): []. When nonempty, include at least one of these matched-catalog check IDs: []. Do not use machine IDs as evidence IDs. Final summary must be nonempty, in zh",
+          "previous_message": "{\"question\": \"综合检查这个模拟片段，说明事件间隔、备件匹配依据和对应资料中的检查步骤。\", \"machine\": \"SIM-PARTS-REPLAY-001\", \"source\": \"imported_synthetic\", \"observations\": \"\"}",
+          "decision": {
+            "action": "snapshot",
+            "component": "",
+            "summary": "",
+            "evidence_ids": [
+              "snapshot-SIM-PARTS-REPLAY-001-2023-10-01T00:00:00"
+            ],
+            "next_check_ids": []
+          }
+        },
+        {
+          "allowed_actions": [
+            "faults",
+            "trends"
+          ],
+          "control": "Allowed next actions: [\"faults\", \"trends\"]. Completed queries must not be repeated. If sufficient evidence has been read, finish now. Required unfinished queries: [\"faults\", \"parts\", \"trends\"]Use EXACT evidence_ids from this list: [\"tool:1:snapshot\"]. Check options (select exact check_id values for next_check_ids): [{\"check_id\": \"check:snapshot\", \"text\": \"核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。\", \"evidence_ids\": [\"tool:1:snapshot\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}]. When nonempty, include at least one of these matched-catalog check IDs: []. Do not use machine IDs as evidence IDs. Final summary must be nonempty, in zh",
+          "previous_message": "{\"tool_result\": {\"machine\": {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"serial_number\": \"SIM-PARTS-REPLAY-001\", \"model\": \"XE135U\", \"machine_type\": \"excavator\", \"customer\": \"SYNTHETIC DEMO\", \"location\": \"Synthetic site\", \"latitude\": null, \"longitude\": null, \"last_seen_at\": \"2026-06-29T08:45:00+00:00\"}, \"total_telemetry_records\": 114, \"displayed_latest_records_limit\": 8, \"telemetry\": [{\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}, {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}, {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}, {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}, {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}, {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}, {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}, {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"operating_hours\": 4858.2791, \"idle_hours\": 608.7748, \"fuel_remaining_percent\": 69.4, \"engine_status\": \"running\", \"latitude\": null, \"longitude\": null, \"recorded_at\": \"2026-06-29T08:45:00+00:00\"}], \"source\": \"imported_synthetic\", \"replay_at\": \"2026-06-29T08:55:00+00:00\", \"source_document\": \"人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则\", \"limitation\": \"May be stale or incomplete; inspect recorded_at and last_seen_at.\"}, \"source_id\": \"tool:1:snapshot\"}",
+          "decision": {
+            "action": "faults",
+            "component": "",
+            "summary": "",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "next_check_ids": []
+          }
+        },
+        {
+          "allowed_actions": [
+            "trends",
+            "parts"
+          ],
+          "control": "Allowed next actions: [\"trends\", \"parts\"]. Completed queries must not be repeated. If sufficient evidence has been read, finish now. Required unfinished queries: [\"parts\", \"trends\"]Use EXACT evidence_ids from this list: [\"tool:1:snapshot\", \"tool:2:faults\"]. Check options (select exact check_id values for next_check_ids): [{\"check_id\": \"check:snapshot\", \"text\": \"核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。\", \"evidence_ids\": [\"tool:1:snapshot\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}, {\"check_id\": \"check:faults\", \"text\": \"核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。\", \"evidence_ids\": [\"tool:2:faults\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}]. When nonempty, include at least one of these matched-catalog check IDs: []. Do not use machine IDs as evidence IDs. Final summary must be nonempty, in zh",
+          "previous_message": "{\"tool_result\": {\"method\": \"fault_record_facts_v1\", \"as_of\": \"2026-06-29T08:55:00+00:00\", \"total_loaded_events\": 2, \"valid_loaded_records\": 2, \"excluded_records\": {}, \"displayed_events_limit\": 20, \"events\": [{\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"spn\": null, \"fmi\": null, \"fault_code\": \"ENG-BOOST-102-3\", \"description\": \"人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。\", \"severity\": \"medium\", \"occurred_at\": \"2026-06-29T08:20:00+00:00\", \"status\": \"open\"}, {\"machine_id\": \"SIM-PARTS-REPLAY-001\", \"trackunit_asset_id\": null, \"equipment_id\": null, \"spn\": null, \"fmi\": null, \"fault_code\": \"ENG-BOOST-102-3\", \"description\": \"人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。\", \"severity\": \"medium\", \"occurred_at\": \"2026-06-29T08:45:00+00:00\", \"status\": \"open\"}], \"groups\": [{\"fault_code\": \"ENG-BOOST-102-3\", \"unique_code_timestamp_records\": 2, \"first_record_at\": \"2026-06-29T08:20:00+00:00\", \"last_record_at\": \"2026-06-29T08:45:00+00:00\", \"first_to_last_minutes\": 25.0, \"consecutive_gaps_minutes\": [25.0], \"conflicting_status_timestamps\": 0, \"unresolved_code_timestamp_records\": 2, \"independent_failure_count\": null}], \"total_fault_code_groups\": 1, \"limitation\": \"Only supplied records before cutoff. Code/time uniqueness does not prove separate failures; time span is not a recurrence period. Fault codes are not part numbers or component IDs. Empty events do not prove health.\", \"source\": \"imported_synthetic\"}, \"source_id\": \"tool:2:faults\"}",
+          "decision": {
+            "action": "trends",
+            "component": "",
+            "summary": "",
+            "evidence_ids": [
+              "tool:1:snapshot",
+              "tool:2:faults"
+            ],
+            "next_check_ids": [
+              "check:snapshot",
+              "check:faults"
+            ]
+          }
+        },
+        {
+          "allowed_actions": [
+            "parts"
+          ],
+          "control": "Allowed next actions: [\"parts\"]. Completed queries must not be repeated. If sufficient evidence has been read, finish now. Required unfinished queries: [\"parts\"]Use EXACT evidence_ids from this list: [\"tool:1:snapshot\", \"tool:2:faults\", \"tool:3:trends\"]. Check options (select exact check_id values for next_check_ids): [{\"check_id\": \"check:snapshot\", \"text\": \"核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。\", \"evidence_ids\": [\"tool:1:snapshot\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}, {\"check_id\": \"check:faults\", \"text\": \"核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。\", \"evidence_ids\": [\"tool:2:faults\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}]. When nonempty, include at least one of these matched-catalog check IDs: []. Do not use machine IDs as evidence IDs. Final summary must be nonempty, in zh",
+          "previous_message": "{\"tool_result\": {\"method\": \"time_window_rules_v1\", \"as_of\": \"2026-06-29T08:55:00+00:00\", \"sample_count\": 105, \"completeness\": \"not_verified\", \"fault_coverage\": \"unknown\", \"window_duration_hours\": 1.7333, \"excluded_samples\": {\"duplicate\": 9}, \"window_start\": \"2026-06-29T07:01:00+00:00\", \"window_end\": \"2026-06-29T08:45:00+00:00\", \"valid_intervals\": 104, \"excluded_intervals\": 0, \"operating_hours_delta\": 1.7333, \"idle_hours_delta\": 0.5278, \"paired_idle_intervals\": 104, \"idle_counter_coverage\": \"all_valid_operating_intervals\", \"operating_counter_window_start\": \"2026-06-29T07:01:00+00:00\", \"operating_counter_window_end\": \"2026-06-29T08:45:00+00:00\", \"idle_share\": 0.3045, \"latest_age_hours\": 0.17, \"findings\": [{\"code\": \"repeated_unresolved_events\", \"kind\": \"inspection_priority\", \"evidence\": {\"fault_code\": \"ENG-BOOST-102-3\", \"unique_events_7d\": 2}, \"meaning\": \"Repeated records warrant inspection; verify whether the source repeats one persistent fault.\"}], \"findings_total\": 1, \"limitations\": [\"No remaining-life or calibrated failure probability is estimated.\", \"Only supplied records are assessed; absent findings do not prove health.\", \"Counter deltas assume aligned sample timestamps and cumulative engine-running/idle counters.\", \"Idle share requires at least 0.5 valid operating hours and aligned idle counters across every accepted operating interval. Operating increments are sums of valid intervals, not proof of full-window coverage.\"], \"source\": \"imported_synthetic\"}, \"source_id\": \"tool:3:trends\"}",
+          "decision": {
+            "action": "parts",
+            "component": "",
+            "summary": "事件间隔为25分钟，备件匹配依据为故障码ENG-BOOST-102-3，对应资料中的检查步骤为核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。",
+            "evidence_ids": [
+              "tool:1:snapshot",
+              "tool:2:faults",
+              "tool:3:trends"
+            ],
+            "next_check_ids": [
+              "check:snapshot",
+              "check:faults"
+            ]
+          }
+        },
+        {
+          "allowed_actions": [
+            "finish"
+          ],
+          "control": "Allowed next actions: [\"finish\"]. Completed queries must not be repeated. If sufficient evidence has been read, finish now. Required unfinished queries: []Use EXACT evidence_ids from this list: [\"tool:1:snapshot\", \"tool:2:faults\", \"tool:3:trends\", \"catalog:DEMO-BOOST-SENSOR\", \"tool:4:parts\"]. Check options (select exact check_id values for next_check_ids): [{\"check_id\": \"check:snapshot\", \"text\": \"核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。\", \"evidence_ids\": [\"tool:1:snapshot\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}, {\"check_id\": \"check:faults\", \"text\": \"核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。\", \"evidence_ids\": [\"tool:2:faults\"], \"provenance\": \"application_rule\", \"source_document\": \"机联智检数据核验规则 v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}, {\"check_id\": \"check:catalog:bb9e40ad600c8a25\", \"text\": \"先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。\", \"evidence_ids\": [\"catalog:DEMO-BOOST-SENSOR\"], \"provenance\": \"demo\", \"source_document\": \"机联智检人工编写演示目录，不是制造商资料 / 演示条目1 / demo-v1\", \"limitation\": \"资料与适用性需核实；不是制造商认证的维修结论。\"}]. When nonempty, include at least one of these matched-catalog check IDs: [\"check:catalog:bb9e40ad600c8a25\"]. Do not use machine IDs as evidence IDs. Final summary must be nonempty, in zh",
+          "previous_message": "{\"tool_result\": {\"candidates\": [{\"part_number\": \"DEMO-BOOST-SENSOR\", \"name\": \"演示增压压力传感器（非采购零件号）\", \"component\": \"boost pressure sensor\", \"models\": [\"XE135U\"], \"serial_numbers\": [], \"applicability\": \"model_only\", \"fault_codes\": [\"ENG-BOOST-102-3\"], \"checks\": [\"先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。\"], \"source_document\": \"机联智检人工编写演示目录，不是制造商资料\", \"source_page\": \"演示条目1\", \"revision\": \"demo-v1\", \"provenance\": \"demo\", \"status\": \"candidate_requires_inspection\", \"match_reason\": \"fault_code\", \"serial_verified\": false, \"source_id\": \"catalog:DEMO-BOOST-SENSOR\", \"limitation\": \"Verify machine configuration and inspection results before ordering.\"}], \"limitation\": \"No match means no supported recommendation. Do not invent a part.\"}, \"source_id\": \"tool:4:parts\"}",
+          "decision": {
+            "action": "finish",
+            "component": "",
+            "summary": "事件间隔为25分钟，备件匹配依据为故障码ENG-BOOST-102-3，对应资料中的检查步骤为核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。",
+            "evidence_ids": [
+              "tool:1:snapshot",
+              "tool:2:faults",
+              "tool:3:trends",
+              "tool:4:parts"
+            ],
+            "next_check_ids": [
+              "check:snapshot",
+              "check:faults",
+              "check:catalog:bb9e40ad600c8a25"
+            ]
+          }
+        }
+      ],
+      "report": {
+        "status": "completed",
+        "provider": "ollama_local",
+        "model": "qwen3:8b",
+        "machine_id": "SIM-PARTS-REPLAY-001",
+        "source": "imported_synthetic",
+        "dataset_id": "926fa6c37d60fd358f94bb9697a53f3ba5be20820b413cbab14af3656896a147",
+        "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+        "replay_at": "2026-06-29T08:55:00+00:00",
+        "summary": "事件间隔为25分钟，备件匹配依据为故障码ENG-BOOST-102-3，对应资料中的检查步骤为核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。",
+        "next_checks": [
+          "核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。",
+          "核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。",
+          "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+        ],
+        "check_recommendations": [
+          {
+            "check_id": "check:snapshot",
+            "text": "核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "provenance": "application_rule",
+            "source_document": "机联智检数据核验规则 v1",
+            "limitation": "资料与适用性需核实；不是制造商认证的维修结论。"
+          },
+          {
+            "check_id": "check:faults",
+            "text": "核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。",
+            "evidence_ids": [
+              "tool:2:faults"
+            ],
+            "provenance": "application_rule",
+            "source_document": "机联智检数据核验规则 v1",
+            "limitation": "资料与适用性需核实；不是制造商认证的维修结论。"
+          },
+          {
+            "check_id": "check:catalog:bb9e40ad600c8a25",
+            "text": "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。",
+            "evidence_ids": [
+              "catalog:DEMO-BOOST-SENSOR"
+            ],
+            "provenance": "demo",
+            "source_document": "机联智检人工编写演示目录，不是制造商资料 / 演示条目1 / demo-v1",
+            "limitation": "资料与适用性需核实；不是制造商认证的维修结论。"
+          }
+        ],
+        "check_selection_method": "model_selected_source_text_v1",
+        "citations": [
+          "tool:1:snapshot",
+          "tool:2:faults",
+          "tool:3:trends",
+          "tool:4:parts"
+        ],
+        "evidence": {
+          "tool:1:snapshot": {
+            "machine": {
+              "machine_id": "SIM-PARTS-REPLAY-001",
+              "trackunit_asset_id": null,
+              "equipment_id": null,
+              "serial_number": "SIM-PARTS-REPLAY-001",
+              "model": "XE135U",
+              "machine_type": "excavator",
+              "customer": "SYNTHETIC DEMO",
+              "location": "Synthetic site",
+              "latitude": null,
+              "longitude": null,
+              "last_seen_at": "2026-06-29T08:45:00+00:00"
+            },
+            "total_telemetry_records": 114,
+            "displayed_latest_records_limit": 8,
+            "telemetry": [
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              }
+            ],
+            "source": "imported_synthetic",
+            "replay_at": "2026-06-29T08:55:00+00:00",
+            "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+            "limitation": "May be stale or incomplete; inspect recorded_at and last_seen_at."
+          },
+          "tool:2:faults": {
+            "method": "fault_record_facts_v1",
+            "as_of": "2026-06-29T08:55:00+00:00",
+            "total_loaded_events": 2,
+            "valid_loaded_records": 2,
+            "excluded_records": {},
+            "displayed_events_limit": 20,
+            "events": [
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "spn": null,
+                "fmi": null,
+                "fault_code": "ENG-BOOST-102-3",
+                "description": "人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。",
+                "severity": "medium",
+                "occurred_at": "2026-06-29T08:20:00+00:00",
+                "status": "open"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "spn": null,
+                "fmi": null,
+                "fault_code": "ENG-BOOST-102-3",
+                "description": "人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。",
+                "severity": "medium",
+                "occurred_at": "2026-06-29T08:45:00+00:00",
+                "status": "open"
+              }
+            ],
+            "groups": [
+              {
+                "fault_code": "ENG-BOOST-102-3",
+                "unique_code_timestamp_records": 2,
+                "first_record_at": "2026-06-29T08:20:00+00:00",
+                "last_record_at": "2026-06-29T08:45:00+00:00",
+                "first_to_last_minutes": 25.0,
+                "consecutive_gaps_minutes": [
+                  25.0
+                ],
+                "conflicting_status_timestamps": 0,
+                "unresolved_code_timestamp_records": 2,
+                "independent_failure_count": null
+              }
+            ],
+            "total_fault_code_groups": 1,
+            "limitation": "Only supplied records before cutoff. Code/time uniqueness does not prove separate failures; time span is not a recurrence period. Fault codes are not part numbers or component IDs. Empty events do not prove health.",
+            "source": "imported_synthetic"
+          },
+          "tool:3:trends": {
+            "method": "time_window_rules_v1",
+            "as_of": "2026-06-29T08:55:00+00:00",
+            "sample_count": 105,
+            "completeness": "not_verified",
+            "fault_coverage": "unknown",
+            "window_duration_hours": 1.7333,
+            "excluded_samples": {
+              "duplicate": 9
+            },
+            "window_start": "2026-06-29T07:01:00+00:00",
+            "window_end": "2026-06-29T08:45:00+00:00",
+            "valid_intervals": 104,
+            "excluded_intervals": 0,
+            "operating_hours_delta": 1.7333,
+            "idle_hours_delta": 0.5278,
+            "paired_idle_intervals": 104,
+            "idle_counter_coverage": "all_valid_operating_intervals",
+            "operating_counter_window_start": "2026-06-29T07:01:00+00:00",
+            "operating_counter_window_end": "2026-06-29T08:45:00+00:00",
+            "idle_share": 0.3045,
+            "latest_age_hours": 0.17,
+            "findings": [
+              {
+                "code": "repeated_unresolved_events",
+                "kind": "inspection_priority",
+                "evidence": {
+                  "fault_code": "ENG-BOOST-102-3",
+                  "unique_events_7d": 2
+                },
+                "meaning": "Repeated records warrant inspection; verify whether the source repeats one persistent fault."
+              }
+            ],
+            "findings_total": 1,
+            "limitations": [
+              "No remaining-life or calibrated failure probability is estimated.",
+              "Only supplied records are assessed; absent findings do not prove health.",
+              "Counter deltas assume aligned sample timestamps and cumulative engine-running/idle counters.",
+              "Idle share requires at least 0.5 valid operating hours and aligned idle counters across every accepted operating interval. Operating increments are sums of valid intervals, not proof of full-window coverage."
+            ],
+            "source": "imported_synthetic"
+          },
+          "catalog:DEMO-BOOST-SENSOR": {
+            "part_number": "DEMO-BOOST-SENSOR",
+            "name": "演示增压压力传感器（非采购零件号）",
+            "component": "boost pressure sensor",
+            "models": [
+              "XE135U"
+            ],
+            "serial_numbers": [],
+            "applicability": "model_only",
+            "fault_codes": [
+              "ENG-BOOST-102-3"
+            ],
+            "checks": [
+              "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+            ],
+            "source_document": "机联智检人工编写演示目录，不是制造商资料",
+            "source_page": "演示条目1",
+            "revision": "demo-v1",
+            "provenance": "demo",
+            "status": "candidate_requires_inspection",
+            "match_reason": "fault_code",
+            "serial_verified": false,
+            "source_id": "catalog:DEMO-BOOST-SENSOR",
+            "limitation": "Verify machine configuration and inspection results before ordering."
+          },
+          "tool:4:parts": {
+            "candidates": [
+              {
+                "part_number": "DEMO-BOOST-SENSOR",
+                "name": "演示增压压力传感器（非采购零件号）",
+                "component": "boost pressure sensor",
+                "models": [
+                  "XE135U"
+                ],
+                "serial_numbers": [],
+                "applicability": "model_only",
+                "fault_codes": [
+                  "ENG-BOOST-102-3"
+                ],
+                "checks": [
+                  "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+                ],
+                "source_document": "机联智检人工编写演示目录，不是制造商资料",
+                "source_page": "演示条目1",
+                "revision": "demo-v1",
+                "provenance": "demo",
+                "status": "candidate_requires_inspection",
+                "match_reason": "fault_code",
+                "serial_verified": false,
+                "source_id": "catalog:DEMO-BOOST-SENSOR",
+                "limitation": "Verify machine configuration and inspection results before ordering."
+              }
+            ],
+            "limitation": "No match means no supported recommendation. Do not invent a part."
+          }
+        },
+        "parts_candidates": [
+          {
+            "part_number": "DEMO-BOOST-SENSOR",
+            "name": "演示增压压力传感器（非采购零件号）",
+            "component": "boost pressure sensor",
+            "models": [
+              "XE135U"
+            ],
+            "serial_numbers": [],
+            "applicability": "model_only",
+            "fault_codes": [
+              "ENG-BOOST-102-3"
+            ],
+            "checks": [
+              "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+            ],
+            "source_document": "机联智检人工编写演示目录，不是制造商资料",
+            "source_page": "演示条目1",
+            "revision": "demo-v1",
+            "provenance": "demo",
+            "status": "candidate_requires_inspection",
+            "match_reason": "fault_code",
+            "serial_verified": false,
+            "source_id": "catalog:DEMO-BOOST-SENSOR",
+            "limitation": "Verify machine configuration and inspection results before ordering."
+          }
+        ],
+        "tool_trace": [
+          {
+            "action": "snapshot",
+            "source_id": "tool:1:snapshot"
+          },
+          {
+            "action": "faults",
+            "source_id": "tool:2:faults"
+          },
+          {
+            "action": "trends",
+            "source_id": "tool:3:trends"
+          },
+          {
+            "action": "parts",
+            "source_id": "tool:4:parts"
+          }
+        ],
+        "generated_at": "2026-09-14T05:02:43.134221+00:00",
+        "task": "comprehensive",
+        "required_queries": [
+          "faults",
+          "parts",
+          "snapshot",
+          "trends"
+        ],
+        "limitations": [
+          "AI hypotheses require inspection; no remaining-life estimate.",
+          "Catalog applicability is user supplied and is not manufacturer certification."
+        ]
+      },
+      "elapsed_seconds": 14.25
+    }
+  ],
+  "model_artifact": {
+    "name": "qwen3:8b",
+    "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+    "size": 5225388164,
+    "details": {
+      "parent_model": "",
+      "format": "gguf",
+      "family": "qwen3",
+      "families": [
+        "qwen3"
+      ],
+      "parameter_size": "8.2B",
+      "quantization_level": "Q4_K_M",
+      "context_length": 40960,
+      "embedding_length": 4096
+    }
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "recorded_at": "2026-09-14T11:12:07.794838+00:00",
+  "build": "20260914.11-ai-request-status",
+  "preview": "http://127.0.0.1:8892/assistant-ui/",
+  "runtime_verified": {
+    "provider": "gemini",
+    "model": "gemini-flash-latest",
+    "backend_build": "20260914.11-ai-request-status",
+    "automatic_fallback": false,
+    "investigation_timeout_seconds": 120,
+    "transient_attempt_limit": 3
+  },
+  "status_endpoint_verified": {
+    "http_status": 200,
+    "cache_control": "no-store",
+    "is_live_check": false,
+    "current_availability": "not_verified",
+    "source": "prior_verification",
+    "configuration_match": false,
+    "finished_at": "2026-09-14T09:41:15.940233+00:00",
+    "failure_kind": "daily_quota",
+    "daily_request_limit": 20
+  },
+  "tests": {
+    "python_passed": 354,
+    "python_existing_deprecation_warnings": 6,
+    "node_passed": 27,
+    "node_failed": 0,
+    "count_source": "Completed full-suite commands in this task before browser checks; not rerun by this evidence script.",
+    "report_feedback_test": "tests/test_gemini_feedback_flow.py",
+    "transport": "simulated httpx.post response; no live Gemini call"
+  },
+  "browser": {
+    "viewports_checked": [
+      "1280x820",
+      "embedded narrow window approximately 552 pixels",
+      "390x844"
+    ],
+    "narrow_measurement": {
+      "inner_width": 390,
+      "body_scroll_width": 375,
+      "inner_height": 844,
+      "run_button_top": 619.2421875,
+      "run_button_bottom": 659.2421875
+    },
+    "fault_code": "ENG-BOOST-102-3",
+    "data_source": "synthetic",
+    "focus_after_handoff": "question",
+    "focus_after_close": "查看资料 button",
+    "ai_submitted": false,
+    "viewport_override_reset": true,
+    "screenshots": [
+      {
+        "path": "docs/evaluation/ux-20260914/request-status/01-fault-action-narrow.jpg",
+        "width": 552,
+        "height": 614,
+        "sha256": "7deb50ab6c6519d37a4e2f86a2a87857219e2c0ef92b0ab678324a6377b8a56d"
+      },
+      {
+        "path": "docs/evaluation/ux-20260914/request-status/02-handoff-status-narrow.jpg",
+        "width": 552,
+        "height": 614,
+        "sha256": "5946b7db3f4a0b482b35e6db32b6cce8391aadc5bd2a39a1a2bdc9be6db757e8"
+      },
+      {
+        "path": "docs/evaluation/ux-20260914/request-status/03-status-desktop.jpg",
+        "width": 1265,
+        "height": 810,
+        "sha256": "a3228df6204fbf535ac16b3131116c0abf84a505df129d55f21fb4e7be93f20c"
+      },
+      {
+        "path": "docs/evaluation/ux-20260914/request-status/04-handoff-390.jpg",
+        "width": 375,
+        "height": 812,
+        "sha256": "476fd669f0cf158913f6762cca190dbf4b3c40db6471bdb0b865d246a8995cc0"
+      }
+    ]
+  },
+  "assets": [
+    {
+      "path": "app/assistant_ui/style.css",
+      "sha256": "756c1c878d60fe197957426b14823235e16895702ca02f8f58553eaee194536f"
+    },
+    {
+      "path": "app/assistant_ui/vendor/echarts/echarts.min.js",
+      "sha256": "baa8dfe7e1d9336b98e8986ba7e20ea15e7cdbea1ef42a59d59478632fa45a1d"
+    },
+    {
+      "path": "app/assistant_ui/investigation-drafts.js",
+      "sha256": "1217481ecf07392a9735fa7ea1c9f995f8db19f7cfa428ad7952090bc7005844"
+    },
+    {
+      "path": "app/assistant_ui/assistant-errors.js",
+      "sha256": "72fb10da53d9a0ab8737b45fbb2fbfa86c8100cdb43adeb5f4782814dded3f1b"
+    },
+    {
+      "path": "app/assistant_ui/ai-request-status.js",
+      "sha256": "7f44fa7b6170482b5aa11a1247798a81f29ff68cb9a0ffe81e1c37cef8533df9"
+    },
+    {
+      "path": "app/assistant_ui/app.js",
+      "sha256": "28a999770a500e639fa626112ee08d35cef7b06eb07b12e283225c606254038d"
+    },
+    {
+      "path": "app/assistant_ui/fault-context.js",
+      "sha256": "5f7024841eceb44b2fe813ee9148f93b236e3b2d7e3c7e6adf219c7a4a6f448f"
+    },
+    {
+      "path": "app/assistant_ui/device-overview.js",
+      "sha256": "dc9e6164c4908827103b8ba96fe10b7a7314381a9274ea01e6f60814a21a6f2d"
+    },
+    {
+      "path": "app/assistant_ui/work-state.js",
+      "sha256": "0a8fc4f927df89a81396b587e6f7eb5a11197af0aa121b6b372ac95b3624c9b8"
+    },
+    {
+      "path": "app/assistant_ui/cooling-warning.js",
+      "sha256": "1b5c3cd2f2a8d3f22f399c89a9c4bb450060c4f48b63c88429ebaa8d8106bb68"
+    },
+    {
+      "path": "app/assistant_ui/device-finder.js",
+      "sha256": "fb7ed8cf5dde743c5d6c9737d51907aa920ca1c30cfba00ea4278b453b4312d0"
+    }
+  ],
+  "v8_zip_unchanged_sha256": "a1407af41b2d28448cd43fe4b1e25b2e6804c7da462f332dfa3b300d09604184",
+  "remaining": [
+    "Real Gemini complete report and feedback continuation",
+    "Authorized XGSS contract and production manual jump",
+    "Formal parts catalog and applicability verification",
+    "Actual extension installation",
+    "Field evaluation",
+    "Updated software package and video",
+    "Another physical computer installation"
+  ]
+}

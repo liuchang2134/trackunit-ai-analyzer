@@ -100,3 +100,44 @@
 ## 设备服务工作台视觉参考（2026-09-15）
 
 参考用户提供的 XGSS 界面：蓝色顶栏、水平导航、细分隔线和紧凑资料表。公开信息组织参考[徐工官网](https://www.xcmg.com/)及[产品目录](https://www.xcmg.com/product/pro-list.htm?catId=0)。本项目采用的颜色和尺寸为设计实现值，并非官方品牌规范；保留机联智检名称，未复制官方Logo或私有页面素材。
+
+## 2026-09-15：AI 作用可量化（industrial-diagnosis-copilot）
+
+本轮目标之一是"加强 AI 功能在里面的体现"。核对后发现缺口不在 AI 能力，而在**没有任何地方说明 AI 到底做了什么**：报告里已有 `model_decisions`、`tool_trace`、`citations`、`format_repair_attempts`，但从未汇总，演示时只能口头声称。
+
+核查日期 2026-09-15，只读读取 GitHub 公开 API 与 raw 文件，未克隆、未安装、未运行其代码。
+
+| 项目 | 本次读取到的状态 | 许可证 | 采用的内容 | 是否复制代码 |
+|---|---|---|---|---|
+| [industrial-diagnosis-copilot](https://github.com/zhenghe-product/industrial-diagnosis-copilot) | 默认分支 `main`；最近推送 2026-09-06；Python；`agent/` 含 routing_gate、information_gain、tool_registry、trace，`llm/` 含 evidence_registry、generation_boundary | MIT | "把 AI 的贡献与程序的贡献分开计量并如实披露"这一做法 | 否 |
+
+实际借鉴三点，均来自该项目 README 与目录结构体现的做法，未复制其代码：
+
+1. **确定性计算与模型推理分开计量**：它的原则是"确定性工具负责计算，LLM 负责推理与选择"。本项目本来就把设备读取交给程序、部件推断交给模型，却从未分开陈述。
+2. **摘要必须区分归因**：它明确写出"Agent 行为更克制，但该 held-out 评估没有证明诊断准确率总体提升"，并单列 token 与成本代价。据此把"模型自己选择的读取"与"任务规定的读取"分开统计，不把程序读到的数据算成 AI 的功劳。
+3. **披露格式修正与坏案例**：它保留 false positive 与格式失败记录而不隐藏。据此把 `format_repair_attempts` 显示在界面上——修正过就说修正过。
+
+未采用：它的 Replay-first 架构、Streamlit 界面、RAG 向量检索与 CWRU 数据集都不属于本项目范围，本轮不引入。
+
+落地：`app/ai_contribution.py` + `tests/test_ai_contribution.py`（13 项用例），并在报告页与历史重开处渲染"本次排查中 AI 做了什么"。
+
+## 2026-09-15：暗色工业风界面（Page Assist / Arwes）
+
+核查日期 2026-09-15，只读读取 GitHub 公开 API，未克隆、未安装、未运行其代码。
+
+| 项目 | 本次读取到的状态 | 许可证 | 本项目采用 | 是否复制代码 |
+|---|---|---|---|---|
+| [Page Assist](https://github.com/n4ze3m/page-assist) | 默认分支 `main`；最近推送 2026-09-13；约 8.2k stars；未归档 | MIT | 侧栏信息层级与网页上下文交接的组织方式 | 否 |
+| [Arwes](https://github.com/arwes/arwes) | 默认分支 `next`；最近推送 2026-07-05；约 7.6k stars；未归档 | MIT | 深色工业控制台的视觉语言 | 否 |
+| [assistant-ui](https://github.com/assistant-ui/assistant-ui) | 默认分支 `main`；最近推送 2026-09-15；约 12.2k stars；未归档 | MIT | 本轮未采用，保留为后续 AI 结构化卡片的次要参考 | 否 |
+
+Arwes 默认分支为 `next`，本次读数与"仓库已停止维护"的旧说法不一致；即使如此仍按原定边界只借鉴视觉，不整套引入依赖。
+
+本轮网页端与侧栏改造全部使用项目自己的 CSS 与原生 JavaScript，未引入上述三个项目的代码、依赖或构建产物。
+
+- **Page Assist（交互）**：侧栏顶部先固定"当前设备 + 采样时间"身份，主要动作紧随其后，设置与调试信息折叠；网页端与侧栏承载同一套工作区。原有的 iframe 交接、`jilian:context` 消息与状态确认机制全部保留，未改成 Page Assist 的架构。
+- **Arwes（视觉）**：深石墨底色（`#0b0f14` / `#111820`）、徐工蓝主按钮（`#0055d9`）、低饱和青色状态线（`#38c8d8`）、白色高对比正文；标题下一条渐隐青色细线、卡片顶部一条主色边、设备概况用紧凑参数网格。按要求没有大面积光晕、没有装饰占据侧栏、没有音效、没有持续闪烁；连接指示沿用改造前已有的 `signal` 呼吸关键帧并保留 `prefers-reduced-motion` 关闭。
+- **图表**：仍使用项目内已有的 Apache ECharts 6.0.0，新增 `app/assistant_ui/chart-theme.js` 只把坐标轴、提示框和缩放滑块改成深色可读值，未引入新的大屏或图表框架。
+
+本轮没有新增第三方运行时依赖、收费服务或外部平台接入。实际渲染验证见 `docs/evaluation/` 的界面验收记录（本机留档）。
+

@@ -1,0 +1,1074 @@
+{
+  "generated_at": "2026-09-14T05:14:14.071764+00:00",
+  "scope": "Frozen-model synthetic stress tests, not field performance",
+  "model_sha256": "b0d990a2b10c2aecd523b26eac2f31357fb5243a172ca7d5e27228135599e2d9",
+  "seed": 20260914,
+  "assumptions": {
+    "missing_pressure_20pct": "Every fifth pressure observation is missing; no imputation.",
+    "additional_noise": "Independent extra Gaussian noise: rpm60, pressure max(6bar,24%observed), flow max(3lpm,24%observed), speed0.24km/h; floor zero.",
+    "pressure_freeze": "Hold pressure at minute10 value through minute30 of each hour. Other sensors remain observed. Affected rows reported separately."
+  },
+  "input_hashes": {
+    "data\\work_state_v1\\observations\\test\\EP-04f3fe977fa0.csv.gz": "5e5f970c39d65466413efe0af4dfd227deff8021a254b7f7160907c1022cdb7f",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-04f3fe977fa0\\physical_truth.csv.gz": "c386035575b5e9793a469f5002059840d910cd45042a7d18e1fed7c1a1073d89",
+    "data\\work_state_v1\\observations\\test\\EP-0a47fae3b9d2.csv.gz": "55675fe7fe7e587a6714e467766f23747f33b5e2ec1d69df81c204bbb3d64612",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-0a47fae3b9d2\\physical_truth.csv.gz": "1490d50d1a2d1cc891dae17c54535ee82fc1a0512939a21e039ba908d8f53638",
+    "data\\work_state_v1\\observations\\test\\EP-36dcbc17b7bc.csv.gz": "f822ee3df2288314e8f6f835b6231adf62b965f901a689cd0c6a62b8563d8c60",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-36dcbc17b7bc\\physical_truth.csv.gz": "cc54cd2e365ea5c522f56bbcda7417f219bf51a4b155805da96afe5aa48e52c2",
+    "data\\work_state_v1\\observations\\test\\EP-61d3d45e95c4.csv.gz": "18a6b2ddb2a0476bc4ad503a310d168567a1fda78fcee2fddc39a442bb356afe",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-61d3d45e95c4\\physical_truth.csv.gz": "762590f1cb6dba8f2d935a3889ac724b77bdf000d24217f56256003e1c5ac8c3",
+    "data\\work_state_v1\\observations\\test\\EP-6449671b4b5c.csv.gz": "45d3aa75c1e76efe35ca8b20da43b31165373fcb959e09f825cb10161e276143",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-6449671b4b5c\\physical_truth.csv.gz": "83d5f9e9cdc35ea39ee4e14c5297befbf4b50250e3cd13c36f30ac07844ebc84",
+    "data\\work_state_v1\\observations\\test\\EP-bd2c4d437330.csv.gz": "d0aa3a0f852e8a40eabe9d7eda54252b918e2c1031b88c4b15132acef8f45558",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-bd2c4d437330\\physical_truth.csv.gz": "62d382b8bb7b9a3d5debf078f0b92c3b971e02525c4d4c18133a3fbc346430fb",
+    "data\\work_state_v1\\observations\\test\\EP-e2947e458859.csv.gz": "e39be0076921f969cb2e6ab6b1e2d8cdc6ec00db432284bf1fac88b5824de5aa",
+    "data\\synthetic_diagnostics_v1\\evaluator_only\\test\\EP-e2947e458859\\physical_truth.csv.gz": "ad9cd02ea4affdc7f8e4528c06545549f3085d06d0c5c5430d5f7c352c6f7d61"
+  },
+  "code_hashes": {
+    "app/work_state.py": "ae718bdb15e3fa01c38eb934ece692effc7a2db339e402abb264a507c5aed1c5",
+    "scripts/stress_work_state.py": "db82db35f5bf58bf6182e32039272f8918d334e2feb36b2deec6ed878d33e810"
+  },
+  "results": {
+    "baseline": {
+      "all": {
+        "total": 40320,
+        "accepted": 36229,
+        "correct": 33866,
+        "high_score": 24833,
+        "high_score_wrong": 114,
+        "unknown": 4091,
+        "coverage": 0.8985367063492063,
+        "accepted_accuracy": 0.9347760081702503,
+        "unknown_fraction": 0.10146329365079365,
+        "high_score_error_fraction": 0.0045906656465187455
+      },
+      "affected_only": {
+        "coverage": null,
+        "accepted_accuracy": null,
+        "unknown_fraction": null,
+        "high_score_error_fraction": null
+      },
+      "per_class": {
+        "dig": {
+          "total": 10205,
+          "accepted": 9445,
+          "correct": 9116,
+          "high_score": 7465,
+          "high_score_wrong": 13,
+          "unknown": 760,
+          "coverage": 0.9255267025967663,
+          "accepted_accuracy": 0.9651667548967707,
+          "unknown_fraction": 0.0744732974032337,
+          "high_score_error_fraction": 0.0017414601473543202
+        },
+        "swing": {
+          "total": 9659,
+          "unknown": 2559,
+          "accepted": 7100,
+          "correct": 5332,
+          "high_score": 1164,
+          "high_score_wrong": 98,
+          "coverage": 0.7350657417952169,
+          "accepted_accuracy": 0.7509859154929578,
+          "unknown_fraction": 0.2649342582047831,
+          "high_score_error_fraction": 0.08419243986254296
+        },
+        "dump": {
+          "total": 4323,
+          "unknown": 772,
+          "accepted": 3551,
+          "correct": 3285,
+          "high_score": 77,
+          "high_score_wrong": 3,
+          "coverage": 0.8214203099699283,
+          "accepted_accuracy": 0.925091523514503,
+          "unknown_fraction": 0.1785796900300717,
+          "high_score_error_fraction": 0.03896103896103896
+        },
+        "idle": {
+          "total": 10647,
+          "accepted": 10647,
+          "correct": 10647,
+          "high_score": 10647,
+          "high_score_wrong": 0,
+          "coverage": 1.0,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.0,
+          "high_score_error_fraction": 0.0
+        },
+        "travel": {
+          "total": 1514,
+          "accepted": 1514,
+          "correct": 1514,
+          "high_score": 1508,
+          "high_score_wrong": 0,
+          "coverage": 1.0,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.0,
+          "high_score_error_fraction": 0.0
+        },
+        "off": {
+          "total": 3972,
+          "accepted": 3972,
+          "correct": 3972,
+          "high_score": 3972,
+          "high_score_wrong": 0,
+          "coverage": 1.0,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.0,
+          "high_score_error_fraction": 0.0
+        }
+      },
+      "high_score_error_examples": []
+    },
+    "missing_pressure_20pct": {
+      "all": {
+        "total": 40320,
+        "unknown": 12832,
+        "accepted": 27488,
+        "correct": 25062,
+        "high_score": 18570,
+        "high_score_wrong": 469,
+        "coverage": 0.6817460317460318,
+        "accepted_accuracy": 0.9117433061699651,
+        "unknown_fraction": 0.31825396825396823,
+        "high_score_error_fraction": 0.025255788906838987
+      },
+      "affected_only": {
+        "total": 8064,
+        "unknown": 8064,
+        "coverage": 0.0,
+        "accepted_accuracy": null,
+        "unknown_fraction": 1.0,
+        "high_score_error_fraction": null
+      },
+      "per_class": {
+        "dig": {
+          "total": 10205,
+          "unknown": 3769,
+          "accepted": 6436,
+          "correct": 6065,
+          "high_score": 4007,
+          "high_score_wrong": 5,
+          "coverage": 0.6306712395884371,
+          "accepted_accuracy": 0.942355500310752,
+          "unknown_fraction": 0.369328760411563,
+          "high_score_error_fraction": 0.0012478163214374844
+        },
+        "swing": {
+          "total": 9659,
+          "unknown": 4287,
+          "accepted": 5372,
+          "correct": 4407,
+          "high_score": 1242,
+          "high_score_wrong": 57,
+          "coverage": 0.5561652344963247,
+          "accepted_accuracy": 0.8203648548026806,
+          "unknown_fraction": 0.44383476550367534,
+          "high_score_error_fraction": 0.04589371980676329
+        },
+        "dump": {
+          "total": 4323,
+          "unknown": 1544,
+          "accepted": 2779,
+          "correct": 1689,
+          "high_score": 438,
+          "high_score_wrong": 407,
+          "coverage": 0.6428406199398565,
+          "accepted_accuracy": 0.6077725800647715,
+          "unknown_fraction": 0.3571593800601434,
+          "high_score_error_fraction": 0.9292237442922374
+        },
+        "idle": {
+          "total": 10647,
+          "unknown": 2135,
+          "accepted": 8512,
+          "correct": 8512,
+          "high_score": 8501,
+          "high_score_wrong": 0,
+          "coverage": 0.799474030243261,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.20052596975673898,
+          "high_score_error_fraction": 0.0
+        },
+        "travel": {
+          "total": 1514,
+          "accepted": 1210,
+          "correct": 1210,
+          "high_score": 1203,
+          "high_score_wrong": 0,
+          "unknown": 304,
+          "coverage": 0.7992073976221928,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.20079260237780713,
+          "high_score_error_fraction": 0.0
+        },
+        "off": {
+          "total": 3972,
+          "accepted": 3179,
+          "correct": 3179,
+          "high_score": 3179,
+          "high_score_wrong": 0,
+          "unknown": 793,
+          "coverage": 0.8003524672708963,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.19964753272910374,
+          "high_score_error_fraction": 0.0
+        }
+      },
+      "high_score_error_examples": []
+    },
+    "additional_noise": {
+      "all": {
+        "total": 40320,
+        "accepted": 29998,
+        "correct": 25230,
+        "high_score": 19926,
+        "high_score_wrong": 891,
+        "unknown": 10322,
+        "coverage": 0.7439980158730158,
+        "accepted_accuracy": 0.8410560704046937,
+        "unknown_fraction": 0.2560019841269841,
+        "high_score_error_fraction": 0.044715447154471545
+      },
+      "affected_only": {
+        "total": 40320,
+        "accepted": 29998,
+        "correct": 25230,
+        "high_score": 19926,
+        "high_score_wrong": 891,
+        "unknown": 10322,
+        "coverage": 0.7439980158730158,
+        "accepted_accuracy": 0.8410560704046937,
+        "unknown_fraction": 0.2560019841269841,
+        "high_score_error_fraction": 0.044715447154471545
+      },
+      "per_class": {
+        "dig": {
+          "total": 10205,
+          "accepted": 7495,
+          "correct": 6682,
+          "high_score": 4315,
+          "high_score_wrong": 33,
+          "unknown": 2710,
+          "coverage": 0.7344439000489956,
+          "accepted_accuracy": 0.8915276851234156,
+          "unknown_fraction": 0.26555609995100443,
+          "high_score_error_fraction": 0.00764774044032445
+        },
+        "swing": {
+          "total": 9659,
+          "accepted": 4755,
+          "correct": 1468,
+          "unknown": 4904,
+          "high_score": 874,
+          "high_score_wrong": 762,
+          "coverage": 0.49228698623045863,
+          "accepted_accuracy": 0.30872765509989486,
+          "unknown_fraction": 0.5077130137695414,
+          "high_score_error_fraction": 0.8718535469107551
+        },
+        "dump": {
+          "total": 4323,
+          "accepted": 2187,
+          "correct": 1519,
+          "unknown": 2136,
+          "high_score": 141,
+          "high_score_wrong": 96,
+          "coverage": 0.5058986814712005,
+          "accepted_accuracy": 0.6945587562871514,
+          "unknown_fraction": 0.49410131852879946,
+          "high_score_error_fraction": 0.6808510638297872
+        },
+        "idle": {
+          "total": 10647,
+          "accepted": 10272,
+          "correct": 10272,
+          "high_score": 9577,
+          "high_score_wrong": 0,
+          "unknown": 375,
+          "coverage": 0.964778810932657,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.035221189067342916,
+          "high_score_error_fraction": 0.0
+        },
+        "travel": {
+          "total": 1514,
+          "accepted": 1508,
+          "correct": 1508,
+          "high_score": 1396,
+          "high_score_wrong": 0,
+          "unknown": 6,
+          "coverage": 0.9960369881109643,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.003963011889035667,
+          "high_score_error_fraction": 0.0
+        },
+        "off": {
+          "total": 3972,
+          "accepted": 3781,
+          "correct": 3781,
+          "high_score": 3623,
+          "high_score_wrong": 0,
+          "unknown": 191,
+          "coverage": 0.951913393756294,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.04808660624370594,
+          "high_score_error_fraction": 0.0
+        }
+      },
+      "high_score_error_examples": [
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 122,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9945112724345042,
+            "scores": {
+              "dig": 0.9945112724345042,
+              "dump": 5.114706383845517e-06,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.005483612859111945,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:10:15+00:00",
+            "engine_rpm": 1905.7860783551491,
+            "hydraulic_pressure_bar": 201.92832909210438,
+            "hydraulic_flow_lpm": 139.54374695896988,
+            "speed_kmh": 0.1942026000298038
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 138,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9669116692463606,
+            "scores": {
+              "dig": 0.9669116692463606,
+              "dump": 0.000216557963676067,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.03287177278996331,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:11:35+00:00",
+            "engine_rpm": 1958.301225185934,
+            "hydraulic_pressure_bar": 228.04070035538265,
+            "hydraulic_flow_lpm": 115.47177737221014,
+            "speed_kmh": 0
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 143,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9731660733712888,
+            "scores": {
+              "dig": 0.9731660733712888,
+              "dump": 0.00015504827508539955,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.026678878353626045,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:12:00+00:00",
+            "engine_rpm": 1678.4285642214504,
+            "hydraulic_pressure_bar": 240.98295838667758,
+            "hydraulic_flow_lpm": 179.930213138726,
+            "speed_kmh": 0
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 149,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9144647700432145,
+            "scores": {
+              "dig": 0.9144647700432145,
+              "dump": 0.00019763324515679773,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.05916424179317755,
+              "travel": 0.02617335491845125
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:12:30+00:00",
+            "engine_rpm": 1787.1896086653849,
+            "hydraulic_pressure_bar": 272.89106388040904,
+            "hydraulic_flow_lpm": 122.80974958649911,
+            "speed_kmh": 0.43810271421720637
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 150,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9874970916464981,
+            "scores": {
+              "dig": 0.9874970916464981,
+              "dump": 1.6390872456095593e-06,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.012501269266256594,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:12:35+00:00",
+            "engine_rpm": 1767.0971625584232,
+            "hydraulic_pressure_bar": 217.17371173463,
+            "hydraulic_flow_lpm": 142.69473049099736,
+            "speed_kmh": 0.010364448518472607
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 163,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.983732572909819,
+            "scores": {
+              "dig": 0.983732572909819,
+              "dump": 0.0002738309736666597,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.015993596116514158,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:13:40+00:00",
+            "engine_rpm": 1889.2043547680394,
+            "hydraulic_pressure_bar": 183.0054165906634,
+            "hydraulic_flow_lpm": 106.88486602389511,
+            "speed_kmh": 0.029054975071617712
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 197,
+          "true_state": "swing",
+          "prediction": {
+            "state": "travel",
+            "candidate_state": "travel",
+            "score": 0.9811568411959215,
+            "scores": {
+              "dig": 0.01861231380419341,
+              "dump": 1.6390872456095593e-06,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.00022920591263950456,
+              "travel": 0.9811568411959215
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:16:30+00:00",
+            "engine_rpm": 1743.5725539167327,
+            "hydraulic_pressure_bar": 153.75809959979864,
+            "hydraulic_flow_lpm": 126.46067408076354,
+            "speed_kmh": 0.78444639440381
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 201,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9760534227363665,
+            "scores": {
+              "dig": 0.9760534227363665,
+              "dump": 7.464779901904813e-06,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.02386061146371238,
+              "travel": 7.850102001904081e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:16:50+00:00",
+            "engine_rpm": 1817.8237955363809,
+            "hydraulic_pressure_bar": 303.17699308620087,
+            "hydraulic_flow_lpm": 165.3506175485958,
+            "speed_kmh": 0
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 205,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9092998675043229,
+            "scores": {
+              "dig": 0.9092998675043229,
+              "dump": 0.0037079505207037997,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.08699218197497371,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:17:10+00:00",
+            "engine_rpm": 1841.0265422161276,
+            "hydraulic_pressure_bar": 154.53353899068006,
+            "hydraulic_flow_lpm": 127.92118300508238,
+            "speed_kmh": 0
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 268,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9699313233251442,
+            "scores": {
+              "dig": 0.9699313233251442,
+              "dump": 2.3434614698735695e-05,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.030045242060157466,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:22:25+00:00",
+            "engine_rpm": 1603.7688930409918,
+            "hydraulic_pressure_bar": 169.50005714736255,
+            "hydraulic_flow_lpm": 140.38779314422735,
+            "speed_kmh": 0
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 341,
+          "true_state": "dump",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.962520632104164,
+            "scores": {
+              "dig": 0.962520632104164,
+              "dump": 2.327563156376994e-05,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.03745609226427241,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:28:30+00:00",
+            "engine_rpm": 1901.0345303490694,
+            "hydraulic_pressure_bar": 219.02213211087172,
+            "hydraulic_flow_lpm": 144.5263858120082,
+            "speed_kmh": 0.08503311853283621
+          }
+        },
+        {
+          "episode_id": "EP-04f3fe977fa0",
+          "sample_index": 437,
+          "true_state": "swing",
+          "prediction": {
+            "state": "dig",
+            "candidate_state": "dig",
+            "score": 0.9881715227634422,
+            "scores": {
+              "dig": 0.9881715227634422,
+              "dump": 2.327563156376994e-05,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.011805201604994235,
+              "travel": 0.0
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-02-21T07:36:30+00:00",
+            "engine_rpm": 1881.0398948097295,
+            "hydraulic_pressure_bar": 248.13760020698737,
+            "hydraulic_flow_lpm": 156.34306888347385,
+            "speed_kmh": 0
+          }
+        }
+      ]
+    },
+    "pressure_freeze": {
+      "all": {
+        "total": 40320,
+        "accepted": 29603,
+        "correct": 27422,
+        "high_score": 19495,
+        "high_score_wrong": 107,
+        "unknown": 10717,
+        "coverage": 0.7342013888888889,
+        "accepted_accuracy": 0.9263250346248691,
+        "unknown_fraction": 0.26579861111111114,
+        "high_score_error_fraction": 0.005488586817132598
+      },
+      "affected_only": {
+        "total": 13440,
+        "accepted": 5534,
+        "correct": 4967,
+        "unknown": 7906,
+        "high_score": 3076,
+        "high_score_wrong": 24,
+        "coverage": 0.41175595238095236,
+        "accepted_accuracy": 0.8975424647632815,
+        "unknown_fraction": 0.5882440476190476,
+        "high_score_error_fraction": 0.007802340702210663
+      },
+      "per_class": {
+        "dig": {
+          "total": 10205,
+          "accepted": 7576,
+          "correct": 7152,
+          "high_score": 5105,
+          "high_score_wrong": 25,
+          "unknown": 2629,
+          "coverage": 0.7423811856932876,
+          "accepted_accuracy": 0.9440337909186906,
+          "unknown_fraction": 0.2576188143067124,
+          "high_score_error_fraction": 0.004897159647404506
+        },
+        "swing": {
+          "total": 9659,
+          "unknown": 3774,
+          "accepted": 5885,
+          "correct": 4547,
+          "high_score": 946,
+          "high_score_wrong": 72,
+          "coverage": 0.6092763226006833,
+          "accepted_accuracy": 0.772642310960068,
+          "unknown_fraction": 0.3907236773993167,
+          "high_score_error_fraction": 0.07610993657505286
+        },
+        "dump": {
+          "total": 4323,
+          "unknown": 1620,
+          "accepted": 2703,
+          "correct": 2284,
+          "high_score": 65,
+          "high_score_wrong": 10,
+          "coverage": 0.6252602359472589,
+          "accepted_accuracy": 0.8449870514243433,
+          "unknown_fraction": 0.3747397640527412,
+          "high_score_error_fraction": 0.15384615384615385
+        },
+        "idle": {
+          "total": 10647,
+          "accepted": 8068,
+          "correct": 8068,
+          "high_score": 8063,
+          "high_score_wrong": 0,
+          "unknown": 2579,
+          "coverage": 0.757772142387527,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.242227857612473,
+          "high_score_error_fraction": 0.0
+        },
+        "travel": {
+          "total": 1514,
+          "accepted": 1491,
+          "correct": 1491,
+          "high_score": 1436,
+          "high_score_wrong": 0,
+          "unknown": 23,
+          "coverage": 0.9848084544253632,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.015191545574636724,
+          "high_score_error_fraction": 0.0
+        },
+        "off": {
+          "total": 3972,
+          "unknown": 92,
+          "accepted": 3880,
+          "correct": 3880,
+          "high_score": 3880,
+          "high_score_wrong": 0,
+          "coverage": 0.9768378650553877,
+          "accepted_accuracy": 1.0,
+          "unknown_fraction": 0.023162134944612285,
+          "high_score_error_fraction": 0.0
+        }
+      },
+      "high_score_error_examples": [
+        {
+          "episode_id": "EP-61d3d45e95c4",
+          "sample_index": 3882,
+          "true_state": "dump",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9112492733220504,
+            "scores": {
+              "dig": 0.01950047905273229,
+              "dump": 0.06923963179201889,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9112492733220504,
+              "travel": 1.061583319862496e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-03-02T12:23:35+00:00",
+            "engine_rpm": "1817.4",
+            "hydraulic_pressure_bar": 134.89,
+            "hydraulic_flow_lpm": "83.64",
+            "speed_kmh": "0.055"
+          }
+        },
+        {
+          "episode_id": "EP-61d3d45e95c4",
+          "sample_index": 5300,
+          "true_state": "dump",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9252004448564083,
+            "scores": {
+              "dig": 0.014360780672467537,
+              "dump": 0.06042815863792542,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9252004448564083,
+              "travel": 1.061583319862496e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-03-02T14:21:45+00:00",
+            "engine_rpm": "1930.0",
+            "hydraulic_pressure_bar": 125.88,
+            "hydraulic_flow_lpm": "89.36",
+            "speed_kmh": "0.003"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 1687,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9206941622476718,
+            "scores": {
+              "dig": 0.019099682163414778,
+              "dump": 0.06012049113362477,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9206941622476718,
+              "travel": 8.566445528862332e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T09:20:40+00:00",
+            "engine_rpm": "1765.9",
+            "hydraulic_pressure_bar": 124.82,
+            "hydraulic_flow_lpm": "95.0",
+            "speed_kmh": "0.101"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 1728,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9175681700365264,
+            "scores": {
+              "dig": 0.032503804079615624,
+              "dump": 0.0498423614285694,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9175681700365264,
+              "travel": 8.566445528862332e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T09:24:05+00:00",
+            "engine_rpm": "1870.4",
+            "hydraulic_pressure_bar": 124.82,
+            "hydraulic_flow_lpm": "103.95",
+            "speed_kmh": "0"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 2291,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9185233326088061,
+            "scores": {
+              "dig": 0.032572989078159365,
+              "dump": 0.048818013857745854,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9185233326088061,
+              "travel": 8.566445528862332e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T10:11:00+00:00",
+            "engine_rpm": "1906.3",
+            "hydraulic_pressure_bar": 129.4,
+            "hydraulic_flow_lpm": "103.8",
+            "speed_kmh": "0.138"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 2355,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9042743175737095,
+            "scores": {
+              "dig": 0.06959105070510291,
+              "dump": 0.02612401588798922,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9042743175737095,
+              "travel": 1.061583319862496e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T10:16:20+00:00",
+            "engine_rpm": "1899.2",
+            "hydraulic_pressure_bar": 129.4,
+            "hydraulic_flow_lpm": "103.35",
+            "speed_kmh": "0.012"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 2364,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9229450457625386,
+            "scores": {
+              "dig": 0.037818588625521156,
+              "dump": 0.03919718721343198,
+              "idle": 2.8562565309745408e-05,
+              "off": 0.0,
+              "swing": 0.9229450457625386,
+              "travel": 1.061583319862496e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T10:17:05+00:00",
+            "engine_rpm": "1777.0",
+            "hydraulic_pressure_bar": 129.4,
+            "hydraulic_flow_lpm": "103.98",
+            "speed_kmh": "0.073"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 3864,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9238351270850487,
+            "scores": {
+              "dig": 0.030719682309042293,
+              "dump": 0.04543457477271057,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9238351270850487,
+              "travel": 1.061583319862496e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T12:22:05+00:00",
+            "engine_rpm": "1761.8",
+            "hydraulic_pressure_bar": 119.06,
+            "hydraulic_flow_lpm": "103.95",
+            "speed_kmh": "0"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 3879,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9285538286051523,
+            "scores": {
+              "dig": 0.04536745623256138,
+              "dump": 0.026068099329087945,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9285538286051523,
+              "travel": 1.061583319862496e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T12:23:20+00:00",
+            "engine_rpm": "1834.8",
+            "hydraulic_pressure_bar": 119.06,
+            "hydraulic_flow_lpm": "100.91",
+            "speed_kmh": "0.066"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 5172,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9167936774438175,
+            "scores": {
+              "dig": 0.031375656671451334,
+              "dump": 0.051745001429442584,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9167936774438175,
+              "travel": 8.566445528862332e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T14:11:05+00:00",
+            "engine_rpm": "1913.6",
+            "hydraulic_pressure_bar": 129.68,
+            "hydraulic_flow_lpm": "104.22",
+            "speed_kmh": "0"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 5228,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.9232002524428601,
+            "scores": {
+              "dig": 0.019510219741424126,
+              "dump": 0.05727891198251716,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.9232002524428601,
+              "travel": 1.061583319862496e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T14:15:45+00:00",
+            "engine_rpm": "1853.8",
+            "hydraulic_pressure_bar": 129.68,
+            "hydraulic_flow_lpm": "88.55",
+            "speed_kmh": "0.024"
+          }
+        },
+        {
+          "episode_id": "EP-6449671b4b5c",
+          "sample_index": 5301,
+          "true_state": "dig",
+          "prediction": {
+            "state": "swing",
+            "candidate_state": "swing",
+            "score": 0.918763287394774,
+            "scores": {
+              "dig": 0.019761427810132154,
+              "dump": 0.06142763102382092,
+              "idle": 0.0,
+              "off": 0.0,
+              "swing": 0.918763287394774,
+              "travel": 4.7653771272877615e-05
+            },
+            "reason": "synthetic_model_only",
+            "limitation": "Model vote scores are not calibrated probabilities; synthetic-only validation."
+          },
+          "observations": {
+            "recorded_at": "2026-01-01T14:21:50+00:00",
+            "engine_rpm": "1858.5",
+            "hydraulic_pressure_bar": 129.68,
+            "hydraulic_flow_lpm": "96.01",
+            "speed_kmh": "0"
+          }
+        }
+      ]
+    }
+  }
+}

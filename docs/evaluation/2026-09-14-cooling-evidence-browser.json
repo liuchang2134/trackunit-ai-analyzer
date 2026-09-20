@@ -1,0 +1,29 @@
+{
+  "browser": "153.0.4234.32",
+  "build": "20260914.16-cooling-evidence",
+  "checked_at": "2026-09-15T01:11:49.523Z",
+  "scope": "Actual local synthetic replay, evaluation and idempotent prefix handoff; evaluation missing-file branch mocked.",
+  "checks": [
+    {
+      "width": 1280,
+      "expanded_metrics": true,
+      "no_page_overflow": true,
+      "historical_results_collapsed": true,
+      "synthetic_handoff_verified": true,
+      "cutoff": "2026-06-14T09:16:00+00:00",
+      "dataset_id": "752f5203507dab6ddf12fc1fb6ab457498a1b704ba29f266afd122230726fd40"
+    },
+    {
+      "width": 390,
+      "expanded_metrics": true,
+      "no_page_overflow": true,
+      "historical_results_collapsed": true,
+      "synthetic_handoff_verified": true,
+      "cutoff": "2026-06-14T09:16:00+00:00",
+      "dataset_id": "752f5203507dab6ddf12fc1fb6ab457498a1b704ba29f266afd122230726fd40"
+    }
+  ],
+  "unavailable_evaluation_not_reported_as_zero": true,
+  "page_errors": [],
+  "real_ai_calls": 0
+}

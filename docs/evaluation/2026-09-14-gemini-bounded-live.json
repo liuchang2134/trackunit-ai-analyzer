@@ -1,0 +1,31 @@
+{
+  "checked_at": "2026-09-14T09:13:21.983127+00:00",
+  "mode": "in_process_api_real_gemini",
+  "source": "synthetic",
+  "request": {
+    "machine_id": "SIM-PARTS-REPLAY-001",
+    "dataset_id": "926fa6c37d60fd358f94bb9697a53f3ba5be20820b413cbab14af3656896a147",
+    "task": "comprehensive",
+    "language": "zh",
+    "question": "重点排查故障码 ENG-BOOST-102-3，结合已有记录说明工时与怠速趋势、故障依据、建议检查和适配备件候选。"
+  },
+  "http_status": 503,
+  "elapsed_seconds": 15.53,
+  "transport_attempts": [
+    {
+      "status": 503,
+      "seconds": 1.0
+    },
+    {
+      "status": 503,
+      "seconds": 5.97
+    },
+    {
+      "status": 503,
+      "seconds": 2.25
+    }
+  ],
+  "response": {
+    "detail": "Gemini returned HTTP 503. The request could not be completed; retry later. Attempts: 3."
+  }
+}

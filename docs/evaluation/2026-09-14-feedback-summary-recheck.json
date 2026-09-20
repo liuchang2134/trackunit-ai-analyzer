@@ -1,0 +1,945 @@
+{
+  "previous_record_id": "bf5cb3f4d074d994c9cd19c9666b84d68985b53c181cd079bca3987967b12fce",
+  "code_sha256": "23ee4d1e7be4458258557d2e5e75ca824daef34900f2cf82b0e02b66f4274109",
+  "cases": [
+    {
+      "request": {
+        "machine_id": "SIM-PARTS-REPLAY-001",
+        "dataset_id": "926fa6c37d60fd358f94bb9697a53f3ba5be20820b413cbab14af3656896a147",
+        "question": "结合已保存的检查反馈继续分析，说明目前支持的判断和仍缺少的证据。",
+        "language": "zh",
+        "observations": "",
+        "task": "parts",
+        "prior_record_id": "34d055644d64526b9cae820a5066cfde1bc62eede734758b08803196bfec2ef2"
+      },
+      "decisions": [
+        {
+          "action": "snapshot",
+          "component": "pressure_sensor",
+          "summary": "根据当前反馈，操作员未发现接头松脱，但未测量压力信号，无法确认传感器是否损坏。缺少对故障活跃状态的核实及传感器测量数据，无法进一步判断故障原因。",
+          "evidence_ids": [
+            "operator:feedback"
+          ],
+          "next_check_ids": []
+        },
+        {
+          "action": "faults",
+          "component": "pressure_sensor",
+          "summary": "根据当前反馈，未发现接头松脱，但压力信号尚未测量，无法确认传感器是否损坏。需进一步检查压力信号以判断传感器状态。同时，未观察到故障是否仍活跃，需核实故障状态。目前缺少对压力信号的测量数据，无法得出明确结论。建议进行压力信号测量以补充证据。",
+          "evidence_ids": [
+            "tool:1:snapshot",
+            "operator:feedback"
+          ],
+          "next_check_ids": [
+            "check:snapshot"
+          ]
+        },
+        {
+          "action": "parts",
+          "component": "pressure_sensor",
+          "summary": "根据现有数据，目前无法确定压力传感器是否损坏，因为尚未进行压力信号测量。同时，故障码 ENG-BOOST-102-3 表示增压压力信号异常，可能涉及线路、接头或传感器，但未确认具体原因。建议进一步检查传感器测量结果以确认问题根源。",
+          "evidence_ids": [
+            "operator:feedback",
+            "tool:1:snapshot",
+            "tool:2:faults"
+          ],
+          "next_check_ids": [
+            "check:snapshot",
+            "check:faults"
+          ]
+        },
+        {
+          "action": "finish",
+          "component": "pressure_sensor",
+          "summary": "当前支持的判断：增压压力信号异常（故障码 ENG-BOOST-102-3）可能涉及线路、接头或传感器，但尚未确认根因。缺少的证据：未测量压力信号，无法确认传感器是否损坏；未核实故障是否仍活跃。建议：根据维修手册检查线束、接头与传感器测量结果，并确认故障状态。",
+          "evidence_ids": [
+            "operator:feedback",
+            "tool:1:snapshot",
+            "tool:2:faults",
+            "catalog:DEMO-BOOST-SENSOR"
+          ],
+          "next_check_ids": [
+            "check:snapshot",
+            "check:faults",
+            "check:catalog:bb9e40ad600c8a25"
+          ]
+        }
+      ],
+      "report": {
+        "status": "completed",
+        "provider": "ollama_local",
+        "model": "qwen3:8b",
+        "machine_id": "SIM-PARTS-REPLAY-001",
+        "source": "imported_synthetic",
+        "dataset_id": "926fa6c37d60fd358f94bb9697a53f3ba5be20820b413cbab14af3656896a147",
+        "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+        "replay_at": "2026-06-29T08:55:00+00:00",
+        "summary": "当前支持的判断：增压压力信号异常（故障码 ENG-BOOST-102-3）可能涉及线路、接头或传感器，但尚未确认根因。缺少的证据：未测量压力信号，无法确认传感器是否损坏；未核实故障是否仍活跃。建议：根据维修手册检查线束、接头与传感器测量结果，并确认故障状态。",
+        "summary_status": "ai_interpretation_requires_review",
+        "data_facts": [
+          {
+            "fact_id": "source",
+            "text": "本报告使用模拟数据；结论仅适用于该片段，不代表实机状态。",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "method": "evidence_render_v1"
+          },
+          {
+            "fact_id": "replay-time",
+            "text": "分析截止时刻：2026-06-29T08:55:00+00:00。这不是采样时刻。",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "method": "evidence_render_v1"
+          },
+          {
+            "fact_id": "sample-time",
+            "text": "快照展示记录中最新有效采样时刻：2026-06-29T08:45:00+00:00。",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "method": "evidence_render_v1"
+          },
+          {
+            "fact_id": "parts-result",
+            "text": "找到待检查候选；机型指整机适用型号，不是零件型号。序列号范围及整机配置仍需核实。 检索仅覆盖本地目录，不构成更换或采购结论。",
+            "evidence_ids": [
+              "tool:3:parts"
+            ],
+            "method": "evidence_render_v1"
+          }
+        ],
+        "language": "zh",
+        "next_checks": [
+          "核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。",
+          "核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。",
+          "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+        ],
+        "check_recommendations": [
+          {
+            "check_id": "check:snapshot",
+            "text": "核对模拟数据的回放时点与记录时间；结论仅适用于该演示片段。",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "provenance": "application_rule",
+            "source_document": "机联智检数据核验规则 v1",
+            "limitation": "资料与适用性需核实；不是制造商认证的维修结论。"
+          },
+          {
+            "check_id": "check:faults",
+            "text": "核对故障码、事件时间、状态及数据来源；不能把重复记录直接当作多次独立故障。",
+            "evidence_ids": [
+              "tool:2:faults"
+            ],
+            "provenance": "application_rule",
+            "source_document": "机联智检数据核验规则 v1",
+            "limitation": "资料与适用性需核实；不是制造商认证的维修结论。"
+          },
+          {
+            "check_id": "check:catalog:bb9e40ad600c8a25",
+            "text": "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。",
+            "evidence_ids": [
+              "catalog:DEMO-BOOST-SENSOR"
+            ],
+            "provenance": "demo",
+            "source_document": "机联智检人工编写演示目录，不是制造商资料 / 演示条目1 / demo-v1",
+            "limitation": "资料与适用性需核实；不是制造商认证的维修结论。"
+          }
+        ],
+        "check_selection_method": "model_selected_source_text_v1",
+        "citations": [
+          "operator:feedback",
+          "tool:1:snapshot",
+          "tool:2:faults",
+          "catalog:DEMO-BOOST-SENSOR"
+        ],
+        "evidence": {
+          "operator:feedback": {
+            "parent_record_id": "34d055644d64526b9cae820a5066cfde1bc62eede734758b08803196bfec2ef2",
+            "total_records": 1,
+            "included_latest_limit": 5,
+            "records": [
+              {
+                "feedback_id": "0dd48388bc52f8d201608d171eef58ab4db5d7ab3cdb54a9c04810a9b2d5e6dc",
+                "check_id": "check:catalog:bb9e40ad600c8a25",
+                "check_text": "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。",
+                "created_at": "2026-09-14T06:42:41.681522+00:00",
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "notes": "模拟检查记录：目视未发现接头松脱；尚未测量压力信号，无法确认传感器是否损坏。仅用于功能演示，不是真实现场检查。",
+                "observed_at": "2026-06-29T08:50:00Z",
+                "outcome": "not_observed",
+                "record_id": "34d055644d64526b9cae820a5066cfde1bc62eede734758b08803196bfec2ef2",
+                "source": "unverified_operator_feedback"
+              }
+            ],
+            "source": "unverified_operator_feedback"
+          },
+          "tool:1:snapshot": {
+            "machine": {
+              "machine_id": "SIM-PARTS-REPLAY-001",
+              "trackunit_asset_id": null,
+              "equipment_id": null,
+              "serial_number": "SIM-PARTS-REPLAY-001",
+              "model": "XE135U",
+              "machine_type": "excavator",
+              "customer": "SYNTHETIC DEMO",
+              "location": "Synthetic site",
+              "latitude": null,
+              "longitude": null,
+              "last_seen_at": "2026-06-29T08:45:00+00:00"
+            },
+            "total_telemetry_records": 114,
+            "displayed_latest_records_limit": 8,
+            "telemetry": [
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              }
+            ],
+            "source": "imported_synthetic",
+            "replay_at": "2026-06-29T08:55:00+00:00",
+            "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+            "limitation": "May be stale or incomplete; inspect recorded_at and last_seen_at."
+          },
+          "tool:2:faults": {
+            "method": "fault_record_facts_v1",
+            "as_of": "2026-06-29T08:55:00+00:00",
+            "total_loaded_events": 2,
+            "valid_loaded_records": 2,
+            "excluded_records": {},
+            "displayed_events_limit": 20,
+            "events": [
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "spn": null,
+                "fmi": null,
+                "fault_code": "ENG-BOOST-102-3",
+                "description": "人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。",
+                "severity": "medium",
+                "occurred_at": "2026-06-29T08:20:00+00:00",
+                "status": "open"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "spn": null,
+                "fmi": null,
+                "fault_code": "ENG-BOOST-102-3",
+                "description": "人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。",
+                "severity": "medium",
+                "occurred_at": "2026-06-29T08:45:00+00:00",
+                "status": "open"
+              }
+            ],
+            "groups": [
+              {
+                "fault_code": "ENG-BOOST-102-3",
+                "unique_code_timestamp_records": 2,
+                "first_record_at": "2026-06-29T08:20:00+00:00",
+                "last_record_at": "2026-06-29T08:45:00+00:00",
+                "first_to_last_minutes": 25.0,
+                "consecutive_gaps_minutes": [
+                  25.0
+                ],
+                "conflicting_status_timestamps": 0,
+                "unresolved_code_timestamp_records": 2,
+                "independent_failure_count": null
+              }
+            ],
+            "total_fault_code_groups": 1,
+            "limitation": "Only supplied records before cutoff. Code/time uniqueness does not prove separate failures; time span is not a recurrence period. Fault codes are not part numbers or component IDs. Empty events do not prove health.",
+            "source": "imported_synthetic"
+          },
+          "catalog:DEMO-BOOST-SENSOR": {
+            "part_number": "DEMO-BOOST-SENSOR",
+            "name": "演示增压压力传感器（非采购零件号）",
+            "component": "boost pressure sensor",
+            "models": [
+              "XE135U"
+            ],
+            "serial_numbers": [],
+            "applicability": "model_only",
+            "fault_codes": [
+              "ENG-BOOST-102-3"
+            ],
+            "checks": [
+              "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+            ],
+            "source_document": "机联智检人工编写演示目录，不是制造商资料",
+            "source_page": "演示条目1",
+            "revision": "demo-v1",
+            "provenance": "demo",
+            "status": "candidate_requires_inspection",
+            "match_reason": "fault_code",
+            "serial_verified": false,
+            "source_id": "catalog:DEMO-BOOST-SENSOR",
+            "limitation": "Verify machine configuration and inspection results before ordering."
+          },
+          "tool:3:parts": {
+            "candidates": [
+              {
+                "part_number": "DEMO-BOOST-SENSOR",
+                "name": "演示增压压力传感器（非采购零件号）",
+                "component": "boost pressure sensor",
+                "models": [
+                  "XE135U"
+                ],
+                "serial_numbers": [],
+                "applicability": "model_only",
+                "fault_codes": [
+                  "ENG-BOOST-102-3"
+                ],
+                "checks": [
+                  "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+                ],
+                "source_document": "机联智检人工编写演示目录，不是制造商资料",
+                "source_page": "演示条目1",
+                "revision": "demo-v1",
+                "provenance": "demo",
+                "status": "candidate_requires_inspection",
+                "match_reason": "fault_code",
+                "serial_verified": false,
+                "source_id": "catalog:DEMO-BOOST-SENSOR",
+                "limitation": "Verify machine configuration and inspection results before ordering."
+              }
+            ],
+            "search_diagnostics": {
+              "method": "catalog_filter_stages_v1",
+              "counts": {
+                "catalog_entries": 1,
+                "eligible_provenance": 1,
+                "matching_model": 1,
+                "matching_serial_scope": 1,
+                "matching_query": 1
+              },
+              "reason_code": "matched",
+              "explanation": "Applicable candidates found; inspection and configuration verification remain required.",
+              "returned_count": 1,
+              "truncated": false,
+              "limitation": "Stage counts are sequential filters of this local catalog only; no match does not prove parts do not exist elsewhere."
+            },
+            "limitation": "No match means no supported recommendation. Do not invent a part."
+          }
+        },
+        "parts_candidates": [
+          {
+            "part_number": "DEMO-BOOST-SENSOR",
+            "name": "演示增压压力传感器（非采购零件号）",
+            "component": "boost pressure sensor",
+            "models": [
+              "XE135U"
+            ],
+            "serial_numbers": [],
+            "applicability": "model_only",
+            "fault_codes": [
+              "ENG-BOOST-102-3"
+            ],
+            "checks": [
+              "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+            ],
+            "source_document": "机联智检人工编写演示目录，不是制造商资料",
+            "source_page": "演示条目1",
+            "revision": "demo-v1",
+            "provenance": "demo",
+            "status": "candidate_requires_inspection",
+            "match_reason": "fault_code",
+            "serial_verified": false,
+            "source_id": "catalog:DEMO-BOOST-SENSOR",
+            "limitation": "Verify machine configuration and inspection results before ordering."
+          }
+        ],
+        "tool_trace": [
+          {
+            "action": "snapshot",
+            "source_id": "tool:1:snapshot"
+          },
+          {
+            "action": "faults",
+            "source_id": "tool:2:faults"
+          },
+          {
+            "action": "parts",
+            "source_id": "tool:3:parts"
+          }
+        ],
+        "generated_at": "2026-09-14T06:51:06.254880+00:00",
+        "task": "parts",
+        "required_queries": [
+          "faults",
+          "parts",
+          "snapshot"
+        ],
+        "prior_record_id": "34d055644d64526b9cae820a5066cfde1bc62eede734758b08803196bfec2ef2",
+        "limitations": [
+          "AI hypotheses require inspection; no remaining-life estimate.",
+          "Catalog applicability is user supplied and is not manufacturer certification."
+        ]
+      }
+    },
+    {
+      "request": {
+        "machine_id": "SIM-PARTS-REPLAY-001",
+        "dataset_id": "926fa6c37d60fd358f94bb9697a53f3ba5be20820b413cbab14af3656896a147",
+        "question": "结合已保存的检查反馈继续分析，说明目前支持的判断和仍缺少的证据。",
+        "language": "en",
+        "observations": "",
+        "task": "parts",
+        "prior_record_id": "34d055644d64526b9cae820a5066cfde1bc62eede734758b08803196bfec2ef2"
+      },
+      "decisions": [
+        {
+          "action": "snapshot",
+          "component": "snapshot",
+          "summary": "The operator reported a visual inspection without finding loose connections but noted that pressure signal measurement was not performed, so the sensor's condition remains unconfirmed. No additional checks have been conducted, and the fault status is not observed. Further measurements and fault analysis are required to determine the root cause.",
+          "evidence_ids": [
+            "operator:feedback"
+          ],
+          "next_check_ids": []
+        },
+        {
+          "action": "faults",
+          "component": "faults",
+          "summary": "The operator's feedback indicates that no physical inspection was conducted, and the sensor measurement was not taken, leaving the cause of the fault unconfirmed. The snapshot data shows the machine is running with consistent operating and idle hours, but no telemetry anomalies are observed. Further evidence is needed to determine if the fault is active or if there are any sensor issues.",
+          "evidence_ids": [
+            "tool:1:snapshot",
+            "operator:feedback"
+          ],
+          "next_check_ids": [
+            "check:snapshot"
+          ]
+        },
+        {
+          "action": "parts",
+          "component": "parts",
+          "summary": "The operator reported no loose connections and no pressure signal measurement, so the sensor's integrity cannot be confirmed. The fault code ENG-BOOST-102-3 indicates an abnormal boost pressure signal, possibly due to wiring, connectors, or sensor issues. However, without sensor measurements or further diagnostics, the root cause remains undetermined. No parts match the search criteria, and the catalog search returned no results. The summary includes both the operator's observations and the missing evidence.",
+          "evidence_ids": [
+            "operator:feedback",
+            "tool:1:snapshot",
+            "tool:2:faults"
+          ],
+          "next_check_ids": []
+        },
+        {
+          "action": "finish",
+          "component": "finish",
+          "summary": "Operator feedback indicates no loose connections or sensor damage, but pressure signal measurement is missing. Fault code ENG-BOOST-102-3 is active, suggesting potential issues with the boost pressure sensor or wiring. No parts match confirmed, and further inspection is required. Missing telemetry and fault data limit conclusive analysis.",
+          "evidence_ids": [
+            "operator:feedback",
+            "tool:1:snapshot",
+            "tool:2:faults",
+            "catalog:DEMO-BOOST-SENSOR"
+          ],
+          "next_check_ids": [
+            "check:snapshot",
+            "check:faults",
+            "check:catalog:bb9e40ad600c8a25"
+          ]
+        }
+      ],
+      "report": {
+        "status": "completed",
+        "provider": "ollama_local",
+        "model": "qwen3:8b",
+        "machine_id": "SIM-PARTS-REPLAY-001",
+        "source": "imported_synthetic",
+        "dataset_id": "926fa6c37d60fd358f94bb9697a53f3ba5be20820b413cbab14af3656896a147",
+        "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+        "replay_at": "2026-06-29T08:55:00+00:00",
+        "summary": "Operator feedback indicates no loose connections or sensor damage, but pressure signal measurement is missing. Fault code ENG-BOOST-102-3 is active, suggesting potential issues with the boost pressure sensor or wiring. No parts match confirmed, and further inspection is required. Missing telemetry and fault data limit conclusive analysis.",
+        "summary_status": "ai_interpretation_requires_review",
+        "data_facts": [
+          {
+            "fact_id": "source",
+            "text": "This report uses simulated data; conclusions apply only to this segment, not a physical machine.",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "method": "evidence_render_v1"
+          },
+          {
+            "fact_id": "replay-time",
+            "text": "Analysis cutoff: 2026-06-29T08:55:00+00:00. This is not a sample timestamp.",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "method": "evidence_render_v1"
+          },
+          {
+            "fact_id": "sample-time",
+            "text": "Latest valid timestamp among displayed snapshot records: 2026-06-29T08:45:00+00:00.",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "method": "evidence_render_v1"
+          },
+          {
+            "fact_id": "parts-result",
+            "text": "Inspection candidates were found. Model lists describe applicable equipment, not part model numbers. Serial applicability and machine configuration still require verification. Search covers this local catalog only; it is not a replacement or purchasing decision.",
+            "evidence_ids": [
+              "tool:3:parts"
+            ],
+            "method": "evidence_render_v1"
+          }
+        ],
+        "language": "en",
+        "next_checks": [
+          "Verify replay time and sample timestamps; conclusions apply only to this synthetic segment.",
+          "Verify fault codes, timestamps, status and provenance; duplicate records do not establish independent failures.",
+          "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+        ],
+        "check_recommendations": [
+          {
+            "check_id": "check:snapshot",
+            "text": "Verify replay time and sample timestamps; conclusions apply only to this synthetic segment.",
+            "evidence_ids": [
+              "tool:1:snapshot"
+            ],
+            "provenance": "application_rule",
+            "source_document": "机联智检数据核验规则 v1",
+            "limitation": "Verify source and applicability; not a manufacturer-certified repair conclusion."
+          },
+          {
+            "check_id": "check:faults",
+            "text": "Verify fault codes, timestamps, status and provenance; duplicate records do not establish independent failures.",
+            "evidence_ids": [
+              "tool:2:faults"
+            ],
+            "provenance": "application_rule",
+            "source_document": "机联智检数据核验规则 v1",
+            "limitation": "Verify source and applicability; not a manufacturer-certified repair conclusion."
+          },
+          {
+            "check_id": "check:catalog:bb9e40ad600c8a25",
+            "text": "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。",
+            "evidence_ids": [
+              "catalog:DEMO-BOOST-SENSOR"
+            ],
+            "provenance": "demo",
+            "source_document": "机联智检人工编写演示目录，不是制造商资料 / 演示条目1 / demo-v1",
+            "limitation": "Verify source and applicability; not a manufacturer-certified repair conclusion."
+          }
+        ],
+        "check_selection_method": "model_selected_source_text_v1",
+        "citations": [
+          "operator:feedback",
+          "tool:1:snapshot",
+          "tool:2:faults",
+          "catalog:DEMO-BOOST-SENSOR"
+        ],
+        "evidence": {
+          "operator:feedback": {
+            "parent_record_id": "34d055644d64526b9cae820a5066cfde1bc62eede734758b08803196bfec2ef2",
+            "total_records": 1,
+            "included_latest_limit": 5,
+            "records": [
+              {
+                "feedback_id": "0dd48388bc52f8d201608d171eef58ab4db5d7ab3cdb54a9c04810a9b2d5e6dc",
+                "check_id": "check:catalog:bb9e40ad600c8a25",
+                "check_text": "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。",
+                "created_at": "2026-09-14T06:42:41.681522+00:00",
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "notes": "模拟检查记录：目视未发现接头松脱；尚未测量压力信号，无法确认传感器是否损坏。仅用于功能演示，不是真实现场检查。",
+                "observed_at": "2026-06-29T08:50:00Z",
+                "outcome": "not_observed",
+                "record_id": "34d055644d64526b9cae820a5066cfde1bc62eede734758b08803196bfec2ef2",
+                "source": "unverified_operator_feedback"
+              }
+            ],
+            "source": "unverified_operator_feedback"
+          },
+          "tool:1:snapshot": {
+            "machine": {
+              "machine_id": "SIM-PARTS-REPLAY-001",
+              "trackunit_asset_id": null,
+              "equipment_id": null,
+              "serial_number": "SIM-PARTS-REPLAY-001",
+              "model": "XE135U",
+              "machine_type": "excavator",
+              "customer": "SYNTHETIC DEMO",
+              "location": "Synthetic site",
+              "latitude": null,
+              "longitude": null,
+              "last_seen_at": "2026-06-29T08:45:00+00:00"
+            },
+            "total_telemetry_records": 114,
+            "displayed_latest_records_limit": 8,
+            "telemetry": [
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "operating_hours": 4858.2791,
+                "idle_hours": 608.7748,
+                "fuel_remaining_percent": 69.4,
+                "engine_status": "running",
+                "latitude": null,
+                "longitude": null,
+                "recorded_at": "2026-06-29T08:45:00+00:00"
+              }
+            ],
+            "source": "imported_synthetic",
+            "replay_at": "2026-06-29T08:55:00+00:00",
+            "source_document": "人工编写的告警流程演示；工时沿用模拟片段；不代表真实故障或制造商诊断规则",
+            "limitation": "May be stale or incomplete; inspect recorded_at and last_seen_at."
+          },
+          "tool:2:faults": {
+            "method": "fault_record_facts_v1",
+            "as_of": "2026-06-29T08:55:00+00:00",
+            "total_loaded_events": 2,
+            "valid_loaded_records": 2,
+            "excluded_records": {},
+            "displayed_events_limit": 20,
+            "events": [
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "spn": null,
+                "fmi": null,
+                "fault_code": "ENG-BOOST-102-3",
+                "description": "人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。",
+                "severity": "medium",
+                "occurred_at": "2026-06-29T08:20:00+00:00",
+                "status": "open"
+              },
+              {
+                "machine_id": "SIM-PARTS-REPLAY-001",
+                "trackunit_asset_id": null,
+                "equipment_id": null,
+                "spn": null,
+                "fmi": null,
+                "fault_code": "ENG-BOOST-102-3",
+                "description": "人工演示告警：增压压力信号异常。可能涉及线路、接头或传感器；尚未确认根因。",
+                "severity": "medium",
+                "occurred_at": "2026-06-29T08:45:00+00:00",
+                "status": "open"
+              }
+            ],
+            "groups": [
+              {
+                "fault_code": "ENG-BOOST-102-3",
+                "unique_code_timestamp_records": 2,
+                "first_record_at": "2026-06-29T08:20:00+00:00",
+                "last_record_at": "2026-06-29T08:45:00+00:00",
+                "first_to_last_minutes": 25.0,
+                "consecutive_gaps_minutes": [
+                  25.0
+                ],
+                "conflicting_status_timestamps": 0,
+                "unresolved_code_timestamp_records": 2,
+                "independent_failure_count": null
+              }
+            ],
+            "total_fault_code_groups": 1,
+            "limitation": "Only supplied records before cutoff. Code/time uniqueness does not prove separate failures; time span is not a recurrence period. Fault codes are not part numbers or component IDs. Empty events do not prove health.",
+            "source": "imported_synthetic"
+          },
+          "catalog:DEMO-BOOST-SENSOR": {
+            "part_number": "DEMO-BOOST-SENSOR",
+            "name": "演示增压压力传感器（非采购零件号）",
+            "component": "boost pressure sensor",
+            "models": [
+              "XE135U"
+            ],
+            "serial_numbers": [],
+            "applicability": "model_only",
+            "fault_codes": [
+              "ENG-BOOST-102-3"
+            ],
+            "checks": [
+              "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+            ],
+            "source_document": "机联智检人工编写演示目录，不是制造商资料",
+            "source_page": "演示条目1",
+            "revision": "demo-v1",
+            "provenance": "demo",
+            "status": "candidate_requires_inspection",
+            "match_reason": "fault_code",
+            "serial_verified": false,
+            "source_id": "catalog:DEMO-BOOST-SENSOR",
+            "limitation": "Verify machine configuration and inspection results before ordering."
+          },
+          "tool:3:parts": {
+            "candidates": [
+              {
+                "part_number": "DEMO-BOOST-SENSOR",
+                "name": "演示增压压力传感器（非采购零件号）",
+                "component": "boost pressure sensor",
+                "models": [
+                  "XE135U"
+                ],
+                "serial_numbers": [],
+                "applicability": "model_only",
+                "fault_codes": [
+                  "ENG-BOOST-102-3"
+                ],
+                "checks": [
+                  "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+                ],
+                "source_document": "机联智检人工编写演示目录，不是制造商资料",
+                "source_page": "演示条目1",
+                "revision": "demo-v1",
+                "provenance": "demo",
+                "status": "candidate_requires_inspection",
+                "match_reason": "fault_code",
+                "serial_verified": false,
+                "source_id": "catalog:DEMO-BOOST-SENSOR",
+                "limitation": "Verify machine configuration and inspection results before ordering."
+              }
+            ],
+            "search_diagnostics": {
+              "method": "catalog_filter_stages_v1",
+              "counts": {
+                "catalog_entries": 1,
+                "eligible_provenance": 1,
+                "matching_model": 1,
+                "matching_serial_scope": 1,
+                "matching_query": 1
+              },
+              "reason_code": "matched",
+              "explanation": "Applicable candidates found; inspection and configuration verification remain required.",
+              "returned_count": 1,
+              "truncated": false,
+              "limitation": "Stage counts are sequential filters of this local catalog only; no match does not prove parts do not exist elsewhere."
+            },
+            "limitation": "No match means no supported recommendation. Do not invent a part."
+          }
+        },
+        "parts_candidates": [
+          {
+            "part_number": "DEMO-BOOST-SENSOR",
+            "name": "演示增压压力传感器（非采购零件号）",
+            "component": "boost pressure sensor",
+            "models": [
+              "XE135U"
+            ],
+            "serial_numbers": [],
+            "applicability": "model_only",
+            "fault_codes": [
+              "ENG-BOOST-102-3"
+            ],
+            "checks": [
+              "先核实故障是否仍活跃，再根据对应维修手册检查线束、接头与传感器测量结果。"
+            ],
+            "source_document": "机联智检人工编写演示目录，不是制造商资料",
+            "source_page": "演示条目1",
+            "revision": "demo-v1",
+            "provenance": "demo",
+            "status": "candidate_requires_inspection",
+            "match_reason": "fault_code",
+            "serial_verified": false,
+            "source_id": "catalog:DEMO-BOOST-SENSOR",
+            "limitation": "Verify machine configuration and inspection results before ordering."
+          }
+        ],
+        "tool_trace": [
+          {
+            "action": "snapshot",
+            "source_id": "tool:1:snapshot"
+          },
+          {
+            "action": "faults",
+            "source_id": "tool:2:faults"
+          },
+          {
+            "action": "parts",
+            "source_id": "tool:3:parts"
+          }
+        ],
+        "generated_at": "2026-09-14T06:51:21.111571+00:00",
+        "task": "parts",
+        "required_queries": [
+          "faults",
+          "parts",
+          "snapshot"
+        ],
+        "prior_record_id": "34d055644d64526b9cae820a5066cfde1bc62eede734758b08803196bfec2ef2",
+        "limitations": [
+          "AI hypotheses require inspection; no remaining-life estimate.",
+          "Catalog applicability is user supplied and is not manufacturer certification."
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-09-14T09:41:15.940233+00:00",
+  "build": "20260914.6-observation-export",
+  "mode": "in_process_api_real_gemini",
+  "source": "synthetic",
+  "request": {
+    "machine_id": "SIM-PARTS-REPLAY-001",
+    "dataset_id": "926fa6c37d60fd358f94bb9697a53f3ba5be20820b413cbab14af3656896a147",
+    "task": "comprehensive",
+    "language": "zh",
+    "question": "重点排查故障码 ENG-BOOST-102-3，结合已有记录说明工时与怠速趋势、故障依据、建议检查和适配备件候选。"
+  },
+  "http_status": 503,
+  "elapsed_seconds": 0.31,
+  "transport_attempts": [
+    {
+      "http_status": 429,
+      "seconds": 0.28,
+      "error_status": "RESOURCE_EXHAUSTED",
+      "capacity_message": false,
+      "quota_violations": [
+        {
+          "metric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+          "id": "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+          "value": "20",
+          "model": "gemini-3.8-flash"
+        }
+      ],
+      "retry_delay": "44s"
+    }
+  ],
+  "response": {
+    "detail": "Gemini API rate limit or quota was exceeded. Retry later or check the project quota. Attempts: 1."
+  }
+}

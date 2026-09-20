@@ -1,0 +1,17 @@
+{
+  "version": "0.4.0",
+  "path": "C:\\Users\\liuch\\OneDrive\\Documents\\ChatGPT\\trackunit-ai-analyzer\\dist\\jilian-extension-0.4.0.zip",
+  "bytes": 7323,
+  "sha256": "0a9b32bdcb41f721c657467055eb7a5b4c79bdb9c01107caa55ff41a704cbb17",
+  "files": {
+    "manifest.json": "d14705d52c3a924df04b7bfb604373809ae2d06f8d209493c725dd117b792b69",
+    "background.js": "bc00babb0c15fe6a98109150649995cade3d4abb8e8ece740c6a1a55cc250582",
+    "context.js": "27978423efe5b71bc9f3ec028859d6bfdbfdabe6bcd6d8623adf4fbafc55e837",
+    "panel.js": "65c19fdfca46c6155714c781309713bc7f7a64bf079b7f6924131048f98e9a4e",
+    "panel.html": "f74324c5994125caa5c36b9ce26438c054b5c917801724de8e15fdb9c0141503",
+    "panel.css": "ae3003f2ddb3c71cd4664a2410d7b2e97703b59545738f08a689e297976d68e3",
+    "README.md": "4218622d82a7eaedc1a49dd5ffd3f452eb889481de5e1ce56aa11cf73cece65a"
+  },
+  "packaged_only": true,
+  "chrome_installation_verified": false
+}
