@@ -141,17 +141,17 @@ def test_unreadable_records_are_skipped_and_do_not_break_the_listing(history):
 def test_the_api_exposes_replay_without_running_anything(history):
     write_record(history, 'rec1')
     client = TestClient(app)
-    listing = client.get('/assistant/demo-case/replays')
+    listing = client.get('/assistant/demo-replay')
     assert listing.status_code == 200
     assert listing.headers['cache-control'] == 'no-store'
     assert listing.json()['total'] == 1
 
-    detail = client.get('/assistant/demo-case/replay/rec1')
+    detail = client.get('/assistant/demo-replay/rec1')
     assert detail.status_code == 200
     assert detail.json()['kind'] == 'real_ai_replay'
 
-    assert client.get('/assistant/demo-case/replay/plain').status_code == 404
-    assert client.get('/assistant/demo-case/replay/nope').status_code == 404
+    assert client.get('/assistant/demo-replay/plain').status_code == 404
+    assert client.get('/assistant/demo-replay/nope').status_code == 404
 
 
 # The evidence pack is the artefact a reviewer keeps, so its structure matters as
@@ -212,7 +212,7 @@ def test_the_pack_keeps_the_model_summary_verbatim(history):
 def test_the_pack_api_serves_a_download_with_a_safe_filename(history):
     write_record(history, 'rec1')
     client = TestClient(app)
-    response = client.get('/assistant/demo-case/replay/rec1/report.md')
+    response = client.get('/assistant/demo-replay/rec1/report.md')
     assert response.status_code == 200
     assert response.headers['content-type'].startswith('text/markdown')
     disposition = response.headers['content-disposition']
@@ -221,7 +221,7 @@ def test_the_pack_api_serves_a_download_with_a_safe_filename(history):
     assert '# 机联智检 · AI 排查证据包' in response.text
     # A record that cannot be replayed must not produce a pack either.
     write_record(history, 'plain', decisions=0)
-    assert client.get('/assistant/demo-case/replay/plain/report.md').status_code == 404
+    assert client.get('/assistant/demo-replay/plain/report.md').status_code == 404
 
 
 def test_every_bullet_helper_call_is_extended_not_appended():

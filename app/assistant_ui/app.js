@@ -74,7 +74,7 @@ function setView(view,{reason='initial'}={}) {
   $('cooling-view').hidden = view !== 'cooling';
   updateRuntimeLabel();
   document.querySelector('.device').hidden=['demo','states','cooling','queue'].includes(view);
-  if(view==='demo' && typeof enterDemoCase==='function')enterDemoCase();
+  if(view==='demo' && typeof enterDemoReplay==='function')enterDemoReplay();
   if(view==='cooling' && typeof enterCoolingView==='function')enterCoolingView();
   if(view!=='cooling' && typeof leaveCoolingView==='function')leaveCoolingView();
   updateSourceLabel();
@@ -266,29 +266,23 @@ function selectMachine() {
   notifyPlatformContext();
 }
 /**
- * Label the demo view by what it is currently showing. The scripted case is a
- * simulation; a replay is genuine saved model output. Calling the replay a
- * simulation would be as misleading as calling the simulation real.
+ * Label the demo view. It shows saved real model output and nothing else, so the
+ * labels are fixed: the view used to hold a simulation beside the replay, which forced
+ * a check of which one was on screen. That check is gone with the simulation.
  */
-function demoModeIsRealReplay(){
-  // Only $() is guaranteed by every harness; read the switch through it.
-  const button=$('demo-mode-real');
-  return Boolean(button&&button.getAttribute&&button.getAttribute('aria-pressed')==='true');
-}
 function updateDemoDisclosure(){
   // Tolerate a partial DOM: this runs from setView, which some harnesses drive
   // with only the nodes that path needs.
   const demoView=$('demo-view');
-  const inDemo=Boolean(demoView&&!demoView.hidden);
-  const realReplay=inDemo&&demoModeIsRealReplay();
+  if(!demoView||demoView.hidden)return;
   const header=$('ai-runtime');
-  if(header&&inDemo)header.textContent=realReplay?'AI 排查回放':'模拟案例';
+  if(header)header.textContent='AI 排查回放';
   const badge=$('source');
-  if(badge&&inDemo)badge.textContent=realReplay?'真实记录回放':'模拟演示';
+  if(badge)badge.textContent='真实记录回放';
 }
 function updateSourceLabel() {
   const m=selected(),demoView=$('demo-view');
-  if(demoView&&!demoView.hidden){$('source').textContent=demoModeIsRealReplay()?'真实记录回放':'模拟演示';return;}
+  if(demoView&&!demoView.hidden){$('source').textContent='真实记录回放';return;}
   $('source').textContent=!$('queue-view').hidden?'排查工作台':!$('cooling-view').hidden||!$('states-view').hidden?'模拟数据':machineSourceLabel(m);
 }
 function applyPlatformContext(focusSelection=false,refreshSelection=false) {
@@ -797,7 +791,7 @@ async function refreshAIRequestStatus(){
 $('ai-status-refresh').onclick=refreshAIRequestStatus;
 function updateRuntimeLabel(){
   $('runtime-footer').textContent=aiFooterLabel;
-  $('ai-runtime').textContent=!$('demo-view').hidden?'模拟演示':!$('queue-view').hidden?'任务与记录':!$('cooling-view').hidden?'模拟预警':!$('states-view').hidden?'模拟工况':aiRuntimeLabel;
+  $('ai-runtime').textContent=!$('demo-view').hidden?'AI 排查回放':!$('queue-view').hidden?'任务与记录':!$('cooling-view').hidden?'模拟预警':!$('states-view').hidden?'模拟工况':aiRuntimeLabel;
 }
 refreshAIRuntime();
 

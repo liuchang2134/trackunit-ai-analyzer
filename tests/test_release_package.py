@@ -32,7 +32,7 @@ def test_package_excludes_private_data_and_replaces_fixture_identity(release_roo
         assert b'OLLAMA_MODEL=qwen3.5:9b' in archive.read('jilian-local/.env.example')
         assert 'jilian-local/requirements-xgss.txt' in archive.namelist()
         assert 'jilian-local/docs/XGSS_INTEGRATION.md' in archive.namelist()
-        for name in ['机联智检_答辩演示稿_v4.pptx','机联智检_模拟功能演示_v1.mp4','examples/browser-export-facts-demo.json','evaluation/2026-09-14-health-claim-guard.md']:
+        for name in ['机联智检_答辩演示稿_v4.pptx','examples/browser-export-facts-demo.json','evaluation/2026-09-14-health-claim-guard.md']:
             assert 'jilian-local/docs/'+name in archive.namelist()
         assert 'jilian-local/scripts/sync_trackunit_history.py' in archive.namelist()
         assert 'jilian-local/docs/SYNTHETIC_DATA_GUIDE.md' in archive.namelist()

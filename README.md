@@ -32,19 +32,21 @@ AI 排查走 `POST /assistant/investigate/stream`：一个请求承载整次排�
 
 **尚未完成真实料号闭环：**当前 XE55U 的 VIN 尾号 02003 请求 XGSS 时，HTTP 200 的业务内容返回 `success=false`，提示 VIN 不存在，未读到该机器的真实零件条目。扩展读取能力已有自动化测试，但 Chrome 中新版插件的实际重载及图册读取验收尚未完成。完整状态见 [当前验收状态](docs/PROJECT_ACCEPTANCE_STATUS.md)。
 
-## 另有离线模拟案例
+## 演示案例：真实 AI 记录回放
 
-启动后打开 [完整演示案例](http://127.0.0.1:8890/assistant-ui/?demo=1)，或在网页选择「演示案例」。
+打开 [演示案例](http://127.0.0.1:8890/assistant-ui/)，或在导航里选择「演示案例」。
 
-案例：**滑移装载机左侧行走异常，仪表出现 H10101**。
+从本机已保存的记录里挑一条回放，看到的**是真实模型当时产出的内容**，不是预设脚本：
 
-1. 观察模拟现场现象和行走指令／响应趋势。
-2. 查阅 H10101 的协议定义及来源。
-3. 展示预设的 AI 分析示例，列出待检查的控制支路。
-4. 展开模拟检查结果，查看线束问题和复测记录。
-5. 按检查依据给出备件类型建议，导出演示讲解。
+1. 读取设备证据（程序侧：读了几项、证据几处、整理几条数据事实）
+2. 模型推断可疑部件（含手册页码与检索词）
+3. 建议检查方向
+4. 模型结论摘要（原文未改写）
+5. 本次运行的账目（决策次数、它自选的读取、格式修正次数）
 
-这是用户要求编写的展示案例。除注明出处的代码定义外，设备、工况数值、检查和结论均为虚构。演示不调用 Trackunit、DeepSeek、Gemini 或 XGSS，不消耗 API 配额，不写入真实设备或诊断历史；不是实机效果证明。14分钟是压缩演示时间，不是实际维修工时。数据在 `data/demo_case.json`。
+下拉框只列出**真的调用过模型**的记录；程序输出不在其中。页面明说这不是实时推理、不调用模型、不产生费用，并可下载 Markdown 证据包带走核对。
+
+**这里没有模拟案例。** 之前有一个预设的讲解案例（滑移装载机 H10101），已彻底移除：把预设脚本和真实模型输出并列展示，只会削弱真实输出的说服力。
 
 ## 启动
 
@@ -65,7 +67,7 @@ start_local.cmd --port 8890
 
 | 功能 | 状态 |
 |---|---|
-| 完整模拟案例 | 五阶段讲解、趋势、证据、检查反馈和导出，可离线演示 |
+| 真实 AI 记录回放 | 五段来源标注的真实模型输出，可下载 Markdown 证据包；离线、不消耗额度 |
 | 设备数据与故障资料 | 搜索、数据版本选择、趋势及 CSV 导出 |
 | 排查任务与草稿 | 创建任务、记录检查、归档、草稿恢复及冲突检查 |
 | TV12U 查码 | 本机可读取72条私有参考资料；完整原表和提取文件不随 Git 分发。演示所需 H10101 定义独立提供 |
@@ -94,7 +96,7 @@ AI 的引用是否真的指向已读取的证据，可以自己跑一遍核对�
 
 ## 开发与验证
 
-当前完整测试：Python **832 项通过**、Node **170 项通过**。Chrome 网页已显示 XC918PRO 的 2 条、XC948U 的 3 条真实快照记录；这些是带时间戳的快照通道，不代表连续历史或故障记录。见[设备关联验收证据](docs/evaluation/platform-follow-2026-09-15.json)。此前测试故障、真实 AI 请求、模拟反馈续查、历史重开和报告下载见 [XE55U 验收证据](docs/evaluation/xe55u-first-case-2026-09-15.json)。本轮的界面、设备关联与流式 AI 见[本轮验收记录](docs/evaluation/2026-09-15-industrial-console-and-streamed-ai.md)。XGSS 真实料号及新版扩展实装仍未验收。
+当前完整测试：Python **817 项通过**、Node **170 项通过**。Chrome 网页已显示 XC918PRO 的 2 条、XC948U 的 3 条真实快照记录；这些是带时间戳的快照通道，不代表连续历史或故障记录。见[设备关联验收证据](docs/evaluation/platform-follow-2026-09-15.json)。此前测试故障、真实 AI 请求、模拟反馈续查、历史重开和报告下载见 [XE55U 验收证据](docs/evaluation/xe55u-first-case-2026-09-15.json)。本轮的界面、设备关联与流式 AI 见[本轮验收记录](docs/evaluation/2026-09-15-industrial-console-and-streamed-ai.md)。XGSS 真实料号及新版扩展实装仍未验收。
 
 ```bat
 .venv\Scripts\python.exe -m pytest tests -q
@@ -103,7 +105,7 @@ node --test tests/*.test.cjs
 
 历史封存包验收、完整训练数据复算以及本机私有参考资料检查，在对应资料未分发时会明确跳过；其余业务规则测试照常运行。CI 同时检查旧 `frontend` 的类型和构建，当前产品界面位于 `app/assistant_ui/`。
 
-- [案例说明](docs/DEMO_CASE.md)
+- [演示路径](docs/演示路径.md)
 - [当前验收状态](docs/PROJECT_ACCEPTANCE_STATUS.md)
 - [Trackunit 与 XGSS 接口](docs/TRACKUNIT_XGSS_API_ANALYSIS.md) · [XGSS 对接](docs/XGSS_INTEGRATION.md)
 - [TV12U 参考资料](docs/TV12U_FAULT_REFERENCE.md) · [任务记录](docs/MAINTENANCE_WORKLIST.md) · [草稿](docs/LOCAL_INVESTIGATION_DRAFTS.md)

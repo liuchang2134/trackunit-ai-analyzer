@@ -42,7 +42,6 @@
 | [INSPECTION_FEEDBACK.md](INSPECTION_FEEDBACK.md) | 检查反馈与续查 |
 | [LOCAL_INVESTIGATION_DRAFTS.md](LOCAL_INVESTIGATION_DRAFTS.md) | 本机草稿与恢复 |
 | [MAINTENANCE_WORKLIST.md](MAINTENANCE_WORKLIST.md) | 排查任务工作台 |
-| [DEMO_CASE.md](DEMO_CASE.md) | 离线演示案例（模拟）与真实 AI 记录回放 |
 | 侧栏验证（真实 Chrome） | `node scripts/extension_probe.mjs`：渲染侧栏、验证设备识别与连接握手（8 项检查）；仍有三项需人工确认（见输出 `still_manual`） |
 | 图册标注验证（真实 DOM） | `node scripts/xgss_marking_probe.mjs`：在 `https://xgss.xcmg.com` 的本地夹具上验证 AI 检索词只标注该标的行（9 项检查） |
 | 侧栏 AI 面板验证 | `node scripts/sidebar_guidance_probe.mjs --report .tmp/g.json`：面板连通、状态落定、无建议时给指引；并记录"工作区只接受扩展来源"这条边界（6 项检查） |

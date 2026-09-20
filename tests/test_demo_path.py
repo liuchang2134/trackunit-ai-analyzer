@@ -46,12 +46,23 @@ def test_it_points_at_screens_that_actually_exist(demo):
     # without updating the walkthrough would leave a reviewer hunting for it.
     index = (ROOT / 'app/assistant_ui/index.html').read_text(encoding='utf-8')
     panel = (ROOT / 'extension/panel.html').read_text(encoding='utf-8')
-    for label in ('演示案例', '真实 AI 记录回放', '设备排查', 'AI 辅助排查',
+    for label in ('演示案例', '设备排查', 'AI 辅助排查',
                   '本次排查中 AI 做了什么', '下载 AI 排查证据包'):
         assert label in demo, f'the walkthrough must mention {label}'
-    assert '真实 AI 记录回放' in index, 'the replay tab label must exist in the page'
     assert 'AI 辅助排查' in index
+    assert '真实模型输出' in index, 'the page must say the replay is real model output'
     assert '读取设备' in panel and '图册' in panel, 'the sidebar bar labels must exist'
+
+
+def test_the_walkthrough_has_no_simulated_case_left(demo):
+    # The demo view used to hold a scripted simulation beside the replay, which forced a
+    # mode switch and let a reviewer see a preset walkthrough first. Both the walkthrough
+    # and the page must now be free of it; a reintroduced simulation fails here.
+    index = (ROOT / 'app/assistant_ui/index.html').read_text(encoding='utf-8')
+    for stale_markup in ('讲解案例', '模拟案例', 'demo-mode-scripted', 'demo-case.js', 'demo-content'):
+        assert stale_markup not in index, f'the demo view must not carry {stale_markup} any more'
+    for stale_text in ('讲解案例', '切到「'):
+        assert stale_text not in demo, f'the walkthrough must not instruct {stale_text}'
 
 
 def test_it_says_which_steps_need_a_key(demo):

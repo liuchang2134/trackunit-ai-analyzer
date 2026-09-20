@@ -1,13 +1,12 @@
 """Replay one real saved investigation, with the AI's actual decisions shown.
 
-The scripted demo case (`data/demo_case.json`) is a simulation: its own validator
-requires it to say so, and it never involved a model. That is honest but it cannot
-show what the AI does. This module builds a second, clearly separate presentation
-from a real saved report, so a reviewer can read genuine model output without
-spending an API call and without mistaking it for a live run.
+This is the only thing the demo view presents. A scripted simulation used to sit beside
+it — honest about being a simulation, but unable to show what the model does, and
+sitting a preset walkthrough next to genuine output only weakens the genuine output. It
+has been removed rather than hidden, so nothing here is a fallback to a preset case.
 
-The replay is read-only and offline: nothing here calls a provider, and every
-statement about the AI is counted from the record rather than described.
+The replay is read-only and offline: nothing here calls a provider, and every statement
+about the AI is counted from the record rather than described.
 """
 from __future__ import annotations
 

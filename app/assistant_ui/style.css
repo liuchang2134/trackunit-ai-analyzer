@@ -204,7 +204,7 @@ body .demo-evidence-list strong{color:var(--ink-strong)}
 body .demo-evidence-list p{color:var(--ink-secondary)}
 body .demo-reference-section h3{color:var(--ink-strong);border-bottom:1px solid var(--line-strong)}
 body .demo-controls{border-top-color:var(--line)}
-body .demo-status{background:var(--surface-1);border-color:var(--line);color:var(--ink-secondary)}
+body .replay-status{background:var(--surface-1);border-color:var(--line);color:var(--ink-secondary)}
 body #fault-reference-panel>summary{color:var(--ink-secondary)}
 body .reference-description{color:var(--ink)}
 

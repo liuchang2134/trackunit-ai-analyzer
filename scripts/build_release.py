@@ -31,7 +31,7 @@ DOCS += ['evaluation/local-assistant-'+stamp+'.json' for stamp in [
     '20260914T055334Z','20260914T055416Z','20260914T055617Z','20260914T055806Z']]
 DOCS += ['TRACKUNIT_HISTORY_SYNC.md','SYNTHETIC_DATA_GUIDE.md','examples/synthetic-profile-and-assumptions.json',
          'evaluation/2026-09-14-ui-history-sync-success.md']
-DOCS += ['机联智检_模拟功能演示_v1.mp4','DEMO_VIDEO.md','RELEASE_V4_NOTES.md',
+DOCS += ['DEMO_VIDEO.md','RELEASE_V4_NOTES.md',
          'examples/browser-export-facts-demo.md','examples/browser-export-facts-demo.json',
          'evaluation/2026-09-14-data-facts-report.md','evaluation/2026-09-14-model-reload.md',
          'evaluation/2026-09-14-startup-scripts.md','evaluation/2026-09-14-local-network-boundary.md',
