@@ -1,0 +1,7 @@
+﻿# Optional: TypeSafe Jev ranking layer for manual sections (app/typesafe_decision.py).
+#
+# The layer is skipped cleanly when these are absent or when TYPESAFE_API_KEY is unset,
+# so installing this is safe for a machine that only runs the offline walkthrough.
+# Note: typesafe-sdk requires pydantic>=2.13.5, which is why requirements.txt pins that
+# version rather than an older one.
+typesafe-sdk==0.7.0
