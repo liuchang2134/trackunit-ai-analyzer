@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 document.documentElement.classList.toggle('panel-embedded', window.parent !== window && new URLSearchParams(location.search).has('panel'));
-let report = null, machines = [], defaultSource = "mock", priorRecordId = null, pendingPlatformContext = false;
+let report = null, openedReport = null, machines = [], defaultSource = "mock", priorRecordId = null, pendingPlatformContext = false;
 let historyRequest = 0;
 let deviceIndexWarnings = [];
 let platformIndexState = 'loading';
@@ -62,6 +62,7 @@ async function api(path, options) {
 function setView(view,{reason='initial'}={}) {
   activeView=view;
   $('page-title').textContent={demo:'案例演示',queue:'待处理',work:'设备排查',data:'资料管理',history:'诊断记录',states:'工况识别',cooling:'冷却预警'}[view];
+  updateDemoDisclosure();
   $('secondary-nav').open=false;
   $('demo-view').hidden = view !== 'demo';
   $('demo-entry').hidden = view !== 'work' || Boolean(PlatformContext.asset(location.hash));
@@ -83,11 +84,16 @@ function setView(view,{reason='initial'}={}) {
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
   window.scrollTo({top:0});
   if(view==='work' && typeof resizeDeviceOverview==='function')requestAnimationFrame(resizeDeviceOverview);
+  // The track belongs to the troubleshooting view only: on the case demo it would
+  // read as if a simulated run had really touched a machine.
+  const track=document.getElementById('flow-track');
+  if(track)track.hidden=view!=='work';
+  if(view==='work')updateFlowTrack();
   notifyPanelView(reason);
   if(typeof platformLoaderChanged==='function')platformLoaderChanged();
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view,{reason:'user'}));
-function clearReport() { report=null; $('current-feedback')?.remove(); $('result').hidden=true; $('empty-result').hidden=false; }
+function clearReport() { report=null; openedReport=null; $('current-feedback')?.remove(); $('result').hidden=true; $('empty-result').hidden=false; }
 function displayDate(value) {
   const date = new Date(value);
   return value && Number.isFinite(date.getTime()) ? date.toLocaleString('zh-CN',{hour12:false}) : '未知';
@@ -179,10 +185,40 @@ function machineOptionLabel(machine){
   const version=versions.length>1?' · 版本 '+(versions.indexOf(machine.selection_id)+1):'';
   return `${machine.model} · ${machine.serial_number} · ${displayDate(machineSampleTime(machine))}${version}`;
 }
+/**
+ * Show an identifier in a form a person can read out loud.
+ *
+ * Trackunit asset ids are full UUIDs; a screen full of them is unreadable and
+ * useless for a walkthrough. The full value stays available where traceability
+ * matters (the data-detail disclosure, the saved record and the exported pack),
+ * so shortening here loses nothing.
+ */
+function shortIdentifier(value, keep=8){
+  const text=String(value==null?'':value).trim();
+  if(!text)return '';
+  if(text.length<=keep+3)return text;
+  return text.slice(0,keep)+'…';
+}
 function machineRecordNote(machine){
   return machine?`最近采样 ${displayDate(machineSampleTime(machine))}${machine.dataset_id?' · '+machine.sample_count+' 条记录':''}`:'等待设备数据';
 }
+function renderDeviceVitals(machine){
+  const root=$('device-vitals');
+  const wide=new Set(['VIN / PIN','数据版本','来源说明']);
+  root.replaceChildren();
+  if(!machine){const cell=document.createElement('div');cell.dataset.wide='1';
+    const dd=document.createElement('dd');dd.textContent='尚未识别设备';cell.append(dd);root.append(cell);return;}
+  const facts=[['机型',machine.model],['VIN / PIN',machine.serial_number],
+    ['最近采样',displayDate(machineSampleTime(machine))],['数据来源',machineSourceLabel(machine)]];
+  if(machine.dataset_id)facts.push(['数据记录',machine.sample_count+' 条']);
+  for(const [label,value] of facts){
+    const cell=document.createElement('div'),term=document.createElement('dt'),definition=document.createElement('dd');
+    if(wide.has(label))cell.dataset.wide='1';
+    term.textContent=label;definition.textContent=value||'未知';cell.append(term,definition);root.append(cell);
+  }
+}
 function renderDeviceFacts(machine,selectionNote='',platformId=''){
+  renderDeviceVitals(machine);
   $('device-facts').replaceChildren();
   const facts=machine?[['机型',machine.model],['VIN / PIN',machine.serial_number],
     ['最近采样',displayDate(machineSampleTime(machine))],['数据来源',machineSourceLabel(machine)],
@@ -196,6 +232,17 @@ function renderDeviceFacts(machine,selectionNote='',platformId=''){
 }
 function selectMachine() {
   const m=selected();
+  // Leaving the device a streamed analysis belongs to retires that analysis, so
+  // its late progress or report can never land on the newly selected machine.
+  const root=document.documentElement;
+  const previousDevice=root?.dataset.runningAnalysisDevice ?? null;
+  if(previousDevice!==null&&previousDevice!==$('machine').value){
+    if(typeof stopStreamedInvestigation==='function')stopStreamedInvestigation().then(()=>{
+      $('status').dataset.state='idle';
+      $('status').textContent='设备已切换，上一台设备的分析已停止。';
+    });
+  }
+  if(root)root.dataset.runningAnalysisDevice=$('machine').value;
   if(typeof faultReferenceDeviceChanged==='function')faultReferenceDeviceChanged(m,defaultSource);
   if(typeof engineeringDeviceChanged==='function')engineeringDeviceChanged();
   $('case-open').disabled=!m || $('machine').disabled;
@@ -215,11 +262,34 @@ function selectMachine() {
   if(typeof refreshCoolingContext==='function')refreshCoolingContext();
   if(typeof updateDeviceFinder==='function')updateDeviceFinder();
   if(typeof selectLocalDraft==='function')selectLocalDraft();
+  if(typeof updateFlowTrack==='function')updateFlowTrack();
   notifyPlatformContext();
 }
+/**
+ * Label the demo view by what it is currently showing. The scripted case is a
+ * simulation; a replay is genuine saved model output. Calling the replay a
+ * simulation would be as misleading as calling the simulation real.
+ */
+function demoModeIsRealReplay(){
+  // Only $() is guaranteed by every harness; read the switch through it.
+  const button=$('demo-mode-real');
+  return Boolean(button&&button.getAttribute&&button.getAttribute('aria-pressed')==='true');
+}
+function updateDemoDisclosure(){
+  // Tolerate a partial DOM: this runs from setView, which some harnesses drive
+  // with only the nodes that path needs.
+  const demoView=$('demo-view');
+  const inDemo=Boolean(demoView&&!demoView.hidden);
+  const realReplay=inDemo&&demoModeIsRealReplay();
+  const header=$('ai-runtime');
+  if(header&&inDemo)header.textContent=realReplay?'AI 排查回放':'模拟案例';
+  const badge=$('source');
+  if(badge&&inDemo)badge.textContent=realReplay?'真实记录回放':'模拟演示';
+}
 function updateSourceLabel() {
-  const m=selected();
-  $('source').textContent=!$('demo-view').hidden?'模拟案例':!$('queue-view').hidden?'排查工作台':!$('cooling-view').hidden||!$('states-view').hidden?'模拟数据':machineSourceLabel(m);
+  const m=selected(),demoView=$('demo-view');
+  if(demoView&&!demoView.hidden){$('source').textContent=demoModeIsRealReplay()?'真实记录回放':'模拟演示';return;}
+  $('source').textContent=!$('queue-view').hidden?'排查工作台':!$('cooling-view').hidden||!$('states-view').hidden?'模拟数据':machineSourceLabel(m);
 }
 function applyPlatformContext(focusSelection=false,refreshSelection=false) {
   if(!location.hash.startsWith('#trackunit-asset='))return;
@@ -275,76 +345,133 @@ $('form').onsubmit=async e=>{
   const tick=()=>{$('elapsed').textContent=`已等待 ${Math.floor((Date.now()-started)/1000)} 秒${Date.now()-started>60000?' · 服务仍在处理，请勿重复提交':''}`;};tick();
   const timer=setInterval(tick,1000);
   const analysisMachine=selected(),analysisSelection=analysisMachine.selection_id,analysisHash=location.hash;
+  const analysisKey=analysisSelection+'@'+(analysisMachine.dataset_id||defaultSource);
   try {
-    const completed=await api('/assistant/investigate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({machine_id:analysisMachine.machine_id,dataset_id:analysisMachine.dataset_id || null,question,observations:$('observations').value,language:$('language').value,task:$('task').value,prior_record_id:priorRecordId,...(manualFault?{manual_fault:manualFault}:{}),...(engineeringFault?{engineering_fault:engineeringFault}:{})})});
+    const completed=await runStreamedInvestigation({
+      machine_id:analysisMachine.machine_id,dataset_id:analysisMachine.dataset_id || null,question,
+      observations:$('observations').value,language:$('language').value,task:$('task').value,
+      prior_record_id:priorRecordId,
+      ...(manualFault?{manual_fault:manualFault}:{}),...(engineeringFault?{engineering_fault:engineeringFault}:{})},analysisKey);
+    if(completed===null)return;
     if(selected()?.selection_id!==analysisSelection||location.hash!==analysisHash){$('status').textContent='原设备分析已完成并保留在其诊断记录中；正在切换当前设备。';return;}
     report=completed;
-    $('current-feedback')?.remove();
-    $('summary').textContent=report.summary;
-    $('summary').previousElementSibling.textContent='AI解释 · 待核实';
-    if(typeof renderEngineeringReport==='function')renderEngineeringReport(report);
-    let factsRoot=$('data-facts');
-    if(!factsRoot){factsRoot=document.createElement('div');factsRoot.id='data-facts';$('result-evidence').insertBefore(factsRoot,$('metrics'));}
-    factsRoot.replaceChildren();
-    const factsHeading=document.createElement('h3');factsHeading.textContent=report.language==='en'?'Data facts':'数据事实';
-    const factsNote=document.createElement('p');factsNote.className='muted';factsNote.textContent=report.language==='en'?'Rendered from loaded evidence. AI interpretation below requires review; these are not verified physical-machine findings.':'根据已载入证据直接整理。下方AI解释仍需复核，这些记录不等于已验证的实机结论。';
-    const factsList=document.createElement('ul');
-    for(const fact of report.data_facts||[]){const li=document.createElement('li');li.textContent=fact.text;factsList.append(li);}
-    factsRoot.append(factsHeading,factsNote,factsList);
-    renderFaultFacts(report.evidence);
-    const trend=Object.values(report.evidence).find(e=>e.method==='time_window_rules_v1');
-    $('metrics').hidden=!trend;
-    if(trend) renderMetrics(trend);
-
-    $('checks').replaceChildren(...report.next_checks.map((s,index)=>{
-      const li=document.createElement('li');li.textContent=s;
-      const evidence=report.check_recommendations?.[index];
-      if(evidence){const note=document.createElement('small');note.className='check-source';
-        note.textContent=`${{application_rule:'数据核验规则',demo:'演示资料',user_supplied:'用户提供资料',ai_inference_from_manual:'AI依据手册推断'}[evidence.provenance] || '待核实资料'} · ${evidence.source_document} · 依据：${evidence.evidence_ids.join('、')}`;
-        li.append(note);}
-      return li;
-    }));
-    if(!report.next_checks.length){const li=document.createElement('li');li.textContent='本次未选择有依据的检查步骤，请补充对应资料。';$('checks').append(li);}
-    $('parts').replaceChildren();
-    if (report.parts_candidates.length) {
-      const table=document.createElement('table'), head=table.createTHead().insertRow();
-      ['备件 / 编号','适用范围 / 匹配依据','来源 / 检查要求'].forEach(label=>{const th=document.createElement('th');th.scope='col';th.textContent=label;head.append(th);});
-      const body=table.createTBody();
-      for(const p of report.parts_candidates) {
-        const row=body.insertRow();
-        const fromXGSS=p.provenance==='xgss_visible_dom'||p.source==='xgss_visible_dom'||String(p.source_id||'').startsWith('xgss:');
-        [p.name+'\n'+p.part_number,
-         (p.models||[]).join('、')+'\n'+(p.ranking_reason||(p.match_reason==='fault_code'?'故障码匹配':'部件匹配'))+' · '+(p.serial_verified?'序列号在适用清单':'整机适用性待确认'),
-         (fromXGSS?'XGSS 可见图册条目':p.provenance==='demo'?'演示资料':'用户提供资料')+' · 候选待核查\n'+(p.source_document||'')+' / '+(p.source_page||p.figure_ref||'位置待核对')+' / '+(p.revision||'版本待核对')+'\n'+(p.checks||[]).join('；')
-        ].forEach(value=>{row.insertCell().textContent=value;});
-      }
-      $('parts').append(table);
-    } else {
-      const search=Object.values(report.evidence||{}).find(item=>item.search_diagnostics?.method==='catalog_filter_stages_v1')?.search_diagnostics;
-      const reasons={catalog_empty:'本地备件目录为空，请导入有来源的目录。',
-        no_eligible_catalog:'目录中只有演示条目，不能用于当前真实数据来源。',
-        model_not_in_catalog:'当前可用目录没有精确匹配此设备机型的条目。',
-        serial_not_applicable:'目录有此机型，但设备序列号不在条目的适用范围内。',
-        fault_or_component_not_matched:'目录条目通过了机型及序列号限制筛选，但未匹配本次故障码或部件查询。通过筛选不代表已核验整机配置。'};
-      $('parts').textContent=engineeringFault?'本次尚未关联具体料号。可先查看可疑部件和检索词，读取对应 VIN 的 XGSS 图册后继续分析。':search ? (reasons[search.reason_code]||'本次没有可展示的匹配候选。')+' 检索仅覆盖当前本地目录。'
-        : '尚无匹配候选。请补充故障证据或对应型号的备件目录。';
-    }
-    $('evidence').textContent=JSON.stringify({citations:report.citations,tools:report.tool_trace,evidence:report.evidence},null,2);
-    $('result-xgss-controls').replaceChildren();
-    if(typeof createXGSSControls==='function') {
-      const machine=selected();
-      $('result-xgss-controls').append(createXGSSControls({...machine,source:machine.dataset_id?'imported_'+machine.provenance:defaultSource},engineeringFault?.code||manualFault?.code||null));
-    }
-    $('result').hidden=false; $('empty-result').hidden=true;
-    $('result-feedback').disabled=!report.record_id;
-    $('status').textContent=`分析完成 · 用时 ${Math.round((Date.now()-started)/1000)} 秒 · ${report.history_saved===false?'记录保存失败，请导出备份':'已保存诊断记录'}`;
-    $('status').dataset.state='complete';
+    const historyNote=completed.history_saved===false?'记录保存失败，请导出备份':'已保存诊断记录';
+    renderInvestigationReport(completed,started,(text,state)=>{$('status').textContent=text;$('status').dataset.state=state;},historyNote);
     setView('work');$('result').focus();$('result').scrollIntoView({block:'start'});
   } catch(e){$('status').setAttribute('role','alert');$('status').dataset.state='error';$('status').textContent=`分析未完成：${e.message}${report?' 下方保留上次成功报告，本次未更新。':''}`;$('status').scrollIntoView({block:'nearest'});}
-  finally{clearInterval(timer);$('elapsed').hidden=true;locked.forEach(id=>$(id).disabled=false);if(typeof setFaultReferenceBusy==='function')setFaultReferenceBusy(false);if(typeof setEngineeringBusy==='function')setEngineeringBusy(false);if(typeof setFaultContextBusy==='function')setFaultContextBusy(false);if(typeof refreshLocalDraftControls==='function')refreshLocalDraftControls();$('sync-history').disabled=!$('sync-source').value;$('run').textContent='开始分析';$('form').setAttribute('aria-busy','false');if(pendingPlatformContext){pendingPlatformContext=false;await refresh(true);}}
+  finally{clearInterval(timer);$('elapsed').hidden=true;resetInvestigationProgress();locked.forEach(id=>$(id).disabled=false);if(typeof setFaultReferenceBusy==='function')setFaultReferenceBusy(false);if(typeof setEngineeringBusy==='function')setEngineeringBusy(false);if(typeof setFaultContextBusy==='function')setFaultContextBusy(false);if(typeof refreshLocalDraftControls==='function')refreshLocalDraftControls();$('sync-history').disabled=!$('sync-source').value;$('run').textContent='开始分析';$('form').setAttribute('aria-busy','false');if(pendingPlatformContext){pendingPlatformContext=false;await refresh(true);}}
 };
-$('catalog').onchange=async()=>{
-  const file=$('catalog').files[0];if(!file)return;
+/**
+ * Show what the AI contributed to this run, from the summary the backend derived
+ * out of the saved report. The model's work and the program's work are listed
+ * separately so neither is credited to the other.
+ */
+function renderAIContribution(report, target){
+  // Reopening a saved record renders through its own path, so the caller can
+  // supply the container instead of relying on the live-result element.
+  const root=target||$('ai-contribution');
+  if(!root)return;
+  const summary=report?.ai_contribution;
+  root.replaceChildren();
+  if(!summary){root.hidden=true;return;}
+  root.hidden=false;
+  const ai=summary.ai||{},program=summary.program||{};
+  const head=document.createElement('div');head.className='ai-contribution-head';
+  const badge=document.createElement('span');badge.className='ai-badge';badge.textContent='AI';
+  const title=document.createElement('strong');title.textContent='本次排查中 AI 做了什么';
+  const model=(summary.model||{}).model;
+  const meta=document.createElement('span');meta.className='ai-contribution-meta';
+  meta.textContent=[model,ai.duration_seconds!=null?`${ai.duration_seconds} 秒`:null].filter(Boolean).join(' · ');
+  head.append(badge,title,meta);
+  root.append(head);
+  const facts=document.createElement('ul');facts.className='ai-facts';
+  const add=(label,value,note)=>{
+    if(!value&&value!==0)return;
+    const li=document.createElement('li');
+    const strong=document.createElement('strong');strong.textContent=label;
+    const span=document.createElement('span');span.textContent=value;
+    li.append(strong,span);
+    if(note){const small=document.createElement('small');small.textContent=note;li.append(small);}
+    facts.append(li);
+  };
+  add('模型决策',`${ai.model_decisions||0} 次`,'每轮决定下一步读取什么、何时收尾');
+  add('它自己选择的读取',(ai.model_selected_actions||[]).length?ai.model_selected_actions.join(' / '):'无');
+  add('推断的可疑部件',`${ai.hypothesis_count||0} 个`);
+  add('提出的检查方向',`${ai.check_directions||0} 条`);
+  add('引用的证据',`${ai.citation_count||0} 条`);
+  if(ai.format_repair_attempts)add('格式修正',`${ai.format_repair_attempts} 次`,'首次输出未满足格式约定，修正后才生成报告');
+  root.append(facts);
+  // Every reference the report makes is resolved against the recorded evidence.
+  // A dangling citation is the one defect that would make the whole report
+  // untrustworthy, so its result is stated outright rather than implied.
+  const audit=summary.audit;
+  if(audit){
+    const line=document.createElement('p');
+    line.className='ai-audit';
+    line.dataset.verdict=audit.verdict;
+    line.textContent=audit.dangling_count===0
+      ?`依据核对：${audit.checked} 条引用全部指向已读取的证据，没有悬空引用。`
+      :`依据核对：${audit.checked} 条引用中有 ${audit.dangling_count} 条找不到对应证据，请以下方悬空条目为准。`;
+    root.append(line);
+    if(audit.dangling_count){
+      const list=document.createElement('ul');list.className='ai-dangling';
+      for(const [where,items] of Object.entries(audit.dangling||{})){
+        for(const ref of items){
+          const li=document.createElement('li');li.textContent=`${where}：${ref}`;list.append(li);
+        }
+      }
+      root.append(list);
+    }
+  }
+  if((ai.hypotheses||[]).length){
+    const list=document.createElement('ol');list.className='ai-hypotheses';
+    for(const row of ai.hypotheses){
+      const li=document.createElement('li');
+      const name=document.createElement('strong');name.textContent=row.component;li.append(name);
+      const grounds=[];
+      if(row.pdf_pages&&row.pdf_pages.length)grounds.push(`手册第 ${row.pdf_pages.join('、')} 页`);
+      if(row.check_count)grounds.push(`${row.check_count} 条检查`);
+      if(row.part_candidate_count)grounds.push(`${row.part_candidate_count} 个目录候选`);
+      if(grounds.length){const span=document.createElement('span');span.textContent=grounds.join(' · ');li.append(span);}
+      list.append(li);
+    }
+    root.append(list);
+  }
+  const programLine=document.createElement('p');programLine.className='ai-program';
+  const families=Object.entries(program.evidence_by_family||{}).map(([name,count])=>`${name} ${count}`).join('，');
+  programLine.textContent=`程序侧：读取 ${program.reads_total||0} 项（其中 ${program.reads_by_task||0} 项由任务规定）、证据来源 ${program.evidence_sources||0} 处${families?`（${families}）`:''}、整理数据事实 ${program.data_facts||0} 条。`;
+  root.append(programLine);
+  const boundary=document.createElement('p');boundary.className='muted ai-boundary';
+  boundary.textContent=(summary.boundary||[]).join(' ');
+  root.append(boundary);
+}
+/**
+ * Light up the three-step track from state the workspace actually reached:
+ * the machine is associated, an AI report exists, and that report carries
+ * catalog-bound part candidates. Nothing is marked done on a timer or a guess.
+ */
+function updateFlowTrack(){
+  const root=document.getElementById('flow-track');
+  if(!root)return;
+  const associated=Boolean(
+    PlatformContext.asset(location.hash)||
+    (typeof platformLoaderChanged==='function'&&$('machine')&&$('machine').value));
+  const diagnosed=Boolean(report);
+  const verified=Boolean(report&&(
+    (report.parts_candidates||[]).some(p=>String(p.source_id||'').startsWith('xgss:')||p.provenance==='xgss_visible_dom')||
+    report.xgss_catalog_context));
+  const order=['connect','diagnose','verify'];
+  const done={connect:associated,diagnose:diagnosed,verify:verified};
+  let activeSet=false;
+  for(const key of order){
+    const li=root.querySelector(`li[data-step="${key}"]`);
+    if(!li)continue;
+    if(done[key])li.dataset.state='done';
+    else if(!activeSet){li.dataset.state='active';activeSet=true;}
+    else li.dataset.state='';
+  }
+}
+$('catalog').onchange=async()=>{  const file=$('catalog').files[0];if(!file)return;
   try{if(file.size>5*1024*1024)throw new Error('目录文件不能超过 5MB');
     const payload=JSON.parse(await file.text());
     const r=await api('/assistant/catalog/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -411,7 +538,7 @@ async function refreshHistory() {
     for(const record of data.records) {
       const item=document.createElement('details'),title=document.createElement('summary');
       title.textContent=displayDate(record.generated_at)+' · '+record.question;
-      const meta=document.createElement('p');meta.className='muted';meta.textContent=record.machine_id+' · '+record.source;
+      const meta=document.createElement('p');meta.className='muted';meta.textContent=shortIdentifier(record.machine_id)+' · '+record.source;
       const summary=document.createElement('p');summary.className='pre';summary.textContent='AI解释（待核实）：'+record.summary;
       const download=document.createElement('button');download.className='quiet';download.textContent='导出完整记录 JSON';
       download.onclick=async()=>{
@@ -431,11 +558,16 @@ async function refreshHistory() {
         view.disabled=true;
         try{
           const full=await api('/assistant/history/'+record.record_id);
-          const saved=full.report;fullPanel.replaceChildren();
-          const heading=document.createElement('h3');heading.textContent='历史报告 · '+saved.machine_id;
+          const saved=full.report;openedReport=saved;fullPanel.replaceChildren();
+          const heading=document.createElement('h3');heading.textContent='历史报告 · '+(saved.machine_id||'当前设备');
           const note=document.createElement('p');note.className='muted';
           note.textContent=`生成时间：${displayDate(saved.generated_at)} · 来源：${saved.source} · 模型：${saved.model || '未记录'}。以下为保存时的报告，未重新运行分析。`;
           fullPanel.append(heading,note);
+          // Show the same AI-contribution summary the live run displayed, so a
+          // reopened record does not look like it had less AI involvement.
+          const contribution=document.createElement('div');contribution.className='ai-contribution';
+          renderAIContribution(saved,contribution);
+          if(!contribution.hidden)fullPanel.append(contribution);
           const addSection=(title,lines)=>{
             const h=document.createElement('h4');h.textContent=title;const list=document.createElement('ul');
             for(const line of lines){const li=document.createElement('li');li.className='pre';li.textContent=line;list.append(li);}
@@ -566,6 +698,48 @@ function notifyPlatformContext(){
     connection_id:new URLSearchParams(location.search).get('panel'),...context},origin);
 }
 function getPlatformEquipmentHint(assetId){return {...(platformEquipmentHints.get(assetId)||{confirmed:false,value:null})};}
+/**
+ * What the AI currently suggests the engineer should look for.
+ *
+ * The panel cannot judge what a parts page means; it needs the AI's hypotheses
+ * to mark the right rows and to explain a match. Only suggestion text, its
+ * stated reason and manual reference ids leave the frame — never device data.
+ */
+function currentAISearchGuidance(){
+  // A report the engineer opened from the history counts as much as a fresh run: the
+  // sidebar asks for the AI's search terms whenever they want to mark the catalog, and
+  // "you have to re-run the analysis first" is not an acceptable answer when the report
+  // is already on screen. The opened report is kept separately so the live-run state
+  // (flow track, export, feedback) is not silently switched to a historical snapshot.
+  const source=report||openedReport;
+  const hypotheses=Array.isArray(source?.component_hypotheses)?source.component_hypotheses:[];
+  const terms=[],components=[];
+  for(const row of hypotheses){
+    const name=typeof row?.component==='string'?row.component.trim():'';
+    if(name&&!components.some(item=>item.name===name)){
+      components.push({name,reason:(typeof row.rationale==='string'?row.rationale:'').slice(0,220),
+        reference_ids:(row.reference_ids||[]).slice(0,4)});
+    }
+    for(const term of row?.search_terms||[]){
+      const clean=typeof term==='string'?term.trim():'';
+      if(clean&&clean.length>=2&&clean.length<=40&&!terms.includes(clean))terms.push(clean);
+    }
+  }
+  return {terms:terms.slice(0,12),components:components.slice(0,6),
+    // Both flags describe the report the terms came from, so an opened report is not
+    // announced as "no AI suggestion" while its terms are being sent.
+    fault_code:source?.engineering_fault?.code||null,has_report:Boolean(source),
+    has_search_terms:terms.length>0,
+    machine_model:selected()?.model||null};
+}
+function handleAIGuidanceRequest(event){
+  const origin=location.ancestorOrigins?.[0],data=event.data;
+  if(window.parent===window||event.source!==window.parent||event.origin!==origin||!/^chrome-extension:\/\/[a-p]{32}$/.test(origin||''))return;
+  if(data?.type!=='jilian:ai-guidance-request'||data.protocol!==1||data.connection_id!==new URLSearchParams(location.search).get('panel'))return;
+  window.parent.postMessage({type:'jilian:ai-guidance',protocol:1,connection_id:data.connection_id,
+    request_id:typeof data.request_id==='string'?data.request_id.slice(0,64):null,...currentAISearchGuidance()},origin);
+}
+window.addEventListener('message',handleAIGuidanceRequest);
 function handlePlatformContextRequest(event){
   const origin=location.ancestorOrigins?.[0],data=event.data;
   if(window.parent===window||event.source!==window.parent||event.origin!==origin||!/^chrome-extension:\/\/[a-p]{32}$/.test(origin||''))return;
@@ -626,3 +800,143 @@ function updateRuntimeLabel(){
   $('ai-runtime').textContent=!$('demo-view').hidden?'模拟演示':!$('queue-view').hidden?'任务与记录':!$('cooling-view').hidden?'模拟预警':!$('states-view').hidden?'模拟工况':aiRuntimeLabel;
 }
 refreshAIRuntime();
+
+
+/**
+ * Drive one streamed investigation and resolve with its report.
+ *
+ * Resolves `null` when the run was stopped or interrupted, so the caller keeps
+ * whatever report it already had instead of rendering a partial one. Progress is
+ * rendered from real backend events only.
+ */
+let investigationRunner=null, investigationProgressTimer=null, investigationProgressStartedAt=0;
+function resetInvestigationProgress(){
+  clearInterval(investigationProgressTimer);investigationProgressTimer=null;
+  const panel=$('ai-progress');if(panel)panel.hidden=true;
+}
+function renderInvestigationProgress(event){
+  const panel=$('ai-progress'),text=$('ai-progress-text'),step=$('ai-progress-step');
+  if(!panel||!text||!step)return;
+  panel.hidden=false;
+  panel.dataset.state=event.type==='stopped'?'stopped':event.type==='error'?'error':'running';
+  text.textContent=event.message||'正在分析…';
+  const label={prepare:'准备',reading:'读取设备数据',model_decision:'模型决策',finalizing:'整理报告'}[event.stage];
+  step.textContent=event.stage==='model_decision'&&event.step
+    ? `${label||'模型决策'} ${event.step}${event.total?` / ${event.total}`:''}`:(label||'');
+}
+/**
+ * Run one streamed investigation and resolve with its validated report.
+ *
+ * Resolves null when the run was stopped, so the caller keeps the report it
+ * already had instead of rendering a partial one. What the user sees comes only
+ * from backend events, and every terminal path clears the progress panel.
+ */
+async function runStreamedInvestigation(payload,analysisKey){
+  let settle;
+  const outcome=new Promise(resolve=>{settle=resolve;});
+  investigationRunner=InvestigationRunner.create({
+    machineKey:()=>analysisKey,
+    onProgress:event=>renderInvestigationProgress(event),
+    onTerminal:event=>settle(event),
+  });
+  investigationProgressStartedAt=Date.now();
+  investigationProgressTimer=setInterval(()=>{
+    const elapsed=$('ai-progress-elapsed'),panel=$('ai-progress');
+    if(elapsed&&panel&&!panel.hidden)elapsed.textContent=`已等待 ${Math.floor((Date.now()-investigationProgressStartedAt)/1000)} 秒`;
+  },1000);
+  const accepted=await investigationRunner.start(payload,analysisKey);
+  if(!accepted){resetInvestigationProgress();return null;}
+  const event=await outcome;
+  resetInvestigationProgress();
+  if(event?.type==='result')return event.report;
+  if(event?.type==='cancelled'){$('status').dataset.state='idle';$('status').textContent=event.message;return null;}
+  const error=new Error(event?.message||'分析未完成。');error.kind=event?.kind;throw error;
+}
+/** Withdraw the running investigation. Returns the backend acknowledgement. */
+async function stopStreamedInvestigation(){
+  if(!investigationRunner)return null;
+  const outcome=await investigationRunner.stop('user');
+  resetInvestigationProgress();
+  const root=document.documentElement;
+  if(root)delete root.dataset.runningAnalysisDevice;
+  return outcome;
+}
+$('ai-progress-stop')?.addEventListener('click',async()=>{
+  await stopStreamedInvestigation();
+  $('status').dataset.state='idle';
+  $('status').textContent='已停止本次分析；不会再发起新的模型请求。已读取的证据和输入仍然保留。';
+});
+$('ai-retry')?.addEventListener('click',()=>{$('form').requestSubmit();});
+
+/**
+ * Render one validated investigation report. Every caller passes a report that
+ * already passed the backend checks, so a stream that is still incomplete can
+ * never reach this function. Returns the reported duration in seconds.
+ */
+function renderInvestigationReport(report, started, onStatus, historyNote=''){
+  // Read the applied fault from the report itself: the streamed path and the
+  // direct path must agree, so neither may depend on local form state here.
+  const engineeringFault=report.engineering_fault||null;
+  const manualFault=report.evidence?.['manual:retrieval']||null;
+  $('current-feedback')?.remove();
+  if(typeof renderAIContribution==='function')renderAIContribution(report);
+  $('summary').textContent=report.summary;
+  $('summary').previousElementSibling.textContent='AI解释 · 待核实';
+  if(typeof renderEngineeringReport==='function')renderEngineeringReport(report);
+  let factsRoot=$('data-facts');
+  if(!factsRoot){factsRoot=document.createElement('div');factsRoot.id='data-facts';$('result-evidence').insertBefore(factsRoot,$('metrics'));}
+  factsRoot.replaceChildren();
+  const factsHeading=document.createElement('h3');factsHeading.textContent=report.language==='en'?'Data facts':'数据事实';
+  const factsNote=document.createElement('p');factsNote.className='muted';factsNote.textContent=report.language==='en'?'Rendered from loaded evidence. AI interpretation below requires review; these are not verified physical-machine findings.':'根据已载入证据直接整理。下方AI解释仍需复核，这些记录不等于已验证的实机结论。';
+  const factsList=document.createElement('ul');
+  for(const fact of report.data_facts||[]){const li=document.createElement('li');li.textContent=fact.text;factsList.append(li);}
+  factsRoot.append(factsHeading,factsNote,factsList);
+  renderFaultFacts(report.evidence);
+  const trend=Object.values(report.evidence).find(e=>e.method==='time_window_rules_v1');
+  $('metrics').hidden=!trend;
+  if(trend) renderMetrics(trend);
+  
+  $('checks').replaceChildren(...report.next_checks.map((s,index)=>{
+    const li=document.createElement('li');li.textContent=s;
+    const evidence=report.check_recommendations?.[index];
+    if(evidence){const note=document.createElement('small');note.className='check-source';
+      note.textContent=`${{application_rule:'数据核验规则',demo:'演示资料',user_supplied:'用户提供资料',ai_inference_from_manual:'AI依据手册推断'}[evidence.provenance] || '待核实资料'} · ${evidence.source_document} · 依据：${evidence.evidence_ids.join('、')}`;
+      li.append(note);}
+    return li;
+  }));
+  if(!report.next_checks.length){const li=document.createElement('li');li.textContent='本次未选择有依据的检查步骤，请补充对应资料。';$('checks').append(li);}
+  $('parts').replaceChildren();
+  if (report.parts_candidates.length) {
+    const table=document.createElement('table'), head=table.createTHead().insertRow();
+    ['备件 / 编号','适用范围 / 匹配依据','来源 / 检查要求'].forEach(label=>{const th=document.createElement('th');th.scope='col';th.textContent=label;head.append(th);});
+    const body=table.createTBody();
+    for(const p of report.parts_candidates) {
+      const row=body.insertRow();
+      const fromXGSS=p.provenance==='xgss_visible_dom'||p.source==='xgss_visible_dom'||String(p.source_id||'').startsWith('xgss:');
+      [p.name+'\n'+p.part_number,
+       (p.models||[]).join('、')+'\n'+(p.ranking_reason||(p.match_reason==='fault_code'?'故障码匹配':'部件匹配'))+' · '+(p.serial_verified?'序列号在适用清单':'整机适用性待确认'),
+       (fromXGSS?'XGSS 可见图册条目':p.provenance==='demo'?'演示资料':'用户提供资料')+' · 候选待核查\n'+(p.source_document||'')+' / '+(p.source_page||p.figure_ref||'位置待核对')+' / '+(p.revision||'版本待核对')+'\n'+(p.checks||[]).join('；')
+      ].forEach(value=>{row.insertCell().textContent=value;});
+    }
+    $('parts').append(table);
+  } else {
+    const search=Object.values(report.evidence||{}).find(item=>item.search_diagnostics?.method==='catalog_filter_stages_v1')?.search_diagnostics;
+    const reasons={catalog_empty:'本地备件目录为空，请导入有来源的目录。',
+      no_eligible_catalog:'目录中只有演示条目，不能用于当前真实数据来源。',
+      model_not_in_catalog:'当前可用目录没有精确匹配此设备机型的条目。',
+      serial_not_applicable:'目录有此机型，但设备序列号不在条目的适用范围内。',
+      fault_or_component_not_matched:'目录条目通过了机型及序列号限制筛选，但未匹配本次故障码或部件查询。通过筛选不代表已核验整机配置。'};
+    $('parts').textContent=engineeringFault?'本次尚未关联具体料号。可先查看可疑部件和检索词，读取对应 VIN 的 XGSS 图册后继续分析。':search ? (reasons[search.reason_code]||'本次没有可展示的匹配候选。')+' 检索仅覆盖当前本地目录。'
+      : '尚无匹配候选。请补充故障证据或对应型号的备件目录。';
+  }
+  $('evidence').textContent=JSON.stringify({citations:report.citations,tools:report.tool_trace,evidence:report.evidence},null,2);
+  $('result-xgss-controls').replaceChildren();
+  if(typeof createXGSSControls==='function') {
+    const machine=selected();
+    $('result-xgss-controls').append(createXGSSControls({...machine,source:machine.dataset_id?'imported_'+machine.provenance:defaultSource},engineeringFault?.code||manualFault?.code||null));
+  }
+  $('result').hidden=false; $('empty-result').hidden=true;
+  $('result-feedback').disabled=!report.record_id;
+  onStatus(`分析完成 · 用时 ${Math.round((Date.now()-started)/1000)} 秒 · ${historyNote}`,'complete');
+  if(typeof updateFlowTrack==='function')updateFlowTrack();
+}

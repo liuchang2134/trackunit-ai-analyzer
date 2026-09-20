@@ -12,6 +12,12 @@ HISTORY_DIR = Path(__file__).resolve().parents[1] / "data/local/investigations"
 def save_investigation(report: dict, request: dict) -> dict:
     if report.get("status") != "completed" or report.get("machine_id") != request.get("machine_id"):
         raise ValueError("Only completed matching-machine reports can be saved")
+    # Derive the AI-contribution summary here, so every saved record and every
+    # caller that gets this report back describes the same AI work. It is a pure
+    # function of the report, so the content hash stays stable for the same run.
+    if "ai_contribution" not in report:
+        from app.ai_contribution import ai_contribution
+        report = {**report, "ai_contribution": ai_contribution(report)}
     # Allowlisted user inputs, not arbitrary request/environment serialization.
     inputs = {k: request.get(k) for k in ("machine_id", "dataset_id", "question", "observations", "language", "task", "prior_record_id", "manual_fault", "engineering_fault")}
     record = {"schema_version": 1, "request": inputs, "report": report}

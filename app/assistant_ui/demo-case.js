@@ -9,10 +9,14 @@
   function drawChart(){
     if(!scenario||byId('demo-view').hidden||!window.echarts)return;
     chart=chart||echarts.init(byId('demo-chart'));
-    chart.setOption({animation:false,color:['#0055d9','#db963b'],grid:{left:42,right:16,top:34,bottom:36},
-      tooltip:{trigger:'axis'},legend:{data:['左行走指令（%）','左行走响应（%）'],textStyle:{fontSize:11}},
-      xAxis:{type:'value',name:'分钟',nameLocation:'middle',nameGap:24,min:0},
-      yAxis:{type:'value',min:0,max:100,axisLabel:{formatter:'{value}%'}},
+    chart.setOption({animation:false,color:[chartTheme.brand,chartTheme.warn],grid:{left:42,right:16,top:34,bottom:36,backgroundColor:'transparent'},
+      textStyle:{color:chartTheme.inkSecondary},
+      tooltip:chartTooltip({trigger:'axis'}),legend:{data:['左行走指令（%）','左行走响应（%）'],textStyle:{fontSize:11,color:chartTheme.inkSecondary}},
+      xAxis:{type:'value',name:'分钟',nameLocation:'middle',nameGap:24,min:0,
+        nameTextStyle:{color:chartTheme.muted},
+        axisLabel:chartAxisText(),axisLine:{lineStyle:{color:chartTheme.axisLine}},splitLine:{lineStyle:{color:chartTheme.splitLine}}},
+      yAxis:{type:'value',min:0,max:100,axisLabel:Object.assign(chartAxisText(),{formatter:'{value}%'}),
+        axisLine:{lineStyle:{color:chartTheme.axisLine}},splitLine:{lineStyle:{color:chartTheme.splitLine}}},
       series:[['左行走指令（%）','left_travel_command_percent'],['左行走响应（%）','left_travel_response_percent']].map(([name,key])=>({name,type:'line',showSymbol:false,smooth:false,data:scenario.telemetry.points.map(p=>[p.minute,p[key]])}))});
     chart.resize();
   }
@@ -57,6 +61,11 @@
     requestAnimationFrame(drawChart);
   }
   window.enterDemoCase=()=>{
+    // The replay tab owns the same view; when it is showing, loading the scripted
+    // case must not pull visibility back to itself.
+    if(typeof demoModeIsRealReplay==='function'&&demoModeIsRealReplay()){
+      return Promise.resolve();
+    }
     if(scenario){requestAnimationFrame(drawChart);return Promise.resolve();}
     if(loading)return loading;
     byId('demo-status').hidden=false;byId('demo-status').textContent='正在载入模拟案例…';

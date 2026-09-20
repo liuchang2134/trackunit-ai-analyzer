@@ -231,5 +231,8 @@ if(typeof document!=='undefined') {
   $('queue-find').onclick=()=>{setView('work');$('finder-open').click();};
   for(const [id,delta] of [['queue-case-prev',-1],['queue-case-next',1]])$(id).onclick=()=>{casePage+=delta;enterWorklist();};
   for(const [id,delta] of [['queue-device-prev',-1],['queue-device-next',1]])$(id).onclick=()=>{attentionPage+=delta;renderAttention();};
-  setView(platform()===null?'queue':'work');
+  // The worklist keeps its code and data but is not an exposed entry any more, so
+  // the app always opens on the troubleshooting view rather than on a page the
+  // user could not navigate back to.
+  setView('work');
 }

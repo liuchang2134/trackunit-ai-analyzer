@@ -1,6 +1,22 @@
 /* XGSS owns the manual/catalog page. Never store its authenticated URL. */
-(() => {
+/**
+ * Decide how to present the official catalog for a given viewport.
+ *
+ * The catalog is a wide two-pane page (assembly tree + parts table). Embedding
+ * it in the narrow side panel produced three stacked scrollbars and a table too
+ * cramped to read, so below the threshold the panel only offers to open it in
+ * its own tab and keeps the AI guidance visible on the panel side.
+ */
+function xgssPresentation(width){
+  return Number(width)>=760
+    ? {embed:true,reason:'wide'}
+    : {embed:false,reason:'narrow',message:'图册是宽屏页面，已在独立标签页打开；本机 AI 检索词留在侧栏对照。'};
+}
+if(typeof module!=='undefined')module.exports={xgssPresentation};
+// Everything below needs a real page; the module also loads under Node for tests.
+if(typeof window!=='undefined'&&typeof document!=='undefined')(() => {
   const text=(tag,value)=>{const e=document.createElement(tag);e.textContent=value;return e;};
+  const canEmbed=()=>xgssPresentation(Math.max(window.innerWidth||0,document.documentElement?.clientWidth||0)).embed;
   window.createXGSSControls=(machine,faultCode=null)=>{
     const root=document.createElement('aside');root.className='integration-limit';
     root.append(text('strong','XGSS 官方资料'));
@@ -32,10 +48,12 @@
     const submit=text('button','连接 XGSS 并打开');submit.type='submit';submit.disabled=true;form.append(label,submit);
     const status=text('p','将向 XGSS 发送该整机 VIN/PIN'+(code?'及故障码 '+code:'')+'，取得官方页面入口。');status.setAttribute('role','status');
     const external=text('a','在新标签页打开 XGSS');external.target='_blank';external.rel='noopener noreferrer';external.hidden=true;
+    // Holds follow-up actions once the address is known (narrow layout uses it).
+    const actions=document.createElement('div');actions.className='fault-context-actions';
     const frame=document.createElement('iframe');frame.title='XGSS 官方手册与零件图册';frame.referrerPolicy='no-referrer';frame.hidden=true;
     frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-downloads');
     const help=text('p','若内嵌页面空白或要求登录，可使用“在新标签页打开 XGSS”。进入图册不代表已找到对应故障手册。');help.hidden=true;
-    dialog.append(header,identity,form,status,external,help,frame);document.body.append(dialog);
+    dialog.append(header,identity,form,actions,status,external,help,frame);document.body.append(dialog);
     let closed=false;
     api('/assistant/xgss/status').then(data=>{
       if(closed)return;
@@ -56,7 +74,20 @@
         const url=new URL(result.url);
         if(url.protocol!=='https:'||url.hostname!=='xgss.xcmg.com'||url.username||url.password||(url.port&&url.port!=='443'))throw new Error('返回地址不属于已配置的 XGSS 官方环境。');
         status.textContent=result.message;form.hidden=true;
-        external.href=result.url;external.hidden=false;help.hidden=false;frame.src=result.url;frame.hidden=false;
+        external.href=result.url;external.hidden=false;
+        const presentation=xgssPresentation(Math.max(window.innerWidth||0,document.documentElement?.clientWidth||0));
+        if(presentation.embed){
+          help.hidden=false;frame.src=result.url;frame.hidden=false;
+        }else{
+          // Too narrow to render the official page: hand over the address as a
+          // single next action instead of a squeezed, unusable catalog.
+          dialog.classList.add('xgss-dialog-narrow');
+          status.textContent=presentation.message;
+          help.hidden=true;
+          const open=text('button','在新标签页打开图册');open.type='button';
+          open.onclick=()=>window.open(result.url,'_blank','noopener,noreferrer');
+          actions.append(open);
+        }
       }catch(error){if(!closed){status.textContent=error.message;submit.disabled=false;}}
     };
     dialog.showModal();confirmed.focus();

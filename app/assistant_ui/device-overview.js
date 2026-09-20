@@ -94,15 +94,21 @@ function renderDeviceChart() {
     const events=overview.faults.events.filter(f=>Date.parse(f.occurred_at)>=start && Date.parse(f.occurred_at)<=end);
     deviceChart.setOption({animation:false,aria:{enabled:true,label:{description:
         `${meta.name}趋势图，单位${meta.unit}，显示${chartRows.length}个采样时点。时间从${displayDate(chartRows[0]?.recorded_at)}到${displayDate(chartRows.at(-1)?.recorded_at)}。缺失值留空，详细测量值见下方数据表。`}},
-      grid:{left:48,right:18,top:28,bottom:74},
-      tooltip:{trigger:'axis',renderMode:'richText',valueFormatter:value=>value==null?'缺失':overviewNumber(value,' '+meta.unit)},
-      xAxis:{type:'time',axisLabel:{fontSize:11,hideOverlap:true}},
-      yAxis:{type:'value',scale:true,name:meta.unit,nameGap:10,axisLabel:{fontSize:11},splitLine:{lineStyle:{color:'#edf0f3'}}},
-      dataZoom:[{type:'inside',filterMode:'none'},{type:'slider',bottom:8,height:22,filterMode:'none'}],
+      grid:{left:48,right:18,top:28,bottom:74,backgroundColor:'transparent'},
+      textStyle:{color:chartTheme.inkSecondary},
+      tooltip:chartTooltip({trigger:'axis',renderMode:'richText',valueFormatter:value=>value==null?'缺失':overviewNumber(value,' '+meta.unit)}),
+      xAxis:{type:'time',axisLabel:Object.assign(chartAxisText(),{hideOverlap:true}),
+        axisLine:{lineStyle:{color:chartTheme.axisLine}},splitLine:{show:false}},
+      yAxis:{type:'value',scale:true,name:meta.unit,nameGap:10,
+        nameTextStyle:{color:chartTheme.muted,fontSize:11},
+        axisLabel:chartAxisText(),axisLine:{show:true,lineStyle:{color:chartTheme.axisLine}},
+        splitLine:{lineStyle:{color:chartTheme.splitLine}}},
+      dataZoom:[{type:'inside',filterMode:'none'},chartSlider()],
       series:[{name:meta.name,type:'line',smooth:false,connectNulls:false,showSymbol:chartRows.length<80,
         symbolSize:4,lineStyle:{width:2,color:meta.color},itemStyle:{color:meta.color},
+        areaStyle:{color:meta.color,opacity:.10},
         data:chartRows.map(row=>[row.recorded_at,row[field]]),
-        markLine:{silent:true,symbol:['none','none'],label:{show:false},lineStyle:{type:'dashed',color:'#b56b27',width:1},
+        markLine:{silent:true,symbol:['none','none'],label:{show:false},lineStyle:{type:'dashed',color:chartTheme.warn,width:1},
           data:events.map(f=>({name:f.fault_code,xAxis:f.occurred_at}))}}]
     },true);
     deviceChart.resize();

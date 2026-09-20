@@ -1,1 +1,1 @@
-ASSISTANT_BUILD = '20260915.10-xcmg-workspace'
+ASSISTANT_BUILD = '20260915.20-docs-index'

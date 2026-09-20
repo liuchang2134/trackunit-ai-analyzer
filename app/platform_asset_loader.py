@@ -159,6 +159,17 @@ def _fleet_endpoint():
     raise TrackunitError('AEMP Fleet endpoint is missing or unsupported')
 
 
+def _fleet_pages_total(links) -> int | None:
+    """Read the fleet page count from the `last` link, or None when absent."""
+    for link in links:
+        if isinstance(link, dict) and link.get('rel') == 'last':
+            href = urlparse(str(link.get('href', '')))
+            match = re.fullmatch(re.escape(FLEET_PATH) + r'(\d+)', href.path)
+            if match and (not href.netloc or href.netloc == 'iris.trackunit.com'):
+                return int(match.group(1))
+    return None
+
+
 def _fleet_fallback(asset_id, get, stats):
     """Inspect at most three pages in memory; only the exact target can be saved."""
     endpoint = _fleet_endpoint()
@@ -188,6 +199,11 @@ def _fleet_fallback(asset_id, get, stats):
         links = payload.get('links', payload.get('Links', []))
         if not isinstance(links, list):
             raise ValueError('Unexpected Fleet links')
+        # The page count is recorded so the caller can tell "this fleet is fully
+        # searched" apart from "the search stopped at a page cap".
+        pages_total = _fleet_pages_total(links)
+        if pages_total is not None:
+            stats['pages_total'] = pages_total
         next_links = [link for link in links if isinstance(link, dict) and link.get('rel') == 'next']
         if not next_links:
             return _unavailable(asset_id, 'limited_search',
@@ -202,8 +218,12 @@ def _fleet_fallback(asset_id, get, stats):
         if next_page != page + 1:
             raise ValueError('Nonsequential Fleet page')
         page = next_page
-    return _unavailable(asset_id, 'limited_search',
-                        '已查询前 3 页设备快照，未找到当前设备；本次未覆盖整个车队，未关联其他设备。', search_complete=False)
+    searched = stats.get('searched_pages', MAX_FLEET_PAGES)
+    total = stats.get('pages_total')
+    scope = f'已查询前 {searched} 页设备快照' + (f'（该账户车队共 {total} 页）' if total else '')
+    return _unavailable(asset_id, 'search_incomplete',
+                        f'{scope}，未找到当前设备。本次未覆盖整个车队，未关联其他设备；重复读取会得到同样的结果。',
+                        search_complete=False, searched_pages=searched, pages_total=total)
 
 
 def _fetch_asset(asset_id, skip_asset_status=None, equipment_id_hint=None):
@@ -234,11 +254,16 @@ def _fetch_asset(asset_id, skip_asset_status=None, equipment_id_hint=None):
                 return {**_save_snapshot(asset_id, snapshot, _snapshot_metadata(snapshot, asset_id),
                         'Trackunit AEMP single-equipment snapshot; equipment ID lookup hint and exact metadata.assetId match; API read-only import; fault events not requested.'), **stats}
             except TrackunitError as exc:
-                if exc.status_code != 404:
-                    status = 'upstream_unauthorized' if exc.status_code in {401, 403} else 'upstream_error'
-                    return _unavailable(asset_id, status, '当前设备编号的快照暂不可读取；未关联其他设备，故障数据未读取。',
-                                        http_status=exc.status_code, failure_phase=getattr(exc, 'phase', 'snapshot'), **stats)
-                stats['hint_status'] = 'not_found'
+                # A title hint is only an optimisation. Any hint failure means
+                # "this shortcut did not work", never "give up on the device":
+                # the bounded fleet search below still runs, so a machine stays
+                # reachable even when the hint is not a real equipment ID or the
+                # single-equipment endpoint rejects the account.
+                if exc.status_code == 404:
+                    stats['hint_status'] = 'not_found'
+                else:
+                    stats['hint_status'] = 'unusable'
+                    stats['hint_http_status'] = exc.status_code
                 stats['lookup_route'] = 'assets_single_snapshot'
         if skip_asset_status in {401, 403}:
             stats.update(asset_endpoint_status=skip_asset_status, asset_endpoint_skipped=True)

@@ -58,3 +58,77 @@ test('16-character machinery PIN is accepted without imposing road vehicle VIN l
   const result=catalog.parse({...fixture,text:'PIN/VIN: XUGTEST000000001'});
   assert.equal(result.capture_status,'visible_rows');assert.equal(result.vin,'XUGTEST000000001');
 });
+
+/* Marking is a visual aid for the AI's search terms. It must only decorate rows
+   that already exist, never invent or rewrite page content, and always be
+   reversible so a second pass does not stack marks. */
+function markDom(rows) {
+  const styles = new Map();
+  const makeRow = text => {
+    const classes = new Set();
+    const row = {
+      innerText: text,
+      classList: {add: (...names) => names.forEach(n => classes.add(n)), remove: (...names) => names.forEach(n => classes.delete(n))},
+      style: {setProperty: (key, value) => styles.set(key, value), removeProperty: key => styles.delete(key)},
+      setAttribute() {}, removeAttribute() {},
+      querySelector: () => null,
+      matches: () => false,
+      closest: () => null,
+      scrollIntoView() {},
+      has: name => classes.has(name),
+    };
+    Object.defineProperty(row, 'className', {get: () => [...classes].join(' ')});
+    return row;
+  };
+  const elements = rows.map(makeRow);
+  const table = {querySelectorAll: selector => (selector.startsWith('tbody') || selector.includes('[role="row"]') ? elements : [])};
+  const doc = {
+    // Table lookup returns the fake table; the mark cleanup selector returns the
+    // rows that currently carry the mark class.
+    querySelectorAll: selector => (selector.startsWith('table') ? [table] : elements.filter(row => row.has('jilian-ai-mark'))),
+    querySelector: () => null,
+  };
+  return {doc, elements, styles};
+}
+
+test('AI terms mark only matching visible rows and can be cleared again', () => {
+  const rows = ['1 TEST-001 液压泵总成 1', '2 TEST-002 回油滤芯 2', '3 TEST-003 先导阀 1'];
+  const {doc, elements, styles} = markDom(rows);
+  const vm = require('node:vm');
+  const source = fs.readFileSync(require.resolve('../extension/xgss-catalog.js'), 'utf8');
+  const sandbox = {location: {href: 'https://xgss.xcmg.com/catalog'}, document: doc, module: {exports: {}}, URL, String};
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(source, sandbox);
+  const api = sandbox.XGSSCatalog;
+
+  const marked = api.mark(['液压泵', '先导阀', '不存在的部件']);
+  assert.equal(marked.marked_rows, 2);
+  // The result crosses a vm realm, so copy it before comparing structure.
+  assert.deepEqual([...marked.unmatched], ['不存在的部件']);
+  assert.equal(elements[0].has('jilian-ai-mark'), true);
+  assert.equal(elements[1].has('jilian-ai-mark'), false, 'a non-matching row must stay untouched');
+  assert.equal(elements[2].has('jilian-ai-mark'), true);
+
+  // Clearing removes every mark and every inline style it added.
+  api.clearMarks(doc);
+  assert.equal(elements.filter(row => row.has('jilian-ai-mark')).length, 0);
+  assert.equal(styles.size, 0);
+
+  // Re-marking is idempotent rather than cumulative.
+  api.mark(['液压泵']);
+  assert.equal(elements.filter(row => row.has('jilian-ai-mark')).length, 1);
+});
+
+test('marking refuses unusable terms and off-site pages', () => {
+  assert.equal(catalog.termMatches('1 TEST-001 液压泵总成','液压泵'), true);
+  assert.equal(catalog.termMatches('1 TEST-001 液压泵总成','液压 马达'), false, 'all tokens must be present');
+  assert.equal(catalog.termMatches('1 TEST-001 液压泵总成','x'), false, 'a one-character term is not a search term');
+  assert.equal(catalog.termMatches('','液压泵'), false);
+  const {doc} = markDom([]);
+  const vm = require('node:vm');
+  const source = fs.readFileSync(require.resolve('../extension/xgss-catalog.js'), 'utf8');
+  const sandbox = {location: {href: 'https://example.com/'}, document: doc, module: {exports: {}}, URL, String};
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(source, sandbox);
+  assert.equal(sandbox.XGSSCatalog.mark(['液压泵']), null, 'marking is limited to the exact XGSS origin');
+});

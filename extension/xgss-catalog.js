@@ -101,6 +101,63 @@ var XGSSCatalog = (() => {
     if (!isXGSS(location.href)) return null;
     return collect(document, window);
   }
-  return {isXGSS,parse,collect,capture};
+  /* Visual aid only: mark the rows whose text the AI asked the user to look for.
+     Nothing on the page is modified, moved or read here beyond the row text the
+     capture path already reads, and every mark is removed before re-marking. */
+  const MARK = 'jilian-ai-mark';
+  const MARK_ROW = MARK + '-row';
+  function rowText(row) {
+    return clean(row.innerText || row.textContent);
+  }
+  function termMatches(text, term) {
+    const haystack = text.toLowerCase(), needle = clean(term).toLowerCase();
+    if (needle.length < 2 || !haystack) return false;
+    // Word-ish terms match on substrings; multi-token terms need every token.
+    const tokens = needle.split(/[\s/、,，]+/).filter(token => token.length >= 2);
+    return tokens.length ? tokens.every(token => haystack.includes(token)) : haystack.includes(needle);
+  }
+  function clearMarks(doc) {
+    for (const el of doc.querySelectorAll('.' + MARK)) {
+      el.classList.remove(MARK, MARK_ROW);
+      el.style.removeProperty('box-shadow');
+      el.style.removeProperty('background-color');
+      el.style.removeProperty('transition');
+      el.removeAttribute('data-jilian-ai');
+    }
+    return true;
+  }
+  function mark(terms) {
+    if (!isXGSS(location.href)) return null;
+    clearMarks(document);
+    const wanted = [...new Set((Array.isArray(terms) ? terms : []).map(clean)
+      .filter(term => term.length >= 2 && term.length <= 40))].slice(0, 12);
+    if (!wanted.length) return {schema_version: 1, marked_rows: 0, terms: [], unmatched: []};
+    let marked = 0;
+    const hitTerms = new Set();
+    for (const table of document.querySelectorAll('table,[role="grid"],[role="table"],.el-table')) {
+      const rows = table.querySelectorAll('tbody tr,[role="row"]');
+      // Data rows also live in a header row; skip rows that carry column headers.
+      for (const row of rows) {
+        if (row.closest('thead') || row.querySelector('th')) continue;
+        const text = rowText(row);
+        if (!text || text.length > 600) continue;
+        const hit = wanted.filter(term => termMatches(text, term));
+        if (!hit.length) continue;
+        hit.forEach(term => hitTerms.add(term));
+        row.classList.add(MARK, MARK_ROW);
+        row.style.setProperty('box-shadow', 'inset 3px 0 0 0 #38c8d8', 'important');
+        row.style.setProperty('background-color', '#0f2c33', 'important');
+        row.style.setProperty('transition', 'background-color .15s ease', 'important');
+        row.setAttribute('data-jilian-ai', hit.join(' '));
+        marked += 1;
+      }
+    }
+    if (marked) {
+      document.querySelector('.' + MARK_ROW)?.scrollIntoView({block: 'center', behavior: 'smooth'});
+    }
+    return {schema_version: 1, marked_rows: marked, terms: [...hitTerms],
+      unmatched: wanted.filter(term => !hitTerms.has(term)), page_terms: wanted.length};
+  }
+  return {isXGSS,parse,collect,capture,mark,clearMarks,termMatches};
 })();
 if (typeof module !== 'undefined') module.exports = XGSSCatalog;

@@ -69,19 +69,249 @@ section{background:#fff;border:1px solid var(--line);border-radius:3px;padding:1
 @media(max-width:400px){body>nav>button{padding-left:9px;padding-right:9px}.panel-embedded body>nav>button{padding-left:7px;padding-right:7px}.panel-embedded #secondary-nav>summary{padding-left:7px;padding-right:7px}}
 
 
-/* XCMG device service workbench. Functional notices stay visible; detail lives in disclosures. */
-:root{--brand:#0055d9;--brand-deep:#00449f;--ink:#24374b;--line:#dce2e9;--muted:#68798a;--surface:#f4f6f8;font-size:14px;line-height:1.55}
-body{background:var(--surface)}button,input,select,textarea{border-radius:2px}button{min-height:38px;font-weight:600;padding:8px 14px}button.quiet{min-height:34px;padding:6px 11px;color:#34506c;font-size:13px;border-color:#cdd7e2}.quiet:hover{background:#f3f7fd}select,textarea,input{font-size:14px;border-color:#cbd5df;padding:8px 10px}label{font-size:13px;color:#3c4d5e}summary{font-size:13px;color:#50687e;padding:9px 0}h2{font-size:17px;font-weight:650;letter-spacing:0}h3{font-size:15px;font-weight:650}h4{font-size:14px}.muted{font-size:12px;color:var(--muted)}
-body>header.app-header{height:70px;padding:0 30px;gap:24px;background:var(--brand);border:0}.xcmg-brand-mark{display:block;width:135px;height:30px;object-fit:contain;flex:0 0 auto}.product-identity{display:flex;align-items:baseline;gap:18px;border-left:1px solid #ffffff55;padding-left:24px;min-width:0}.product-identity h1{font-size:23px;letter-spacing:.02em;white-space:nowrap}.product-identity .subtitle{display:block;font-size:13px;color:#dbe9ff;border:0;padding:0;white-space:nowrap}.app-header .badge{border-color:#ffffff50;background:transparent;padding:4px 9px;font-size:11px;font-weight:500;max-width:230px;overflow-wrap:anywhere;white-space:normal;text-align:center}
-body>nav{padding:0 30px;gap:4px;min-height:50px;border-bottom:1px solid #d7dfe7;background:#fff;box-shadow:none}body>nav>button{font-size:14px;padding:12px 21px;min-height:50px;color:#526779}body>nav>button[aria-pressed=true]{background:#fff;color:var(--brand);box-shadow:inset 0 -3px var(--brand)}body>nav>button:hover{background:#f5f8fc}#secondary-nav{margin-left:auto}#secondary-nav>summary{font-size:13px;min-height:50px;padding:14px 18px;color:#65788b}#secondary-nav-list{border-radius:2px;box-shadow:0 4px 14px #20334712}#secondary-nav-list button{font-size:13px;min-height:38px}.nav-section-label{font-size:11px;color:#8390a0}
-main{max-width:1480px;padding:23px 30px 14px}.page-heading{margin-bottom:18px;align-items:center}.page-heading .eyebrow{font-size:11px;letter-spacing:.08em;color:#8190a0;margin-bottom:5px}.page-heading h2{font-size:23px;color:#1e344b;line-height:1.35}.page-heading .local-label{font-size:12px;color:#75869a}.local-label{font-size:12px}section{border:1px solid var(--line);border-radius:2px;background:#fff;padding:20px;margin-bottom:16px;box-shadow:none}
-.device{grid-template-columns:minmax(0,1fr) 260px;gap:0 28px;align-items:start;padding:18px 20px;border-top:3px solid var(--brand)}.device-picker>.row{margin:0 0 12px;align-items:center;gap:16px}.device label[for=machine]{font-size:15px;font-weight:650;color:#25415d;white-space:nowrap}.device-picker-actions{gap:6px}.device-picker-actions button{font-size:12px;min-height:33px;padding:5px 10px}#machine{font-size:15px;font-weight:500;min-height:43px;border-color:#c7d3df;max-width:100%;text-overflow:ellipsis}.device-record-summary{margin:10px 0 0;font-size:12px;color:#738397}.device-record-summary:has(#device-fault-summary:empty):not(:has(button:not([hidden]))){display:none}.device-details{margin:0;align-self:stretch;border-left:1px solid #e4e9ef;padding-left:22px}.device-details>summary{padding:4px 0 10px;color:#61768a;font-size:13px}.device-details .device-facts{grid-template-columns:1fr;margin:3px 0 12px;gap:11px}.device-details .device-facts>div:last-child{grid-column:auto}.device-facts dt{font-size:11px;margin-bottom:2px}.device-facts dd{font-size:13px;color:#364e65;line-height:1.6}#machine-note{font-size:12px;line-height:1.7;margin:10px 0 0;border-top:1px solid #e5ebf0;padding-top:9px;overflow-wrap:anywhere}#platform-load{grid-column:1/-1;font-size:13px;border-top:1px solid #e3e9ef;padding-top:10px;margin-top:12px}#platform-load-status{font-size:13px;color:#536b83}
-.workspace{grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}.query{padding:20px;border-top:3px solid var(--brand);top:18px}.query>h2{font-size:17px;margin-bottom:18px}.output>section{min-height:0}#device-overview>.row{padding-bottom:13px;margin-bottom:0;border-bottom:1px solid #e6ebf0}#device-overview>.row h2{font-size:17px;margin:0}.engineering-overview-actions{gap:7px}.engineering-overview-actions button{font-size:12px;min-height:33px}#overview-status{margin:11px 0;font-size:12px}#overview-metrics{margin:19px 0 20px;gap:20px}#overview-metrics dd{font-size:26px;color:#1e3a58;font-weight:650;line-height:1.3}.metric-grid dt{font-size:12px;color:#718297}.metric-grid>div{border-right-color:#e1e7ed}.chart-controls{border-top:1px solid #edf0f4;padding-top:16px;gap:8px}.chart-controls label{font-size:12px;color:#708296}.chart-controls select{font-size:12px;min-height:33px;padding:6px 26px 6px 9px;max-width:190px}#chart-note{font-size:11px;margin:8px 0 6px}#device-chart{height:265px}#overview-fault-title{font-size:15px;padding-top:16px;margin-top:17px}.table-wrap{border-color:#dfe5ec;border-radius:1px}table{font-size:13px}th{background:#f3f5f8;color:#566b80;font-size:12px;padding:10px 12px;font-weight:600}td{padding:10px 12px;color:#364d63;border-bottom-color:#e7ebf0;line-height:1.65}tbody tr:hover{background:#f8fafc}
-.workbench-disclosure{border-top:1px solid #e3e9ef;padding-top:2px;margin-top:15px}.workbench-disclosure>summary{font-size:12px;color:#6e8194;font-weight:500}.workbench-disclosure[open]>summary{color:#2c557d}.workbench-disclosure p{line-height:1.75}.device-details.workbench-disclosure{border-top:0;padding-top:0;margin-top:0}.analysis-empty{padding:18px 20px;background:#fff}#empty-result>p{margin:5px 0 15px;color:#7a8999;font-size:13px}.flow-guide{display:flex;gap:22px;flex-wrap:wrap;list-style:decimal inside;padding:12px 0 0;margin:0;border-top:1px solid #edf0f3;color:#526b83;font-size:12px}.flow-guide li{margin:0;line-height:1.6}.analysis-empty>.workbench-disclosure{margin-top:14px}
-#engineering-fault-panel,#fault-reference-panel{border:1px solid #dfe6ed;padding:0 12px;margin:0 0 12px;background:#fbfcfd;border-radius:2px}#engineering-fault-panel>summary,#fault-reference-panel>summary{font-size:13px;font-weight:600;min-height:42px;padding:11px 0;color:#375b80}#engineering-fault-panel[open],#fault-reference-panel[open]{padding-bottom:12px;background:#fff}#engineering-fault-panel p{font-size:12px}#engineering-linked{border-left-width:2px;font-size:12px;background:#f4f8ff}.engineering-catalog>summary{font-size:12px}#task{font-size:14px}#task-hint{margin:9px 0 4px;font-size:12px}.query #question-details,.query details.observations{border:0;margin-top:12px}.query #question-details>summary,.query .observations>summary{font-size:13px;padding:5px 0;color:#4e6780}.query textarea{font-size:13px;line-height:1.65}.analysis-settings{margin-top:12px}.analysis-settings select{max-width:180px;font-size:13px}#ai-data-note{font-size:11px;line-height:1.65;color:#758496;margin:11px 0 8px}#ai-data-note:empty{display:none}.run-actions{display:block;margin-top:12px!important}.run-actions #run{width:100%;font-size:14px;min-height:42px;padding:10px 14px}.draft-storage{margin-top:13px}.local-draft{border:0;margin:0;padding:0}.local-draft button{font-size:12px;min-height:34px}.local-draft p,.local-draft small{font-size:11px}.recent-analysis{margin-top:13px}.recent-analysis .ai-request-state{margin:5px 0 0;padding:10px;border-left:2px solid #9aacbf;background:#f5f7fa}.ai-request-state .row strong{font-size:12px}.ai-request-state button{font-size:11px}#status{font-size:12px;line-height:1.75;margin:12px 0 0}#status[data-state=error]{font-size:13px}#elapsed{font-size:12px}
-#result>.row{padding-bottom:13px;border-bottom:1px solid #e5eaf0}#summary{font-size:14px;line-height:1.9;color:#344d65}#result>h3{font-size:15px}.engineering-origin{font-size:12px;border-left-width:2px;background:#fffaf0}.engineering-hypothesis{padding:15px 0}.engineering-hypothesis h4{font-size:15px;color:#214e7c}.engineering-hypothesis p{font-size:13px;line-height:1.8}.engineering-hypothesis ul{font-size:13px}.engineering-hypothesis .check-source,.engineering-search-terms{font-size:12px}.engineering-reference{font-size:12px}#checks{font-size:13px;line-height:1.8}.check-source{font-size:11px}.integration-limit{background:#f6f8fb;border-left:2px solid #8aa8c9;padding:11px 13px;font-size:12px}.integration-limit p{color:#687c91}.workbench-disclosure>.integration-limit{margin-top:5px}#result-xgss-controls .integration-limit{background:#f7f9fc}.result-actions{gap:8px;border-top:1px solid #e7ecf2;padding-top:15px}#runtime-footer{font-size:11px;color:#8794a3;padding:0 30px 20px}
-@media(max-width:1100px){main{padding:20px}.workspace{grid-template-columns:minmax(0,1fr) 310px;gap:16px}.device{grid-template-columns:minmax(0,1fr) 220px;gap:20px}.device-picker>.row{flex-wrap:wrap;gap:9px}.device-details{padding-left:18px}.query{padding:16px}.product-identity .subtitle{display:none}}
-@media(max-width:950px){.workspace{grid-template-columns:minmax(0,1fr) 285px;gap:14px}.device{grid-template-columns:minmax(0,1fr)}.device-details{margin-top:12px!important;padding:9px 0 0;border-left:0;border-top:1px solid #e6ebf0!important}.device-details .device-facts{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.device-details>summary{padding:3px 0}.device-picker>.row{flex-wrap:nowrap}.device-picker-actions{justify-content:flex-end}}
-@media(max-width:720px){:root{font-size:14px}body>header.app-header{height:62px;padding:0 14px;gap:12px}.xcmg-brand-mark{width:106px;height:28px}.product-identity{padding-left:13px;gap:0}.product-identity h1{font-size:18px}.app-header .badge{max-width:100px;font-size:10px;padding:3px 5px}body>nav{padding:0 9px;gap:0;min-height:47px}body>nav>button{font-size:13px;min-height:47px;padding:11px 12px;flex:0 1 auto}#secondary-nav>summary{font-size:12px;padding:13px 10px;min-height:47px}.page-heading{margin-bottom:14px;align-items:flex-start}.page-heading .eyebrow{display:none}.page-heading h2{font-size:21px}.page-heading .local-label{max-width:46%;font-size:11px;line-height:1.6}main{padding:15px 12px 10px}section{padding:16px 14px;margin-bottom:13px}.device{display:block;padding:14px;border-top-width:3px}.device-picker>.row{flex-wrap:wrap;gap:10px}.device-picker-actions{width:100%;justify-content:flex-start;gap:6px}.device-picker-actions button{min-height:34px;padding:6px 9px;font-size:12px}.device-picker label[for=machine]{font-size:15px}#machine{font-size:14px;min-height:42px}.device-record-summary{font-size:12px}.device-details .device-facts{grid-template-columns:1fr 1fr;gap:12px}.device-details .device-facts>div:last-child{grid-column:1/-1}.workspace{display:flex;flex-direction:column;gap:0}.workspace>.output{width:100%;order:0}.workspace>.query{width:100%;order:1;position:static;padding:16px 14px}.query>h2{font-size:17px}#device-overview>.row{align-items:flex-start;gap:9px;flex-wrap:wrap}#device-overview>.row h2{font-size:16px}.engineering-overview-actions{justify-content:flex-start}.metric-grid,#overview-metrics{gap:12px;margin:17px 0}.metric-grid dt{font-size:11px}#overview-metrics dd{font-size:23px}.chart-controls{gap:7px;padding-top:13px}.chart-controls select{font-size:12px;max-width:150px}#device-chart{height:235px}th,td{padding:9px 10px;font-size:12px}.flow-guide{gap:14px;font-size:12px}.analysis-empty{padding:16px 14px}.result-actions button{min-height:40px;font-size:12px}.run-actions #run{min-height:44px}#runtime-footer{padding:0 14px 16px}#secondary-nav-list{right:0}.query .workbench-disclosure>summary{min-height:36px}#platform-load{padding-top:10px}.draft-storage .draft-controls{gap:7px}}
-.panel-embedded body>header,.panel-embedded .page-heading,.panel-embedded body>footer{display:none}.panel-embedded body>nav{padding:0 5px;gap:0;min-height:46px;border-bottom:1px solid #d8e1ea;background:#fff}.panel-embedded body>nav>button{font-size:13px;min-height:46px;padding:11px 9px;flex:0 1 auto}.panel-embedded #secondary-nav{margin-left:auto}.panel-embedded #secondary-nav>summary{font-size:12px;min-height:46px;padding:12px 8px}.panel-embedded main{padding:11px 10px}.panel-embedded .device{padding:13px 12px}.panel-embedded .device-details>summary{padding:5px 0}.panel-embedded .device-picker-actions button{font-size:12px;padding:6px 9px}.panel-embedded .output>section,.panel-embedded .query{padding:15px 12px}.panel-embedded #overview-metrics dd{font-size:23px}.panel-embedded #overview-title{font-size:16px}.panel-embedded #device-chart{height:230px}.panel-embedded .query>h2{font-size:17px}.panel-embedded .engineering-hypothesis p{font-size:13px}.panel-embedded .muted{font-size:12px}.panel-embedded #ai-data-note{font-size:11px}
-@media(max-width:400px){body>nav>button{padding:11px 9px}.panel-embedded body>nav>button{padding:11px 7px;font-size:12px}.panel-embedded #secondary-nav>summary{padding:12px 7px}.app-header .badge{max-width:81px}.product-identity h1{font-size:17px}.xcmg-brand-mark{width:100px}.flow-guide{gap:12px}.chart-controls label{font-size:11px}.chart-controls select{max-width:138px}.metric-grid dt{font-size:10.5px}}
+/* Machine-link inspection workbench: dark industrial console. Functional notices stay visible; detail lives in disclosures. */
+:root{
+  --brand:#0055d9;--brand-deep:#00449f;--brand-soft:#14294b;
+  --accent:#38c8d8;--accent-soft:#123037;
+  --ink:#e8eff8;--ink-strong:#ffffff;--ink-secondary:#b3c2d4;--muted:#8b9cb0;
+  --line:#24303d;--line-strong:#33414f;--surface:#0b0f14;--surface-1:#111820;--surface-2:#161f2a;--surface-3:#1d2733;
+  --ok:#4ecb8d;--warn:#e0a33f;--danger:#f0665c;--warn-soft:#2a2113;
+  font-size:14px;line-height:1.55;color-scheme:dark
+}
+body{background:var(--surface);color:var(--ink)}button,input,select,textarea{border-radius:2px}button{min-height:38px;font-weight:600;padding:8px 14px}button.quiet{min-height:34px;padding:6px 11px;color:var(--ink-secondary);font-size:13px;border-color:var(--line-strong);background:var(--surface-2)}.quiet:hover{background:var(--brand-soft);color:var(--ink-strong);border-color:var(--brand)}select,textarea,input{font-size:14px;border-color:var(--line-strong);background:var(--surface-2);color:var(--ink);padding:8px 10px}label{font-size:13px;color:var(--ink-secondary)}summary{font-size:13px;color:var(--ink-secondary);padding:9px 0}h2{font-size:17px;font-weight:650;letter-spacing:0;color:var(--ink-strong)}h3{font-size:15px;font-weight:650;color:var(--ink-strong)}h4{font-size:14px;color:var(--ink)}.muted{font-size:12px;color:var(--muted)}
+body>header.app-header{height:58px;padding:0 24px;gap:20px;background:linear-gradient(90deg,#0d1522 0%,#12203a 58%,#0d1522 100%);border:0;border-bottom:1px solid var(--line-strong);position:relative}body>header.app-header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--accent) 22%,var(--brand) 70%,transparent);opacity:.75}.xcmg-brand-mark{display:block;width:118px;height:26px;object-fit:contain;flex:0 0 auto}.product-identity{display:flex;align-items:baseline;gap:16px;border-left:1px solid var(--line-strong);padding-left:20px;min-width:0}.product-identity h1{font-size:20px;letter-spacing:.06em;white-space:nowrap;color:var(--ink-strong)}.product-identity .subtitle{display:block;font-size:12px;color:var(--accent);border:0;padding:0;white-space:nowrap;letter-spacing:.04em}.app-header .badge{border-color:var(--line-strong);background:var(--surface-2);padding:4px 9px;font-size:11px;font-weight:500;max-width:230px;overflow-wrap:anywhere;white-space:normal;text-align:center;color:var(--ink-secondary)}
+body>nav{padding:0 24px;gap:2px;min-height:44px;border-bottom:1px solid var(--line);background:var(--surface-1);box-shadow:none}body>nav>button{font-size:13px;padding:11px 18px;min-height:44px;color:var(--ink-secondary);background:transparent}body>nav>button[aria-pressed=true]{background:var(--surface-2);color:var(--ink-strong);box-shadow:inset 0 -2px var(--accent)}body>nav>button:hover{background:var(--surface-2);color:var(--ink-strong)}#secondary-nav{margin-left:auto}#secondary-nav>summary{font-size:13px;min-height:44px;padding:13px 16px;color:var(--ink-secondary)}#secondary-nav-list{border-radius:2px;background:var(--surface-2);border-color:var(--line-strong);box-shadow:0 6px 20px #000000a6}#secondary-nav-list button{font-size:13px;min-height:38px}.nav-section-label{font-size:11px;color:var(--muted)}
+main{max-width:1480px;padding:18px 24px 12px}.page-heading{margin-bottom:14px;align-items:center}.page-heading .eyebrow{font-size:11px;letter-spacing:.1em;color:var(--muted);margin-bottom:4px;text-transform:uppercase}.page-heading h2{font-size:21px;color:var(--ink-strong);line-height:1.35}.page-heading .local-label{font-size:12px;color:var(--muted)}.local-label{font-size:12px}section{border:1px solid var(--line);border-radius:2px;background:var(--surface-1);padding:16px;margin-bottom:13px;box-shadow:none}
+.device{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,300px);gap:0 24px;align-items:start;padding:15px 17px;border-top:2px solid var(--brand)}.device-picker>.row{margin:0 0 10px;align-items:center;gap:14px}.device label[for=machine]{font-size:14px;font-weight:650;color:var(--ink-strong);white-space:nowrap}.device-picker-actions{gap:6px}.device-picker-actions button{font-size:12px;min-height:32px;padding:5px 10px}#machine{font-size:14px;font-weight:500;min-height:40px;border-color:var(--line-strong);background:var(--surface-2);max-width:100%;text-overflow:ellipsis;color:var(--ink-strong)}.device-record-summary{margin:9px 0 0;font-size:12px;color:var(--muted)}.device-record-summary:has(#device-fault-summary:empty):not(:has(button:not([hidden]))){display:none}
+.device-vitals{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.5fr);gap:8px 18px;margin:11px 0 0;border-top:1px solid var(--line);padding-top:11px}.device-vitals dt{font-size:10px;color:var(--muted);letter-spacing:.06em;margin:0 0 3px;text-transform:uppercase}.device-vitals dd{margin:0;font-size:12.5px;color:var(--ink);line-height:1.5;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.device-vitals>div[data-wide]{grid-column:1/-1}
+.device-details{margin:0;align-self:stretch;border-left:1px solid var(--line);padding-left:20px}.device-details>summary{padding:4px 0 10px;color:var(--ink-secondary);font-size:12px}.device-details .device-facts{grid-template-columns:1fr;margin:3px 0 12px;gap:10px}.device-details .device-facts>div:last-child{grid-column:auto}.device-facts dt{font-size:11px;margin-bottom:2px;color:var(--muted)}.device-facts dd{font-size:12.5px;color:var(--ink);line-height:1.55}#machine-note{font-size:12px;line-height:1.65;margin:10px 0 0;border-top:1px solid var(--line);padding-top:8px;overflow-wrap:anywhere;color:var(--muted)}#platform-load{grid-column:1/-1;font-size:12px;border-top:1px solid var(--line);padding-top:9px;margin-top:11px;color:var(--ink-secondary)}#platform-load-status{font-size:12px;color:var(--ink-secondary)}
+.workspace{grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}.query{padding:16px;border-top:2px solid var(--brand);top:14px;background:var(--surface-1)}.query>h2{font-size:16px;margin-bottom:14px}.output>section{min-height:0}#device-overview>.row{padding-bottom:11px;margin-bottom:0;border-bottom:1px solid var(--line)}#device-overview>.row h2{font-size:16px;margin:0}.engineering-overview-actions{gap:7px}.engineering-overview-actions button{font-size:12px;min-height:32px}#overview-status{margin:9px 0;font-size:12px}#overview-metrics{margin:15px 0 16px;gap:16px}#overview-metrics dd{font-size:23px;color:var(--accent);font-weight:650;line-height:1.25;font-variant-numeric:tabular-nums}.metric-grid dt{font-size:11px;color:var(--muted);letter-spacing:.04em}.metric-grid>div{border-right-color:var(--line)}.chart-controls{border-top:1px solid var(--line);padding-top:13px;gap:8px}.chart-controls label{font-size:12px;color:var(--muted)}.chart-controls select{font-size:12px;min-height:32px;padding:6px 26px 6px 9px;max-width:190px}#chart-note{font-size:11px;margin:7px 0 5px}#device-chart{height:250px}#overview-fault-title{font-size:14px;padding-top:13px;margin-top:14px}.table-wrap{border-color:var(--line);border-radius:1px}table{font-size:12.5px}th{background:var(--surface-3);color:var(--ink-secondary);font-size:11px;padding:9px 11px;font-weight:600;letter-spacing:.04em}td{padding:9px 11px;color:var(--ink);border-bottom-color:var(--line);line-height:1.6}tbody tr:hover{background:var(--surface-2)}
+.workbench-disclosure{border-top:1px solid var(--line);padding-top:2px;margin-top:13px}.workbench-disclosure>summary{font-size:12px;color:var(--muted);font-weight:500}.workbench-disclosure[open]>summary{color:var(--accent)}.workbench-disclosure p{line-height:1.7}.device-details.workbench-disclosure{border-top:0;padding-top:0;margin-top:0}.analysis-empty{padding:15px 17px;background:var(--surface-1)}#empty-result>p{margin:5px 0 13px;color:var(--muted);font-size:12.5px}.flow-guide{display:flex;gap:20px;flex-wrap:wrap;list-style:decimal inside;padding:11px 0 0;margin:0;border-top:1px solid var(--line);color:var(--ink-secondary);font-size:12px}.flow-guide li{margin:0;line-height:1.6}.analysis-empty>.workbench-disclosure{margin-top:12px}
+#engineering-fault-panel,#fault-reference-panel{border:1px solid var(--line);padding:0 12px;margin:0 0 11px;background:var(--surface-2);border-radius:2px}#engineering-fault-panel>summary,#fault-reference-panel>summary{font-size:12.5px;font-weight:600;min-height:40px;padding:10px 0;color:var(--ink-secondary)}#engineering-fault-panel[open],#fault-reference-panel[open]{padding-bottom:11px;background:var(--surface-2)}#engineering-fault-panel p{font-size:12px}#engineering-linked{border-left-width:2px;font-size:12px;background:var(--brand-soft);border-left-color:var(--accent)}.engineering-catalog>summary{font-size:12px}#task{font-size:14px}#task-hint{margin:8px 0 4px;font-size:12px}.query #question-details,.query details.observations{border:0;margin-top:11px}.query #question-details>summary,.query .observations>summary{font-size:12.5px;padding:5px 0;color:var(--ink-secondary)}.query textarea{font-size:13px;line-height:1.6}.analysis-settings{margin-top:11px}.analysis-settings select{max-width:180px;font-size:13px}#ai-data-note{font-size:11px;line-height:1.6;color:var(--muted);margin:10px 0 8px}#ai-data-note:empty{display:none}.run-actions{display:block;margin-top:11px!important}.run-actions #run{width:100%;font-size:14px;min-height:42px;padding:10px 14px;background:var(--brand);border-color:var(--brand);letter-spacing:.04em}.run-actions #run:hover{background:var(--brand-deep)}.draft-storage{margin-top:12px}.local-draft{border:0;margin:0;padding:0}.local-draft button{font-size:12px;min-height:33px}.local-draft p,.local-draft small{font-size:11px}.recent-analysis{margin-top:12px}.recent-analysis .ai-request-state{margin:5px 0 0;padding:9px;border-left:2px solid var(--line-strong);background:var(--surface-2)}.ai-request-state .row strong{font-size:12px}.ai-request-state button{font-size:11px}#status{font-size:12px;line-height:1.7;margin:11px 0 0}#status[data-state=error]{font-size:12.5px}#elapsed{font-size:12px;font-variant-numeric:tabular-nums}
+#result>.row{padding-bottom:11px;border-bottom:1px solid var(--line)}#summary{font-size:13.5px;line-height:1.85;color:var(--ink)}#result>h3{font-size:14px}.engineering-origin{font-size:12px;border-left-width:2px;background:var(--warn-soft);border-left-color:var(--warn)}.engineering-hypothesis{padding:13px 0}.engineering-hypothesis h4{font-size:14px;color:var(--accent)}.engineering-hypothesis p{font-size:12.5px;line-height:1.75}.engineering-hypothesis ul{font-size:12.5px}.engineering-hypothesis .check-source,.engineering-search-terms{font-size:12px}.engineering-reference{font-size:12px}#checks{font-size:12.5px;line-height:1.75}.check-source{font-size:11px}.integration-limit{background:var(--surface-2);border-left:2px solid var(--accent);padding:10px 12px;font-size:12px}.integration-limit p{color:var(--ink-secondary)}.workbench-disclosure>.integration-limit{margin-top:5px}#result-xgss-controls .integration-limit{background:var(--surface-2)}.result-actions{gap:8px;border-top:1px solid var(--line);padding-top:13px}#runtime-footer{font-size:11px;color:var(--muted);padding:0 24px 18px}
+@media(max-width:1100px){main{padding:16px}.workspace{grid-template-columns:minmax(0,1fr) 300px;gap:14px}.device{grid-template-columns:minmax(0,1fr) 220px;gap:18px}.device-picker>.row{flex-wrap:wrap;gap:9px}.device-details{padding-left:16px}.query{padding:15px}.product-identity .subtitle{display:none}}
+@media(max-width:950px){.workspace{grid-template-columns:minmax(0,1fr) 285px;gap:13px}.device{grid-template-columns:minmax(0,1fr)}.device-details{margin-top:11px!important;padding:9px 0 0;border-left:0;border-top:1px solid var(--line)!important}.device-details .device-facts{grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.device-details>summary{padding:3px 0}.device-picker>.row{flex-wrap:nowrap}.device-picker-actions{justify-content:flex-end}.device-vitals{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){body>header.app-header{height:52px;padding:0 12px;gap:10px}.xcmg-brand-mark{width:96px;height:24px}.product-identity{padding-left:11px;gap:0}.product-identity h1{font-size:17px}.app-header .badge{max-width:104px;font-size:10px;padding:3px 5px}body>nav{padding:0 8px;gap:0;min-height:43px}body>nav>button{font-size:12.5px;min-height:43px;padding:10px 11px;flex:0 1 auto}#secondary-nav>summary{font-size:12px;padding:12px 9px;min-height:43px}.page-heading{margin-bottom:12px}.page-heading h2{font-size:19px}.page-heading .local-label{max-width:46%;font-size:11px;line-height:1.6}main{padding:13px 11px 9px}section{padding:14px 12px;margin-bottom:11px}.device{display:block;padding:13px;border-top-width:2px}.device-picker>.row{flex-wrap:wrap;gap:9px}.device-picker-actions{width:100%;justify-content:flex-start;gap:6px}.device-picker-actions button{min-height:33px;padding:6px 9px;font-size:12px}.device-picker label[for=machine]{font-size:14px}#machine{font-size:13.5px;min-height:40px}.device-vitals{grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:10px;padding-top:10px}.device-details{margin-top:11px!important;padding:9px 0 0;border-left:0;border-top:1px solid var(--line)!important}.device-details .device-facts{grid-template-columns:1fr 1fr;gap:10px}.device-details .device-facts>div:last-child{grid-column:1/-1}.workspace{display:flex;flex-direction:column;gap:0}.workspace>.output{width:100%;order:0}.workspace>.query{width:100%;order:1;position:static;padding:15px 13px}.query>h2{font-size:16px}#device-overview>.row{align-items:flex-start;gap:9px;flex-wrap:wrap}#device-overview>.row h2{font-size:15px}.engineering-overview-actions{justify-content:flex-start}.metric-grid,#overview-metrics{gap:11px;margin:15px 0}.metric-grid dt{font-size:11px}#overview-metrics dd{font-size:21px}.chart-controls{gap:7px;padding-top:12px}.chart-controls select{font-size:12px;max-width:150px}#device-chart{height:225px}th,td{padding:8px 9px;font-size:12px}.flow-guide{gap:13px;font-size:12px}.analysis-empty{padding:14px 12px}.result-actions button{min-height:40px}.result-actions{align-items:stretch}#runtime-footer{padding:0 12px 14px}}
+.panel-embedded body>header,.panel-embedded .page-heading,.panel-embedded body>footer{display:none}.panel-embedded body>nav{padding:0 4px;gap:0;min-height:42px;border-bottom:1px solid var(--line);background:var(--surface-1)}.panel-embedded body>nav>button{font-size:12.5px;min-height:42px;padding:10px 8px;flex:0 1 auto}.panel-embedded #secondary-nav{margin-left:auto}.panel-embedded #secondary-nav>summary{font-size:12px;min-height:42px;padding:11px 7px}.panel-embedded main{padding:10px 9px}.panel-embedded .device{padding:12px 11px}.panel-embedded .device-vitals{grid-template-columns:1fr 1fr}.panel-embedded .device-details>summary{padding:5px 0}.panel-embedded .device-picker-actions button{font-size:12px;padding:6px 9px}.panel-embedded .output>section,.panel-embedded .query{padding:13px 11px}.panel-embedded #overview-metrics dd{font-size:21px}.panel-embedded #overview-title{font-size:15px}.panel-embedded #device-chart{height:215px}.panel-embedded .query>h2{font-size:16px}.panel-embedded .engineering-hypothesis p{font-size:12.5px}.panel-embedded .muted{font-size:11.5px}.panel-embedded #ai-data-note{font-size:11px}
+@media(max-width:400px){body>nav>button{padding:10px 8px}.panel-embedded body>nav>button{padding:10px 6px;font-size:12px}.panel-embedded #secondary-nav>summary{padding:11px 6px}.app-header .badge{max-width:84px}.product-identity h1{font-size:16px}.xcmg-brand-mark{width:92px}.flow-guide{gap:11px}.chart-controls label{font-size:11px}.chart-controls select{max-width:138px}.metric-grid dt{font-size:10.5px}#overview-metrics dd{font-size:19px}.device-vitals{grid-template-columns:1fr}}
+@media(max-width:340px){.device-vitals{grid-template-columns:1fr}}
+
+/* Dark-console compatibility: earlier layer values are re-mapped onto the token set above. */
+body>nav>button[aria-pressed=true]{background:var(--surface-2)}
+.device-facts dd,.device-details>summary,#platform-load{color:var(--ink)}
+body .muted,body .local-label,body .check-source,body .catalog-provenance,body .finder-fault-label{color:var(--muted)}
+body .analysis-empty{background:var(--surface-1)}
+body .evidence-notes{background:var(--warn-soft);border-left-color:var(--warn);color:var(--ink)}
+body .integration-limit{background:var(--surface-2);border-left-color:var(--accent)}
+body .integration-limit p,body .integration-limit summary{color:var(--ink-secondary)}
+body .engineering-origin{background:var(--warn-soft);border-left-color:var(--warn);color:var(--ink)}
+body .engineering-catalog,body .engineering-reference,body .engineering-hypothesis{color:var(--ink)}
+body .engineering-reference blockquote,body .engineering-reference .engineering-excerpt{border-left-color:var(--line-strong);color:var(--ink-secondary)}
+body .engineering-search-terms{color:var(--ink-secondary)}
+body .local-draft{border-top-color:var(--line);border-bottom-color:var(--line)}
+body #draft-preview-body{color:var(--ink)}
+body .ai-request-state{background:var(--surface-2);border-left-color:var(--line-strong);color:var(--ink)}
+body .ai-request-state[data-tone=warning]{background:var(--warn-soft);border-left-color:var(--warn)}
+body .ai-request-state small,body .local-draft small{color:var(--muted)}
+body .recent-analysis .ai-request-state{background:var(--surface-2);border-left-color:var(--line-strong)}
+body .fault-detail{border-top-color:var(--line-strong)}
+body .catalog-empty{background:var(--surface-2);border-left-color:var(--line-strong);color:var(--ink-secondary)}
+body .fault-part{border-top-color:var(--line)}
+body pre{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:2px}
+body #help code{background:var(--surface-2);color:var(--accent)}
+body #manual-fault-linked{background:var(--surface-2);border-left-color:var(--accent)}
+body .device-record-summary{color:var(--muted)}
+body .device-record-summary button{background:var(--surface-2)}
+body .reference-facts dt{color:var(--muted)}
+body .reference-list{border-top-color:var(--line)}
+body .reference-list button{border-bottom-color:var(--line);color:var(--ink)}
+body .reference-list button:hover{background:var(--surface-2)}
+body .reference-search-actions button,body #fault-reference-attach{color:var(--ink)}
+body #status[data-state=error]{background:#2c1416;border-left:3px solid var(--danger);color:#ffb3ad}
+body #status[data-state=loading]{color:var(--accent)}
+body #status[data-state=complete]{color:var(--ok)}
+body #draft-state[data-tone=warning]{color:var(--warn)}
+body #overview-table th,body #cooling-table th{background:var(--surface-3)}
+body .download-link{border-color:var(--line-strong);background:var(--surface-2);color:var(--ink);border-radius:2px;padding:7px 12px}
+body .download-link:hover{background:var(--brand-soft);border-color:var(--brand)}
+body #state-track .current{outline-color:var(--accent)}
+body #state-position,body #cooling-position{accent-color:var(--accent)}
+body .worklist-row,body .finder-result,body .case-history li{border-color:var(--line)}
+body .case-state-tag{color:var(--accent)}
+body #selected-cooling{border-left-color:var(--warn)}
+body #cooling-result[data-state=warning],body #cooling-result[data-state=current_high]{border-left-color:var(--warn)}
+body .cooling-next-action{border-top-color:var(--line)}
+body #device-finder,body #case-dialog{border-color:var(--line-strong);background:var(--surface-1);color:var(--ink)}
+body #device-finder::backdrop,body #case-dialog::backdrop{background:#04070ab8}
+body .finder-header,body .finder-filters,body .finder-filter-actions,body .case-dialog-header{border-color:var(--line)}
+body .finder-results{border-top-color:var(--line)}
+body .finder-result[data-current=true]{background:var(--brand-soft)}
+body .finder-source-label{border-color:var(--line-strong);color:var(--ink-secondary)}
+body #finder-count,body #finder-empty{color:var(--ink-secondary)}
+body .case-dialog-header{background:var(--surface-1)}
+body .case-dialog-body fieldset{border-color:var(--line)}
+body #case-status[role=alert]{color:#ffb3ad}
+body .xgss-dialog{border-color:var(--line-strong);background:var(--surface-1);color:var(--ink)}
+body .xgss-dialog iframe{border-color:var(--line)}
+body .xgss-dialog::backdrop{background:#04070aba}
+body .metric-grid>div{border-right-color:var(--line)}
+body .flow-guide{border-top-color:var(--line)}
+body .engineering-hypothesis,body .engineering-reference{border-color:var(--line)}
+body .engineering-hypothesis .engineering-feedback-effect{background:var(--brand-soft);border-left-color:var(--accent)}
+body .engineering-hypothesis h4{color:var(--accent)}
+body .fault-part h4,body .fault-detail h4{color:var(--ink-strong)}
+body .fault-row-actions button{color:var(--ink-secondary)}
+body .part-number{color:var(--accent)}
+body #secondary-nav-list{background:var(--surface-2);border-color:var(--line-strong)}
+body #secondary-nav-list button{color:var(--ink-secondary)}
+body #secondary-nav-list button:hover{background:var(--surface-3);color:var(--ink-strong)}
+body .nav-section-label{color:var(--muted)}
+body summary:hover{color:var(--accent)}
+body select option{background:var(--surface-2);color:var(--ink)}
+body #device-overview p,body #empty-result p{color:var(--ink)}
+body .row h2,body section>h2,body h3{color:var(--ink-strong)}
+
+/* Demo case shares the console surface; its light-layer values are re-mapped here. */
+body .demo-entry{background:var(--surface-1);border-color:var(--line);border-left:2px solid var(--brand);padding:12px 15px;margin-bottom:12px}
+body .demo-entry strong{color:var(--ink-strong);font-size:13px}
+body .demo-entry p{color:var(--muted);font-size:12px}
+body .demo-tag{background:var(--warn-soft);color:#f0c477;border-color:#5c4520}
+body .demo-hero{border-top:2px solid var(--brand);border-radius:2px}
+body .demo-hero h2,body .demo-body h3{color:var(--ink-strong)}
+body .demo-hero .demo-intro,body .demo-disclosure summary,body .demo-note,body .demo-chart-heading p,body .demo-footer-note,body .demo-controls #demo-step-count{color:var(--muted)}
+body .demo-disclosure p{background:var(--surface-2);border-left:2px solid var(--accent);color:var(--ink-secondary)}
+body .demo-identity{border-top-color:var(--line);color:var(--muted)}
+body .demo-identity strong{color:var(--ink)}
+body .demo-actions a{border-color:var(--line-strong);background:var(--surface-2);color:var(--ink)}
+body .demo-actions a:hover{background:var(--brand-soft);border-color:var(--brand)}
+body .demo-steps{background:var(--surface-2);border-color:var(--line)}
+body .demo-steps button{background:var(--surface-2);color:var(--ink-secondary);border-right-color:var(--line)}
+body .demo-steps button:hover{background:var(--surface-3);color:var(--ink-strong)}
+body .demo-steps button[aria-current=step]{background:var(--brand-soft);color:var(--ink-strong);box-shadow:inset 0 -2px var(--accent)}
+body .demo-step-number{background:var(--surface-3);color:var(--ink-secondary)}
+body .demo-steps button[aria-current=step] .demo-step-number{background:var(--brand);color:#fff}
+body .demo-summary{color:var(--ink)}
+body .demo-body ul{color:var(--ink-secondary)}
+body .demo-reference-label{color:var(--accent)}
+body .demo-check{border-color:var(--line);border-top-color:var(--line);border-left:2px solid var(--line-strong);background:var(--surface-2)}
+body .demo-check h4{color:var(--ink-strong)}
+body .demo-check-result{border-left-color:var(--ok);background:#12241c;color:#a9e5c6}
+body .demo-part{border-top-color:var(--line)}
+body .demo-part strong{color:#7fb2ff}
+body .demo-part small,body .demo-evidence-list small{color:var(--muted)}
+body .demo-evidence-list li{border-top-color:var(--line)}
+body .demo-evidence-list strong{color:var(--ink-strong)}
+body .demo-evidence-list p{color:var(--ink-secondary)}
+body .demo-reference-section h3{color:var(--ink-strong);border-bottom:1px solid var(--line-strong)}
+body .demo-controls{border-top-color:var(--line)}
+body .demo-status{background:var(--surface-1);border-color:var(--line);color:var(--ink-secondary)}
+body #fault-reference-panel>summary{color:var(--ink-secondary)}
+body .reference-description{color:var(--ink)}
+
+/* Streamed investigation: real backend progress, with a stop that really stops. */
+.ai-progress{margin:11px 0 0;padding:10px 12px;border:1px solid var(--line);border-left:2px solid var(--accent);background:var(--surface-2);border-radius:2px}
+.ai-progress[data-state=stopped]{border-left-color:var(--warn)}
+.ai-progress[data-state=error]{border-left-color:var(--danger)}
+.ai-progress-head{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-strong)}
+.ai-progress-head strong{font-weight:600}
+.ai-progress-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none;animation:pulse 1.4s ease-in-out infinite}
+.ai-progress[data-state=stopped] .ai-progress-dot{background:var(--warn);animation:none}
+.ai-progress[data-state=error] .ai-progress-dot{background:var(--danger);animation:none}
+.ai-progress-elapsed{margin-left:auto;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.ai-progress-text{margin:6px 0 0;font-size:12px;line-height:1.6;color:var(--ink-secondary);overflow-wrap:anywhere}
+.ai-progress-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.ai-progress-actions button{font-size:11px;min-height:30px;padding:5px 10px}
+@keyframes pulse{50%{opacity:.3}}
+@media(prefers-reduced-motion:reduce){.ai-progress-dot{animation:none}}
+
+/* Narrow layout (side panel): the catalog is not embedded, so the dialog shrinks
+   to a short hand-off card instead of a squeezed wide page. */
+.xgss-dialog-narrow{width:min(100vw - 16px,420px);max-height:calc(100dvh - 24px);padding:13px 14px}
+.xgss-dialog-narrow h2{font-size:15px}
+.xgss-dialog-narrow .fault-context-actions{margin-top:10px}
+.xgss-dialog-narrow .fault-context-actions button{width:100%}
+.xgss-dialog-narrow p{font-size:12px;line-height:1.6}
+
+/* The whole product in one line: associate the machine, let the AI narrow it
+   down, confirm the part in the matching-VIN catalog. Steps light up as the
+   workspace actually reaches them; the indicator never claims a step that has
+   not happened. */
+.flow-track{display:flex;gap:0;list-style:none;margin:0 0 13px;padding:0;border:1px solid var(--line);border-radius:2px;overflow:hidden;background:var(--surface-1)}
+.flow-track li{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12px;color:var(--muted);border-right:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flow-track li:last-child{border-right:0}
+.flow-track li span{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid var(--line-strong);color:var(--muted);font-size:10.5px;line-height:17px;text-align:center}
+.flow-track li[data-state=active]{color:var(--ink-strong);background:var(--brand-soft);box-shadow:inset 0 -2px var(--accent)}
+.flow-track li[data-state=active] span{border-color:var(--accent);color:var(--accent)}
+.flow-track li[data-state=done]{color:var(--ink-secondary)}
+.flow-track li[data-state=done] span{border-color:var(--ok);color:var(--ok)}
+@media(max-width:720px){.flow-track li{padding:8px 9px;font-size:11px;gap:6px}.flow-track li span{width:16px;height:16px;line-height:15px;font-size:10px}}
+
+/* What the AI contributed: the model's work and the program's work are listed
+   apart, so the demo neither overstates nor hides the model's part. */
+.ai-contribution{margin:0 0 16px;padding:12px 14px;background:#0d1b26;border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:2px}
+.ai-contribution-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.ai-contribution-head strong{font-size:13px;color:var(--ink-strong)}
+.ai-badge{flex:none;font-size:10px;font-weight:700;letter-spacing:.08em;color:#04141a;background:var(--accent);border-radius:2px;padding:2px 6px}
+.ai-contribution-meta{margin-left:auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ai-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px 16px;list-style:none;padding:0;margin:0}
+.ai-facts li{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-size:12px}
+.ai-facts strong{color:var(--muted);font-weight:500;font-size:11px}
+.ai-facts span{color:var(--ink-strong);font-weight:600;font-variant-numeric:tabular-nums}
+.ai-facts small{flex-basis:100%;color:var(--muted);font-size:10.5px;line-height:1.5}
+.ai-hypotheses{list-style:none;counter-reset:hy;padding:8px 0 0;margin:9px 0 0;border-top:1px solid var(--line)}
+.ai-hypotheses li{position:relative;padding:4px 0 4px 20px;font-size:12px;counter-increment:hy}
+.ai-hypotheses li::before{content:counter(hy);position:absolute;left:0;top:4px;width:14px;height:14px;border-radius:50%;background:#16222e;border:1px solid var(--line-strong);color:var(--ink-secondary);font-size:9px;line-height:13px;text-align:center}
+.ai-hypotheses strong{color:var(--ink-strong);font-weight:600}
+.ai-hypotheses span{color:var(--muted);margin-left:8px;font-size:11px}
+.ai-program{margin:10px 0 0;padding-top:9px;border-top:1px solid var(--line);font-size:11.5px;line-height:1.6;color:var(--ink-secondary)}
+.ai-boundary{margin:7px 0 0;font-size:10.5px;line-height:1.6}
+@media(max-width:720px){.ai-facts{grid-template-columns:1fr 1fr;gap:6px 12px}.ai-contribution{padding:11px 12px}}
+
+/* Replay of a real saved AI run, shown beside the scripted case and never mixed
+   with it: one is a simulation, the other is genuine model output. */
+.demo-switch{display:flex;gap:0;margin:0 0 14px;border:1px solid var(--line);border-radius:2px;overflow:hidden;background:var(--surface-1)}
+.demo-switch button{flex:1 1 0;min-width:0;background:transparent;border:0;border-right:1px solid var(--line);border-radius:0;color:var(--muted);font-size:12.5px;font-weight:600;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.demo-switch button:last-child{border-right:0}
+.demo-switch button:hover{background:var(--surface-3);color:var(--ink-strong)}
+.demo-switch button[aria-pressed=true]{background:var(--brand-soft);color:var(--ink-strong);box-shadow:inset 0 -2px var(--accent)}
+.replay-disclosure{margin:0 0 12px;padding:10px 12px;background:var(--warn-soft);border-left:2px solid var(--warn);border-radius:2px;font-size:12px;line-height:1.7;color:var(--ink)}
+.replay-head{border-top:2px solid var(--brand);background:var(--surface-1);border-radius:2px;padding:16px 18px;margin-bottom:12px}
+.replay-head h2{font-size:20px;margin:8px 0 0;color:var(--ink-strong)}
+.replay-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px 20px;padding:13px 16px;background:var(--surface-1);border:1px solid var(--line);border-radius:2px;margin-bottom:12px}
+.replay-meta dt{font-size:10.5px;color:var(--muted);letter-spacing:.05em;margin-bottom:3px;text-transform:uppercase}
+.replay-meta dd{margin:0;font-size:12.5px;color:var(--ink);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.replay-stages{list-style:none;counter-reset:rpstage;padding:0;margin:0 0 12px}
+.replay-stages>li{counter-increment:rpstage;position:relative;background:var(--surface-1);border:1px solid var(--line);border-radius:2px;padding:14px 16px 14px 46px;margin-bottom:10px}
+.replay-stages>li::before{content:counter(rpstage);position:absolute;left:15px;top:15px;width:20px;height:20px;border-radius:50%;background:var(--surface-3);border:1px solid var(--line-strong);color:var(--ink-secondary);font-size:11px;line-height:19px;text-align:center}
+.replay-stages>li[data-origin=ai]{border-left:2px solid var(--accent)}
+.replay-stages>li[data-origin=mixed]{border-left:2px solid var(--warn)}
+.replay-stage-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+.replay-stage-head strong{font-size:14px;color:var(--ink-strong)}
+.replay-origin{flex:none;font-size:10px;font-weight:700;letter-spacing:.06em;border-radius:2px;padding:2px 6px;background:var(--surface-3);color:var(--ink-secondary)}
+.replay-stages>li[data-origin=ai] .replay-origin{background:var(--accent);color:#04141a}
+.replay-stages>li[data-origin=mixed] .replay-origin{background:var(--warn);color:#1c1204}
+.replay-stages ul{list-style:none;padding:0;margin:0}
+.replay-stages li li{padding:5px 0;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.7;color:var(--ink)}
+.replay-stages li li:last-child{border-bottom:0}
+.replay-stages>li>p{margin:9px 0 0;padding-top:8px;border-top:1px solid var(--line);font-size:11px;line-height:1.6}
+#replay-facts{padding-left:20px;margin:8px 0 0}
+#replay-facts li{font-size:12px;line-height:1.7;margin-bottom:6px;color:var(--ink)}
+@media(max-width:720px){.demo-switch button{font-size:11.5px;padding:9px 8px}.replay-meta{grid-template-columns:1fr 1fr;gap:8px 12px}.replay-stages>li{padding:12px 12px 12px 40px}.replay-stages>li::before{left:12px;top:13px}}
+
+.replay-actions{margin:12px 0 0}
+.replay-actions .download-link{margin:0}
+
+/* Citation audit: a report whose references all resolve is the claim worth
+   showing, and a dangling reference is worth shouting about. */
+.ai-audit{margin:10px 0 0;padding:8px 10px;border-radius:2px;font-size:11.5px;line-height:1.6}
+.ai-audit[data-verdict=all_references_resolved]{background:#12241c;border-left:2px solid var(--ok);color:#a9e5c6}
+.ai-audit[data-verdict=dangling_references_present]{background:#2c1416;border-left:2px solid var(--danger);color:#ffb3ad;font-weight:600}
+.ai-dangling{list-style:none;padding:0;margin:7px 0 0}
+.ai-dangling li{padding:4px 0;font-size:11px;color:#ffb3ad;border-top:1px solid #3a1c1f;overflow-wrap:anywhere;font-family:ui-monospace,Consolas,monospace}
+
+/* Identifiers are shortened on screen and kept in full behind a disclosure and in
+   the exported pack, so a walkthrough stays readable without losing traceability. */
+.replay-identifiers{grid-column:1/-1;margin-top:4px;padding-top:9px;border-top:1px solid var(--line)}
+.replay-identifiers>summary{font-size:11px;color:var(--muted);cursor:pointer}
+.replay-identifiers ul{list-style:none;padding:0;margin:7px 0 0}
+.replay-identifiers li{padding:3px 0;font-size:11px;color:var(--ink-secondary);overflow-wrap:anywhere;font-family:ui-monospace,Consolas,monospace}

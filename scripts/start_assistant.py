@@ -36,14 +36,36 @@ def read_local_json(port, path):
     return json.loads(content)
 
 
-def existing_service(port):
+def loopback_probe(host, port):
+    """Report whether a loopback listener answered.
+
+    A refused connection means nothing is listening. A *timeout* means the SYN
+    was dropped, which on loopback is the normal signature of a closed port on
+    hosts where the stack filters it instead of refusing it; treating that as
+    "occupied but unverifiable" made the launcher refuse to start at all, so a
+    timeout is reported as "no listener". Both families are still probed, so a
+    service bound only to ::1 is found rather than shadowed by an IPv4 timeout.
+    """
     try:
-        with socket.create_connection((HOST, port), timeout=1):
-            pass
+        with socket.create_connection((host, port), timeout=1):
+            return True
     except ConnectionRefusedError:
         return False
-    except OSError:
-        raise StartupError(f'Cannot verify local port {port}; no server was started.') from None
+    except TimeoutError:
+        return False
+    except OSError as error:
+        raise StartupError(
+            f'Cannot verify local port {port} ({host}): {error.strerror or error}. No server was started.') from None
+
+
+def existing_service(port):
+    listening = False
+    for host in (HOST, '::1'):
+        if loopback_probe(host, port):
+            listening = True
+            break
+    if not listening:
+        return False
     try:
         metadata = read_local_json(port, '/openapi.json')
         if not isinstance(metadata, dict) or metadata.get('info', {}).get('title') != 'Trackunit AI Analyzer':

@@ -1,11 +1,11 @@
 /* Read the active Trackunit URL and equipment title only. Connection probes use loopback frames, never fetch. */
-const PORTS = ['8892', '8890'];
+const PORTS = ['8890', '8892'];
 const HANDSHAKE_TIMEOUT = 6500;
 const FOLLOW_DELAY = 150;
 const MINIMUM_BACKEND = [20260915, 9];
 const get = id => document.getElementById(id);
 const frame = get('assistant'), portSelector = get('service-port');
-let preferredPort = '8892';
+let preferredPort = '8890';
 try { const saved = localStorage.getItem('jilian-service-port'); if (PORTS.includes(saved)) preferredPort = saved; } catch {}
 portSelector.value = preferredPort;
 let deadline, contextDeadline, assetId = null, localOrigin, connectionId, sequence = 0;
@@ -138,7 +138,7 @@ function attemptNext() {
   }, HANDSHAKE_TIMEOUT);
 }
 function connect(firstPort = preferredPort) {
-  const first = PORTS.includes(firstPort) ? firstPort : '8892';
+  const first = PORTS.includes(firstPort) ? firstPort : '8890';
   remaining = [first, ...PORTS.filter(port => port !== first)]; failures = [];
   attemptNext();
 }
@@ -193,6 +193,10 @@ window.addEventListener('message', event => {
     resetCatalogRequest(message); return;
   }
   if (data.type === 'jilian:ready') dataReady = true;
+  else if (data.type === 'jilian:ai-guidance') {
+    const waiting = data.request_id && guidanceWaiters.get(data.request_id);
+    if (waiting) { guidanceWaiters.delete(data.request_id); waiting(data); }
+  }
   else if (data.type === 'jilian:runtime' && ['provider', 'model', 'backend_build'].every(key => typeof data[key] === 'string' && data[key].length > 0 && data[key].length <= 160)) {
     if (!supportsDeviceFollowing(data.backend_build)) {
       if (state !== 'connecting') return;
@@ -288,6 +292,138 @@ async function readCurrent(manual = false) {
   } finally { if (manual) button.disabled = false; }
 }
 get('identify').onclick = () => readCurrent(true);
+
+/* ---- AI guidance for the parts catalog -------------------------------------
+   The panel cannot judge what a parts page means. It asks the workbench for the
+   AI's current hypotheses (suspicious components and the manual search terms
+   behind them), shows them here, and uses them to mark the matching rows on the
+   XGSS page. That is the AI's role made visible: what to look for, where to look,
+   and — once rows come back — which candidate the evidence supports. */
+let aiGuidance = {terms:[],components:[],fault_code:null,has_report:false};
+const guidanceWaiters = new Map();
+let guidanceTicket = 0;
+
+function renderAIGuidance() {
+  const status = get('ai-guidance-status'), terms = get('ai-guidance-terms'), list = get('ai-guidance-components');
+  if (!status || !terms || !list) return;
+  terms.replaceChildren(); list.replaceChildren();
+  terms.hidden = true; list.hidden = true;
+  if (state !== 'connected') { status.textContent = '连接工作区后读取 AI 建议。'; return; }
+  if (!aiGuidance.has_report) {
+    status.textContent = '尚无 AI 建议。请先在下方工作区完成一次 AI 分析（可先用测试故障码），再回到这里读取图册。';
+    return;
+  }
+  status.textContent = aiGuidance.fault_code
+    ? `AI 依据 ${aiGuidance.fault_code} 给出 ${aiGuidance.components.length} 个可疑部件、${aiGuidance.terms.length} 个图册检索词：`
+    : `AI 给出 ${aiGuidance.components.length} 个可疑部件、${aiGuidance.terms.length} 个图册检索词：`;
+  if (aiGuidance.terms.length) {
+    for (const term of aiGuidance.terms) { const li = document.createElement('li'); li.textContent = term; terms.append(li); }
+    terms.hidden = false;
+  }
+  for (const row of aiGuidance.components) {
+    const li = document.createElement('li');
+    const strong = document.createElement('strong'); strong.textContent = row.name; li.append(strong);
+    if (row.reason) { const p = document.createElement('span'); p.textContent = row.reason; li.append(p); }
+    list.append(li);
+  }
+  list.hidden = !aiGuidance.components.length;
+}
+
+async function requestAIGuidance() {
+  if (state !== 'connected' || !frame.contentWindow) { renderAIGuidance(); return aiGuidance; }
+  const request_id = 'guidance-' + Date.now() + '-' + (++sequence);
+  const answer = new Promise(resolve => {
+    guidanceWaiters.set(request_id, resolve);
+    setTimeout(() => { if (guidanceWaiters.delete(request_id)) resolve(null); }, 4000);
+  });
+  frame.contentWindow.postMessage({type:'jilian:ai-guidance-request',protocol:1,
+    connection_id:connectionId,request_id},localOrigin);
+  const result = await answer;
+  if (result) aiGuidance = {terms:result.terms||[],components:result.components||[],
+    fault_code:result.fault_code||null,has_report:Boolean(result.has_report)};
+  renderAIGuidance();
+  return aiGuidance;
+}
+
+/** Mark the AI's search terms on an open XGSS tab. Returns what was marked. */
+async function markCatalogTargets(tab) {
+  if (!aiGuidance.terms.length) return null;  await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},files:['xgss-catalog.js']});
+  const frames = await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},
+    func:terms => (typeof XGSSCatalog === 'undefined' ? null : XGSSCatalog.mark(terms)),
+    args:[aiGuidance.terms]});
+  const results = frames.map(item => item.result).filter(Boolean);
+  return results.reduce((best,item) => (!best || item.marked_rows > best.marked_rows ? item : best), null);
+}
+
+async function markOpenCatalogTab() {
+  const note = get('catalog-status'), button = get('catalog-open');
+  button.disabled = true;
+  try {
+    // Reuse the guidance already shown in this panel; ask again only when there
+    // is nothing to mark, so a click never waits twice for the same answer.
+    if (!aiGuidance.terms.length) await requestAIGuidance();
+    const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
+    if (!Number.isInteger(tab?.id) || !XGSSCatalog.isXGSS(tab.url)) {
+      // The panel cannot cross the XGSS sign-in itself; the workbench owns that
+      // handshake. Say exactly where to start instead of opening a bare web page.
+      note.textContent = aiGuidance.has_report
+        ? '请在工作区的备件候选区域点“XGSS 图册”打开本机对应 VIN 的官方图册，回到本页后再点“标出 AI 目标”。'
+        : '尚无 AI 建议。请先在工作区完成一次 AI 分析，再打开图册标注目标。';
+      return;
+    }
+    const marked = await markCatalogTargets(tab);
+    if (!marked) throw catalogError('暂无 AI 检索词可标出，请先完成一次 AI 分析。');
+    note.textContent = marked.marked_rows
+      ? `已在页面上标出 ${marked.marked_rows} 行（AI 检索词：${marked.terms.join('、')}）。`
+        + (marked.unmatched.length ? ` 本页未出现：${marked.unmatched.join('、')}，可能在其他分类下。` : '')
+      : `本页未出现 AI 检索词${marked.unmatched.length ? '：' + marked.unmatched.join('、') : ''}；请展开可疑部件所在分类。`;
+  } catch (error) {
+    note.textContent = error?.catalogMessage || '无法在图册页面标出目标，请核对扩展的 XGSS 站点访问权限。';
+  } finally { button.disabled = false; }
+}
+
+if (get('catalog-open')) get('catalog-open').onclick = markOpenCatalogTab;
+/* Sheets are fixed to the panel's own viewport, so their offset has to follow the
+   action bar instead of being hard-coded. */
+function syncSheetOffset() {
+  const bar = document.querySelector('.actionbar') || document.querySelector('.panel-controls');
+  if (!bar) return;
+  document.documentElement.style.setProperty('--sheet-top', Math.round(bar.getBoundingClientRect().bottom) + 'px');
+}
+syncSheetOffset();
+window.addEventListener('resize', syncSheetOffset);
+/* A sheet covers the rest of the bar while it is open, so any other bar action
+   closes it first — otherwise the button the user wants next is underneath it. */
+function closeSheets(except) {
+  for (const id of ['catalog-options', 'connection-options']) {
+    const sheet = get(id);
+    if (sheet && sheet !== except) sheet.open = false;
+  }
+}
+for (const el of document.querySelectorAll('.actionbar>button, .actionbar>a')) {
+  el.addEventListener('click', () => closeSheets());
+}
+/* A positioned sheet escapes the closed-details hiding rule, so each sheet is
+   also kept `hidden` while collapsed: a closed panel must not render at all. */
+for (const id of ['catalog-options', 'connection-options']) {
+  const sheet = get(id);
+  if (!sheet) continue;
+  const panel = sheet.querySelector('.settings-panel');
+  const sync = () => { if (panel) panel.hidden = !sheet.open; };
+  // The sheet itself is the source of truth for whether it is open; depending on
+  // event.target would also tie this handler to how the event was dispatched.
+  sheet.addEventListener('toggle', () => {
+    if (sheet.open) closeSheets(sheet);
+    sync();
+    syncSheetOffset();
+    // Returning the guidance promise lets a caller await the refresh that
+    // opening this sheet triggers.
+    if (sheet.open && id === 'catalog-options') return requestAIGuidance();
+    return undefined;
+  });
+  sync();
+}
+
 if (get('capture-catalog')) get('capture-catalog').onclick = async () => {
   const note = get('catalog-status'), button = get('capture-catalog');
   if (state !== 'connected' || mode !== 'work' || !assetId || !matchedSelection) {
@@ -300,6 +436,9 @@ if (get('capture-catalog')) get('capture-catalog').onclick = async () => {
     if (!Number.isInteger(tab?.id) || tab.status === 'loading' || !XGSSCatalog.isXGSS(tab.url))
       throw catalogError('请打开 XGSS 页面，选中分类并显示零件明细后再读取。');
     await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},files:['xgss-catalog.js']});
+    // Mark the AI's search terms first, so the highlight matches the rows that
+    // are about to be read and the user sees what the AI asked for.
+    if (aiGuidance.terms.length) await markCatalogTargets(tab);
     const frames = await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},func:() => XGSSCatalog.capture()});
     if (assetId !== expectedAsset || connectionId !== expectedConnection || !matchedSelection || matchedSelection.dataset_id !== selection.dataset_id)
       throw catalogError('设备或数据版本已切换，本次图册未导入，请重新读取。');

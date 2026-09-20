@@ -44,13 +44,19 @@
     root.append(table);
     if(window.echarts){
       chart=chart||echarts.init(el('cooling-chart'));
-      chart.setOption({animation:false,grid:{left:48,right:18,top:24,bottom:42},tooltip:{trigger:'axis',renderMode:'richText'},
-        xAxis:{type:'time',axisLabel:{formatter:value=>new Date(value).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false})}},
+      chart.setOption({animation:false,grid:{left:48,right:18,top:24,bottom:42,backgroundColor:'transparent'},
+        textStyle:{color:chartTheme.inkSecondary},
+        tooltip:chartTooltip({trigger:'axis',renderMode:'richText'}),
+        xAxis:{type:'time',axisLabel:Object.assign(chartAxisText(),{formatter:value=>new Date(value).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false})}),
+          axisLine:{lineStyle:{color:chartTheme.axisLine}},splitLine:{show:false}},
         yAxis:{type:'value',name:'°C',min:Math.floor(Math.min(70,...data.history.map(h=>h.observation.coolant_c??70))/10)*10,
-          max:Math.max(110,Math.ceil((last.coolant_c||100)/10)*10)},
-        series:[{name:'冷却液温度',type:'line',showSymbol:false,lineStyle:{color:'#2463bc',width:2},
+          max:Math.max(110,Math.ceil((last.coolant_c||100)/10)*10),
+          nameTextStyle:{color:chartTheme.muted},axisLabel:chartAxisText(),
+          axisLine:{lineStyle:{color:chartTheme.axisLine}},splitLine:{lineStyle:{color:chartTheme.splitLine}}},
+        series:[{name:'冷却液温度',type:'line',showSymbol:false,lineStyle:{color:chartTheme.accent,width:2},
+          itemStyle:{color:chartTheme.accent},areaStyle:{color:chartTheme.accent,opacity:.10},
           data:data.history.map(h=>[h.observation.recorded_at,h.observation.coolant_c]),
-          markLine:{symbol:'none',label:{show:false},lineStyle:{color:'#af7427',type:'dashed'},data:[{yAxis:100}]}}]},true);
+          markLine:{symbol:'none',label:{show:false},lineStyle:{color:chartTheme.warn,type:'dashed'},data:[{yAxis:100}]}}]},true);
       chart.resize();
     }
     el('cooling-handoff').disabled=false;

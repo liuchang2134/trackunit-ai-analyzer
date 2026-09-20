@@ -4,24 +4,52 @@ const fs=require('node:fs');const vm=require('node:vm');const path=require('node
 const asset='00000000-0000-0000-0000-000000000001';
 const cloud={provider:'gemini',model:'gemini-flash-latest',backend_build:'20260915.9-platform-follow'};
 function setup(url='https://example.com',savedPort,auto=false){
- const outgoing=[],tabHandlers={},confirmations=[];
- const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','open-demo','follow','capture-catalog','catalog-status'];
- const elements=Object.fromEntries(ids.map(id=>[id,{textContent:'',hidden:false,dataset:{},attributes:{},
-  setAttribute(key,value){this.attributes[key]=value;},removeAttribute(key){delete this.attributes[key];delete this[key];},
-  contentWindow:{postMessage:(data,origin)=>outgoing.push({data,origin})}}]));
+ const outgoing=[],tabHandlers={},confirmations=[],scriptCalls=[],scriptResults=[];
+ const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','catalog-options','open-demo','follow','capture-catalog','catalog-open','catalog-status','ai-guidance','ai-guidance-status','ai-guidance-terms','ai-guidance-components'];
+ // Minimal element stand-in with the few DOM methods the panel actually calls.
+ const makeElement = tag => ({
+  tag, children: [], textContent: '', hidden: false, disabled: false, dataset: {}, attributes: {},
+  handlers: {},
+  append(...nodes) { this.children.push(...nodes); },
+  replaceChildren(...nodes) { this.children = [...nodes]; },
+  setAttribute(key, value) { this.attributes[key] = value; },
+  removeAttribute(key) { delete this.attributes[key]; delete this[key]; },
+  // Real elements keep every listener; a later registration must not replace an
+  // earlier one. dispatch returns the last handler's value, which is how the tests
+  // drive the open handler that returns the guidance promise.
+  addEventListener(name, handler) { (this.handlers[name] || (this.handlers[name] = [])).push(handler); },
+  dispatch(name, event = {}) {
+   const list = this.handlers[name] || [];
+   let result;
+   for (const handler of list) result = handler(Object.assign({target: this}, event));
+   return result;
+  },
+  // The sheet code resolves its own panel element to keep it hidden while collapsed.
+  querySelector(selector) {
+   if (!this._panel) this._panel = makeElement('div');
+   return selector.includes('settings-panel') ? this._panel : null;
+  },
+ });
+ const elements=Object.fromEntries(ids.map(id=>[id,Object.assign(makeElement(id),
+  {contentWindow:{postMessage:(data,origin)=>outgoing.push({data,origin})}})]));
  const storage=new Map(savedPort?[['jilian-service-port',savedPort]]:[]);
  const timers=new Map(),handlers={};let counter=0;
- const box={URL,URLSearchParams,Date,document:{getElementById:id=>elements[id]},
+ const box={URL,URLSearchParams,Date,
+  document:{getElementById:id=>elements[id],createElement:makeElement,
+   querySelector:selector=>selector.includes('actionbar')?{getBoundingClientRect:()=>({bottom:83})}:null,
+   querySelectorAll:()=>[],
+   documentElement:{dataset:{},style:{setProperty(){},removeProperty(){}}}},
   window:{addEventListener:(name,handler)=>handlers[name]=handler,confirm:message=>{confirmations.push(message);return true;}},
   localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
-  chrome:{tabs:{query:async()=>[{url,id:10,windowId:1}],onActivated:{addListener:fn=>tabHandlers.activated=fn},onUpdated:{addListener:fn=>tabHandlers.updated=fn}}},
+  chrome:{tabs:{query:async()=>[{url,id:10,windowId:1}],onActivated:{addListener:fn=>tabHandlers.activated=fn},onUpdated:{addListener:fn=>tabHandlers.updated=fn}},
+   scripting:{executeScript:async request=>{scriptCalls.push(request);return scriptResults.length?scriptResults.shift():[];}}},
   fetch:()=>{throw new Error('Connection probing must not use fetch');},
   setTimeout:(fn,ms)=>{timers.set(++counter,{fn,ms});return counter;},clearTimeout:id=>timers.delete(id)};
  vm.createContext(box);
  for(const file of ['context.js','xgss-catalog.js','panel.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../extension',file),'utf8'),box);
  // Legacy connection tests isolate startup detection; explicit automatic-follow tests retain it below.
  if(!auto)for(const [id,timer] of timers)if(timer.ms===150)timers.delete(id);
- return {elements,handlers,timers,storage,outgoing,tabHandlers,box,confirmations,
+ return {elements,handlers,timers,storage,outgoing,tabHandlers,box,confirmations,scriptCalls,scriptResults,
   tick(){const [id,timer]=timers.entries().next().value;timers.delete(id);timer.fn();},
   async follow(){const entry=[...timers.entries()].find(([,timer])=>timer.ms===150);assert.ok(entry,'automatic lookup scheduled');const [id,timer]=entry;timers.delete(id);timer.fn();await new Promise(resolve=>setImmediate(resolve));}};
 }
@@ -33,7 +61,7 @@ function ready(panel){reply(panel,'jilian:ready');reply(panel,'jilian:runtime',c
 function state(panel){return panel.elements.workspace.dataset.state;}
 
 test('initial frame stays covered until runtime and readiness both arrive',()=>{
- const p=setup();assert.equal(new URL(p.elements.assistant.src).port,'8892');
+ const p=setup();assert.equal(new URL(p.elements.assistant.src).port,'8890');
  assert.equal(state(p),'connecting');assert.equal(p.elements['connection-cover'].hidden,false);
  assert.equal(p.elements.assistant.attributes['aria-hidden'],'true');assert.equal(p.elements.standalone.href,undefined);
  assert.equal(p.timers.values().next().value.ms,6500);
@@ -41,7 +69,7 @@ test('initial frame stays covered until runtime and readiness both arrive',()=>{
  reply(p,'jilian:ready');assert.equal(state(p),'connected');assert.equal(p.timers.size,0);
  assert.equal(p.elements['connection-cover'].hidden,true);assert.equal(p.elements.assistant.attributes['aria-hidden'],'false');
  assert.match(p.elements.runtime.textContent,/实际分析结果/);assert.doesNotMatch(p.elements.connection.textContent,/Gemini.*成功/);
- const link=new URL(p.elements.standalone.href);assert.equal(link.port,'8892');assert.equal(link.searchParams.has('panel'),false);
+ const link=new URL(p.elements.standalone.href);assert.equal(link.port,'8890');assert.equal(link.searchParams.has('panel'),false);
 });
 
 test('DeepSeek runtime is displayed without claiming a successful AI request',()=>{
@@ -54,30 +82,30 @@ test('DeepSeek runtime is displayed without claiming a successful AI request',()
 
 test('failed default port falls back and partial or stale handshakes cannot combine',()=>{
  const p=setup(),old=new URL(p.elements.assistant.src);reply(p,'jilian:ready');p.tick();
- const current=new URL(p.elements.assistant.src);assert.equal(current.port,'8890');assert.notEqual(current.search,old.search);
+ const current=new URL(p.elements.assistant.src);assert.equal(current.port,'8892');assert.notEqual(current.search,old.search);
  assert.match(p.elements['cover-detail'].textContent,/备用连接/);assert.equal(p.elements['connection-cover'].hidden,false);
  reply(p,'jilian:ready',{},old);reply(p,'jilian:runtime',cloud,old);reply(p,'jilian:runtime',cloud);
  assert.equal(state(p),'connecting');reply(p,'jilian:ready');assert.equal(state(p),'connected');
- assert.match(p.elements['connection-detail'].textContent,/自动连接 8890/);assert.equal(p.storage.size,0);
+ assert.match(p.elements['connection-detail'].textContent,/自动连接 8892/);assert.equal(p.storage.size,0);
 });
 
 test('both timeouts unload error frame and expose a fresh retry',()=>{
  const p=setup();p.tick();const last=new URL(p.elements.assistant.src);p.tick();
  assert.equal(state(p),'failed');assert.equal(p.elements.assistant.src,undefined);assert.equal(p.elements.help.hidden,false);
  assert.equal(p.elements['cover-retry'].hidden,false);assert.match(p.elements['cover-detail'].textContent,/尚未|未找到/);
- assert.equal(p.elements['start-command'].textContent,'start_local.cmd --port 8892');
+ assert.equal(p.elements['start-command'].textContent,'start_local.cmd --port 8890');
  reply(p,'jilian:ready',{},last);reply(p,'jilian:runtime',cloud,last);assert.equal(state(p),'failed');
  let blocked=false;p.elements.standalone.onclick({preventDefault:()=>blocked=true});assert.equal(blocked,true);
  p.elements['cover-retry'].onclick();assert.equal(state(p),'connecting');assert.equal(p.elements.help.hidden,true);
- assert.equal(new URL(p.elements.assistant.src).port,'8892');assert.notEqual(new URL(p.elements.assistant.src).search,last.search);
+ assert.equal(new URL(p.elements.assistant.src).port,'8890');assert.notEqual(new URL(p.elements.assistant.src).search,last.search);
 });
 
 test('saved allowed port is tried first, fallback never overwrites preference',()=>{
- const p=setup(undefined,'8890');assert.equal(new URL(p.elements.assistant.src).port,'8890');p.tick();
- assert.equal(new URL(p.elements.assistant.src).port,'8892');ready(p);assert.equal(p.storage.get('jilian-service-port'),'8890');
- assert.equal(p.elements['service-port'].value,'8890');
+ const p=setup(undefined,'8892');assert.equal(new URL(p.elements.assistant.src).port,'8892');p.tick();
+ assert.equal(new URL(p.elements.assistant.src).port,'8890');ready(p);assert.equal(p.storage.get('jilian-service-port'),'8892');
+ assert.equal(p.elements['service-port'].value,'8892');
  for(const invalid of ['https://evil.test','8888','8890/path']){
-  const invalidPanel=setup(undefined,invalid);assert.equal(new URL(invalidPanel.elements.assistant.src).port,'8892');
+  const invalidPanel=setup(undefined,invalid);assert.equal(new URL(invalidPanel.elements.assistant.src).port,'8890');
  }
 });
 
@@ -109,7 +137,7 @@ test('same work document forwards only UUID with unchanged connection and renewe
  const before=new URL(p.elements.assistant.src);await p.elements.identify.onclick();const after=new URL(p.elements.assistant.src);
  assert.equal(after.hash,`#trackunit-asset=${asset}`);assert.equal(after.search,before.search);assert.equal(after.searchParams.has('token'),false);
  assert.equal(state(p),'connected');assert.match(p.elements.context.textContent,/等待/);assert.equal(p.timers.size,1);
- assert.equal(p.outgoing.at(-1).data.asset_id,asset);assert.equal(p.outgoing.at(-1).origin,'http://127.0.0.1:8892');
+ assert.equal(p.outgoing.at(-1).data.asset_id,asset);assert.equal(p.outgoing.at(-1).origin,'http://127.0.0.1:8890');
  assert.equal(new URL(p.elements.standalone.href).hash,after.hash);
  reply(p,'jilian:context',{asset_id:asset,state:'pending'});assert.match(p.elements.context.textContent,/尚未切换/);
  reply(p,'jilian:context',{asset_id:asset,state:'choose_version',available_versions:2});assert.match(p.elements.context.textContent,/版本尚未选定/);
@@ -128,10 +156,10 @@ test('reading during initial connection preserves handshake and includes device 
 
 test('service change retains UUID but resets handshake and rejects old origin',async()=>{
  const p=setup(`https://manager.trackunit.com/assets/${asset}`);ready(p);await p.elements.identify.onclick();
- const oldURL=new URL(p.elements.assistant.src);p.elements['service-port'].value='8890';let prevented=false;
+ const oldURL=new URL(p.elements.assistant.src);p.elements['service-port'].value='8892';let prevented=false;
  p.elements['service-form'].onsubmit({preventDefault:()=>prevented=true});assert.equal(prevented,true);
- assert.equal(p.storage.get('jilian-service-port'),'8890');const next=new URL(p.elements.assistant.src);
- assert.equal(next.port,'8890');assert.equal(next.hash,`#trackunit-asset=${asset}`);assert.equal(p.timers.size,1);
+ assert.equal(p.storage.get('jilian-service-port'),'8892');const next=new URL(p.elements.assistant.src);
+ assert.equal(next.port,'8892');assert.equal(next.hash,`#trackunit-asset=${asset}`);assert.equal(p.timers.size,1);
  p.handlers.message({origin:oldURL.origin,source:p.elements.assistant.contentWindow,data:{type:'jilian:ready',protocol:1,connection_id:next.searchParams.get('panel')}});
  reply(p,'jilian:runtime',cloud);assert.equal(state(p),'connecting');reply(p,'jilian:ready');assert.equal(state(p),'connected');
  reply(p,'jilian:context',{asset_id:asset,state:'missing'});assert.equal(p.timers.size,0);
@@ -183,7 +211,13 @@ test('navigation during asynchronous tab lookup cannot commit a stale device',as
 
 test('manifest only permits exact Trackunit and XGSS sites and two loopback frames',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(__dirname,'../extension/manifest.json'),'utf8'));
- assert.equal(manifest.version,'0.6.2');assert.deepEqual(manifest.permissions,['sidePanel','activeTab','scripting']);
+ // The exact version is a release fact that changes every packaging round; what
+ // must hold is that it is a well-formed MV3 version and that the advertised
+ // package for it exists, so a bump cannot ship without its ZIP.
+ assert.match(manifest.version,/^\d+\.\d+\.\d+$/);
+ assert.equal(fs.existsSync(path.join(__dirname,'../dist',`jilian-extension-${manifest.version}.zip`)),true,
+   `dist/jilian-extension-${manifest.version}.zip must exist for the manifest version`);
+ assert.deepEqual(manifest.permissions,['sidePanel','activeTab','scripting']);
  assert.deepEqual(manifest.host_permissions,['https://manager.trackunit.com/*','https://new.manager.trackunit.com/*','https://xgss.xcmg.com/*']);
  assert.equal(manifest.content_scripts,undefined);
  assert.match(manifest.content_security_policy.extension_pages,/frame-src http:\/\/127\.0\.0\.1:8890 http:\/\/127\.0\.0\.1:8892$/);
@@ -344,7 +378,7 @@ test('catalog capture forwards only rows and matched dataset through the current
  p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog?token=SECRET',id:11,windowId:1,status:'complete'}];
  await p.elements['capture-catalog'].onclick();
  assert.equal(injections.length,2);assert.equal(injections[0].target.tabId,11);
- const posted=p.outgoing.at(-1);assert.equal(posted.origin,'http://127.0.0.1:8892');
+ const posted=p.outgoing.at(-1);assert.equal(posted.origin,'http://127.0.0.1:8890');
  assert.equal(posted.data.type,'jilian:xgss-catalog-capture');assert.equal(posted.data.dataset_id,'a'.repeat(64));
  assert.equal(posted.data.asset_id,asset);assert.equal(posted.data.capture.source_url,'https://xgss.xcmg.com/');
  assert.equal(JSON.stringify(posted).includes('SECRET'),false);assert.equal(p.elements['capture-catalog'].disabled,true);
@@ -384,7 +418,7 @@ test('catalog read does not expose raw browser errors and rejects mid-read devic
 test('old running backend cannot masquerade as a compatible connection',()=>{
  const p=setup();reply(p,'jilian:ready');const old=new URL(p.elements.assistant.src);
  reply(p,'jilian:runtime',{...cloud,backend_build:'20260915.8-xe55u-components'});
- assert.equal(new URL(p.elements.assistant.src).port,'8890');assert.equal(state(p),'connecting');
+ assert.equal(new URL(p.elements.assistant.src).port,'8892');assert.equal(state(p),'connecting');
  assert.match(p.elements['connection-detail'].textContent,/服务版本较旧/);
  reply(p,'jilian:runtime',cloud,old);assert.equal(state(p),'connecting');
  ready(p);assert.equal(state(p),'connected');
@@ -475,4 +509,77 @@ test('newly ready asset frame can request the current hint without an acknowledg
  reply(p,'jilian:asset-hint-request',{asset_id:asset});assert.equal(p.outgoing.length,before+1);
  assert.equal(p.outgoing.at(-1).data.equipment_id_hint,'10046254');
  reply(p,'jilian:context',{asset_id:asset,state:'missing'});assert.equal(p.outgoing.length,before+1);
+});
+
+/* The AI's contribution has to be visible before the parts page is opened: the
+   panel asks the workbench what the AI suspects, shows it, and uses those terms
+   to mark the page. It never invents terms of its own. */
+const guidance={terms:['液压泵','先导阀','hydraulic pump'],
+ components:[{name:'液压泵总成',reason:'E4030 指向先导压力异常',reference_ids:['m1']},
+             {name:'先导阀',reason:'手册第286页',reference_ids:['m2']}],
+ fault_code:'E4030',has_report:true};
+
+/* Opening the sheet runs every toggle listener; the guidance request is the one
+   that returns a promise, so dispatch gives it back. */
+function openSheet(p){p.elements['catalog-options'].open=true;return p.elements['catalog-options'].dispatch('toggle');}
+/* Answer one guidance request in order: start it, reply synchronously, then let it settle.
+   A timeout turns a missing reply into a clear failure instead of a hang. */
+async function guidanceRound(p,payload){
+ const pending=openSheet(p);
+ const request=p.outgoing.at(-1);
+ assert.equal(request.data.type,'jilian:ai-guidance-request');
+ reply(p,'jilian:ai-guidance',{request_id:request.data.request_id,...payload});
+ await Promise.race([pending,new Promise((resolve,reject)=>setTimeout(()=>reject(
+   new Error('guidance request was never answered for '+(request.data.request_id||'(no id)'))),3000))]);
+}
+
+test('the panel asks the workbench for AI guidance and shows the terms it returns',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ p.outgoing.length=0;
+ await guidanceRound(p,guidance);
+ const request=p.outgoing.at(-1);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(request.data.type,'jilian:ai-guidance-request');
+ assert.match(request.data.request_id,/^guidance-/);
+ assert.match(p.elements['ai-guidance-status'].textContent,/E4030/);
+ assert.equal(p.elements['ai-guidance-terms'].hidden,false);
+ assert.deepEqual(p.elements['ai-guidance-terms'].children.map(node=>node.textContent),
+   ['液压泵','先导阀','hydraulic pump']);
+ assert.deepEqual(p.elements['ai-guidance-components'].children.map(node=>node.children[0].textContent),
+   ['液压泵总成','先导阀']);
+});
+
+test('without an AI report the panel says so instead of offering empty marks',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ await guidanceRound(p,{terms:[],components:[],fault_code:null,has_report:false});
+ assert.match(p.elements['ai-guidance-status'].textContent,/尚无 AI 建议/);
+ assert.equal(p.elements['ai-guidance-terms'].hidden,true);
+ assert.equal(p.elements['ai-guidance-components'].hidden,true);
+});
+
+test('marking on the XGSS page passes exactly the AI terms and reports what was marked',async()=>{
+ const p=setup('https://xgss.xcmg.com/catalog',undefined);ready(p);
+ await p.elements.identify.onclick();
+ await guidanceRound(p,guidance);
+ p.scriptCalls.length=0;
+ // First injection loads the helper file (no result), second runs the mark call.
+ p.scriptResults.push([], [{result:{schema_version:1,marked_rows:2,terms:['液压泵','先导阀'],unmatched:['hydraulic pump'],page_terms:3}}]);
+ await p.elements['catalog-open'].onclick();
+ const markCall=p.scriptCalls.find(call=>call.func);
+ assert.deepEqual(markCall.args[0],['液压泵','先导阀','hydraulic pump'],
+   'the page is asked to mark exactly the terms the AI returned');
+ assert.match(p.elements['catalog-status'].textContent,/标出 2 行/);
+ assert.match(p.elements['catalog-status'].textContent,/本页未出现：hydraulic pump/);
+ assert.equal(p.elements['catalog-open'].disabled,false);
+});
+
+test('marking tells the engineer where to open the catalog when the tab is not XGSS',async()=>{
+ const p=setup('https://manager.trackunit.com/assets/'+asset,undefined);ready(p);
+ await p.elements.identify.onclick();
+ await guidanceRound(p,guidance);
+ p.scriptCalls.length=0;
+ await p.elements['catalog-open'].onclick();
+ assert.equal(p.scriptCalls.length,0,'nothing may be injected into a non-XGSS page');
+ assert.match(p.elements['catalog-status'].textContent,/XGSS 图册/);
+ assert.match(p.elements['catalog-status'].textContent,/标出 AI 目标/);
 });

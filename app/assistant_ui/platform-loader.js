@@ -29,8 +29,14 @@
   const hintContext=()=>global.parent&&global.parent!==global
     ?(typeof getPlatformEquipmentHint==='function'?getPlatformEquipmentHint(currentAsset()):{confirmed:false,value:null})
     :{confirmed:true,value:null};
-  const permitted=()=>Boolean(currentAsset()&&!busy()&&activeView!=='demo'&&platformIndexState==='ready'&&hintContext().confirmed);
+  const permitted=()=>Boolean(currentAsset()&&!busy()&&activeView!=='demo'&&platformIndexState==='ready');
   const noLocalData=()=>PlatformContext.candidates(machines,defaultSource,currentAsset()).length===0;
+  // A remote read needs the panel's equipment-number hint, so it waits for that
+  // handshake. Showing a device that already has local data does not, and
+  // requiring the handshake there parked real devices on "正在识别当前设备…"
+  // whenever the panel had not confirmed that asset yet — which is what users
+  // reported as the machine "not being associated".
+  const needsRemoteLoad=()=>permitted()&&noLocalData()&&hintContext().confirmed;
   function panel(){
     let root=byId('platform-load');if(root)return root;
     root=document.createElement('div');root.id='platform-load';
@@ -39,15 +45,32 @@
     const retry=document.createElement('button');retry.id='platform-load-retry';retry.className='quiet';retry.type='button';retry.textContent='重试读取当前设备';retry.onclick=()=>load(true);
     root.append(status,identity,retry);document.querySelector('.device').append(root);return root;
   }
+  // "Searched everything and it is not there" and "the search hit its page cap"
+  // are different facts. Only the first is a conclusion about the device; the
+  // second must not be dressed up as a temporary failure with a retry that can
+  // only produce the same answer.
+  const inconclusive=result=>result?.search_complete===false;
+  function statusText(entry,result){
+    if(entry?.pending)return '正在读取 Trackunit 设备数据…';
+    if(result?.message){
+      if(inconclusive(result))return result.message;
+      return result.message+(result.retry_after_seconds?' 请稍后重试。':'');
+    }
+    if(busy())return '当前分析结束后切换设备。';
+    if(!noLocalData())return '已载入当前设备的本地数据，请在下方核对机型与采样时间。';
+    if(!hintContext().confirmed)return '正在识别当前设备…';
+    return platformIndexState==='ready'?'正在连接 Trackunit…':'正在载入设备资料…';
+  }
   function render(){
     const root=panel(),entry=state.entry();root.hidden=!currentAsset()||activeView==='demo'||!noLocalData();
     if(root.hidden)return;
     const result=entry?.result;
-    byId('platform-load-status').textContent=entry?.pending?'正在读取 Trackunit 设备数据…':result?.message?result.message+(result.retry_after_seconds?' 请稍后重试。':''):
-      (busy()?'当前分析结束后切换设备。':!hintContext().confirmed?'正在识别当前设备…':platformIndexState==='ready'?'正在连接 Trackunit…':'正在载入设备资料…');
+    byId('platform-load-status').textContent=statusText(entry,result);
     byId('platform-load-identity').textContent=result?.machine
       ? `${result.machine.model||'机型待确认'} · ${result.machine.serial_number||'VIN 待确认'}${result.status==='metadata_only'?' · 暂无运行样本':''} · 故障记录未读取`:'';
-    byId('platform-load-retry').hidden=!result;
+    // An inconclusive search has no retry to offer, so the button is withheld
+    // rather than left there to fail identically.
+    byId('platform-load-retry').hidden=!result||inconclusive(result);
     byId('platform-load-retry').disabled=!permitted()||entry?.pending||refreshPending;
   }
   async function refreshLoaded(entry){
@@ -56,7 +79,14 @@
     try{await refresh();}finally{refreshPending=false;global.platformLoaderChanged();}
   }
   async function load(retry=false,followup=false){
-    state.select(currentAsset());if(!permitted()||!noLocalData())return;
+    state.select(currentAsset());
+    if(retry&&currentAsset()&&!hintContext().confirmed){
+      // The panel may have dropped our one hint request (it was not connected,
+      // or the tab had already moved on). Without this the asset could never be
+      // read again in this document, and the retry button did nothing at all.
+      hintRequests.delete(currentAsset());
+    }
+    if(!needsRemoteLoad())return;
     if(retry&&state.entry()?.retryAt>Date.now()){
       byId('platform-load-status').textContent=`请在 ${Math.ceil((state.entry().retryAt-Date.now())/1000)} 秒后重试。`;return;
     }
@@ -76,7 +106,7 @@
       !hintRequests.has(currentAsset())&&typeof notifyAssistantPanel==='function'){
       hintRequests.add(currentAsset());notifyAssistantPanel('jilian:asset-hint-request',{asset_id:currentAsset()});
     }
-    if(!permitted()||!noLocalData())return;
+    if(!needsRemoteLoad())return;
     const entry=state.entry();
     if(!entry){load();return;}
     if(!entry.pending&&entry.result?.state==='loaded'&&/^[a-f0-9]{64}$/.test(entry.result.dataset_id||'')){refreshLoaded(entry);return;}

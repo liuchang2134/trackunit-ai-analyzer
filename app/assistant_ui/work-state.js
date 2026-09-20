@@ -1,6 +1,6 @@
 (() => {
   const names={dig:'挖掘',swing:'回转',dump:'卸料',idle:'怠速',travel:'行走',off:'停机',unknown:'未知'};
-  const colors={dig:'#2463bc',swing:'#8a64b7',dump:'#cb8c32',idle:'#78909c',travel:'#348979',off:'#3d4653',unknown:'#d2d7de'};
+  const colors={dig:'#4d8fe8',swing:'#a884d8',dump:'#e0a33f',idle:'#8fa2b3',travel:'#4ecb8d',off:'#7d8b99',unknown:'#5d6b7a'};
   let replay=null,timer=null;
   const stop=()=>{clearInterval(timer);timer=null;$('state-play').textContent='播放 · 20×';};
   window.stopWorkStatePlayback=stop;

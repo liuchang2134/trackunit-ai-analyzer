@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +27,33 @@ app.add_middleware(
 )
 
 app.mount("/assistant-ui", StaticFiles(directory=Path(__file__).parent / "assistant_ui", html=True), name="assistant-ui")
+
+# Serve the side panel over the same origin as the workbench so a local check can drive
+# both together. Only the files the panel itself loads are exposed: the manifest and the
+# icons are deliberately left out, since publishing them would hand out the extension id
+# and the icon set for no benefit to anyone running this locally.
+_PANEL_FILES = {
+    'panel.html': 'text/html; charset=utf-8',
+    'panel.js': 'application/javascript; charset=utf-8',
+    'panel.css': 'text/css; charset=utf-8',
+    'context.js': 'application/javascript; charset=utf-8',
+    'xgss-catalog.js': 'application/javascript; charset=utf-8',
+    'assets/xcmg-logo.png': 'image/png',
+}
+_EXTENSION_DIR = Path(__file__).resolve().parents[1] / "extension"
+
+
+@app.get("/panel-preview/{relative_path:path}")
+def panel_preview(relative_path: str):
+    """Read-only preview of the side panel for the local probes."""
+    media_type = _PANEL_FILES.get(relative_path)
+    if media_type is None:
+        raise HTTPException(404, "Not part of the panel preview")
+    path = _EXTENSION_DIR / relative_path
+    if not path.is_file():
+        raise HTTPException(404, "Panel file missing")
+    return Response(path.read_bytes(), media_type=media_type,
+                    headers={'Cache-Control': 'no-store'})
 
 for router in (
     routes_demo.router,

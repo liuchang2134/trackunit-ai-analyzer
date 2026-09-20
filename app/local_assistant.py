@@ -1,4 +1,5 @@
 """Bounded local AI investigation. Model selects tools; code owns evidence and parts."""
+import contextvars
 import json
 import os
 import re
@@ -18,6 +19,7 @@ from app.summary_time_validation import unsupported_time_equality
 from app.feedback_validation import feedback_conflict
 from app.fault_evidence import assess_fault_events
 from app import fault_reference
+from app.deepseek_client import InvestigationCancelled
 from app.manual_knowledge import EngineeringFault, retrieve_manuals, engineering_fault_evidence
 from app.engineering_diagnostics import ComponentHypothesis, validate_hypotheses, ENGINEERING_INSTRUCTIONS
 from app.ollama_client import OllamaError, get_ollama_base_url, get_ollama_model
@@ -145,6 +147,39 @@ def unsupported_health_claim(prose: str) -> bool:
     return False
 
 
+# Cooperative progress and cancellation for one in-flight investigation. The
+# streaming endpoint installs an observer; every other caller leaves it unset and
+# behaves exactly as before. Progress describes real work already done (a read or
+# a model decision), never a timer, so the stream can be trusted not to fake
+# progress. A cancelled investigation raises InvestigationCancelled inside the
+# worker thread, which aborts before the next model call.
+_investigation_observer: contextvars.ContextVar = contextvars.ContextVar('investigation_observer', default=None)
+
+
+def investigation_scope(observer):
+    return _investigation_observer.set(observer)
+
+
+def reset_investigation_scope(token) -> None:
+    _investigation_observer.reset(token)
+
+
+def investigation_progress(stage: str, message: str, step: int = 0, total: int = 0) -> None:
+    observer = _investigation_observer.get()
+    if observer is None:
+        return
+    if observer.cancelled:
+        raise InvestigationCancelled('investigation cancelled by the caller')
+    observer.emit({'type': 'progress', 'stage': stage, 'message': message,
+                   'step': step, 'total': total})
+
+
+def _raise_if_cancelled() -> None:
+    observer = _investigation_observer.get()
+    if observer is not None and observer.cancelled:
+        raise InvestigationCancelled('investigation cancelled by the caller')
+
+
 def assistant_runtime() -> dict:
     provider = os.getenv('AI_PROVIDER', 'deepseek')
     cloud = provider in {'gemini', 'deepseek'}
@@ -216,6 +251,8 @@ def model_step(messages: list[dict], allowed_actions: list[str] | None = None, t
 def investigate(request: InvestigationRequest) -> dict:
     started_at = datetime.now(timezone.utc)
     started_clock = time.monotonic()
+    investigation_progress('prepare', '正在准备设备上下文与资料范围…', 0, 6)
+    _raise_if_cancelled()
     provider = assistant_runtime()['provider']
     cloud = provider in {'gemini', 'deepseek'}
     error_type = DeepSeekError if provider == 'deepseek' else (GeminiError if cloud else OllamaError)
@@ -361,6 +398,11 @@ def investigate(request: InvestigationRequest) -> dict:
     def execute_query(action: str, component: str = '', trigger: str = 'model_selected') -> None:
         """One source-preserving implementation for task and model selected reads."""
         nonlocal candidates
+        read_labels = {'snapshot': '正在读取设备快照…', 'faults': '正在读取故障事件记录…',
+                       'trends': '正在计算工时、怠速与数据质量…', 'parts': '正在检索本地备件目录与图册条目…'}
+        if action in read_labels:
+            investigation_progress('reading', read_labels[action], len(used), 6)
+        _raise_if_cancelled()
         if action == 'snapshot':
             result = {'machine': machine.model_dump(), 'total_telemetry_records': len(telemetry),
                 'displayed_latest_records_limit': 8,
@@ -429,6 +471,8 @@ def investigate(request: InvestigationRequest) -> dict:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise error_type(f'{provider_name} investigation time limit reached. No report was generated.', kind='timeout')
+            investigation_progress('model_decision',
+                f'第 {step_index + 1} 次模型决策：正在核对已读证据与下一步检查…', step_index + 1, 6)
             try:
                 decision = model_step(messages + [control], allowed, timeout_seconds=min(60.0, remaining))
             except error_type as exc:
@@ -544,6 +588,8 @@ def investigate(request: InvestigationRequest) -> dict:
                 messages.append({'role': 'system', 'content': 'No engineering context was provided; omit component hypotheses.'})
                 continue
             final_candidates = candidates + ranked_parts
+            investigation_progress('finalizing', '正在整理报告、来源与检查步骤…', 6, 6)
+            _raise_if_cancelled()
             return {"status": "completed", **assistant_runtime(),
                     "machine_id": machine.machine_id, "source": source, "dataset_id": request.dataset_id,
                     "source_document": dataset_source, "replay_at": replay_at.isoformat() if replay_at else None,

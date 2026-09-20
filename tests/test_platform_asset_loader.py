@@ -153,9 +153,12 @@ def test_api_route_returns_scoped_dataset_and_no_store(fixture, monkeypatch):
     assert client.post('/assistant/platform-asset/not-a-uuid/load').status_code == 422
 
 
-def page(items, next_page=None):
-    return {'equipment': items, 'Links': [] if next_page is None else [
-        {'rel': 'next', 'href': 'https://iris.trackunit.com' + loader.FLEET_PATH + str(next_page)}]}
+def page(items, next_page=None, pages_total=None):
+    links = [] if next_page is None else [
+        {'rel': 'next', 'href': 'https://iris.trackunit.com' + loader.FLEET_PATH + str(next_page)}]
+    if pages_total is not None:
+        links.append({'rel': 'last', 'href': 'https://iris.trackunit.com' + loader.FLEET_PATH + str(pages_total)})
+    return {'equipment': items, 'Links': links}
 
 
 def test_fleet_fallback_skips_other_assets_and_stores_only_exact_match(fixture, monkeypatch):
@@ -179,10 +182,39 @@ def test_fleet_search_has_three_page_limit_and_never_claims_no_faults(fixture, m
     unrelated = {**SNAPSHOT, 'metadata': {'assetId': OTHER}}
     calls = mock_client(monkeypatch, [TrackunitError('denied', 403)] + [page([unrelated], i + 1) for i in (1, 2, 3)])
     result = loader.load_platform_asset(ASSET)
-    assert result['status'] == 'limited_search' and result['search_complete'] is False
+    # Hitting the page cap is not a conclusion about the device, so it is reported
+    # as its own status: a caller must not present it as "not found" or as a
+    # temporary failure that a retry would fix.
+    assert result['status'] == 'search_incomplete' and result['search_complete'] is False
     assert result['searched_pages'] == 3 and result['identity_matches'] == 0
+    assert '前 3 页' in result['message'] and '未关联其他设备' in result['message']
     assert result['fault_status'] == 'not_checked' and len(calls) == 4
     assert not list(local_datasets.DATASETS.glob('*.json'))
+
+
+def test_fleet_page_cap_reports_how_much_of_the_fleet_was_covered(fixture, monkeypatch):
+    unrelated = {**SNAPSHOT, 'metadata': {'assetId': OTHER}}
+    mock_client(monkeypatch, [TrackunitError('denied', 401)] + [page([unrelated], i + 1, pages_total=11) for i in (1, 2, 3)])
+    result = loader.load_platform_asset(ASSET)
+    assert result['status'] == 'search_incomplete'
+    assert result['searched_pages'] == 3 and result['pages_total'] == 11
+    assert '共 11 页' in result['message']
+    # The device stays unassociated; nothing about it is asserted from a partial scan.
+    assert result['dataset_id'] is None and result.get('machine') is None
+
+
+def test_an_unusable_equipment_hint_still_allows_the_fleet_search(fixture, monkeypatch):
+    # A tab title is only a hint. If that endpoint rejects the account or the
+    # value is not a real equipment ID, the device must still be reachable
+    # through the bounded fleet search instead of the import being abandoned.
+    # The 401 sequence below is the one this account really produces: the hint
+    # endpoint and the single-asset endpoint both refuse, and only AEMP answers.
+    calls = mock_client(monkeypatch, [TrackunitError('denied', 401), TrackunitError('denied', 401),
+                                      page([SNAPSHOT])])
+    result = loader.load_platform_asset(ASSET, equipment_id_hint='TEST-10001')
+    assert result['state'] == 'loaded' and result['lookup_route'] == 'aemp_fleet'
+    assert result['hint_status'] == 'unusable' and result['hint_http_status'] == 401
+    assert len(calls) == 3 and calls[0][0].endswith('TEST-10001')
 
 
 @pytest.mark.parametrize('items', [[SNAPSHOT, SNAPSHOT], [{**SNAPSHOT, 'assetId': OTHER}]])

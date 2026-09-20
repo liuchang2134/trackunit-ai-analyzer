@@ -95,7 +95,10 @@ def test_non_http_occupied_port_is_an_error_not_a_free_port(monkeypatch, capsys)
     assert 'occupied' in capsys.readouterr().err
 
 
-def test_connection_refusal_only_is_treated_as_available(monkeypatch):
+def test_free_port_is_not_mistaken_for_a_running_service(monkeypatch):
+    # A refused connection and a dropped SYN both mean "nothing is listening".
+    # A dropped SYN is what this machine returns for a closed loopback port, so
+    # treating it as unverifiable used to stop the launcher before it started.
     def refused(*args, **kwargs):
         raise ConnectionRefusedError()
     monkeypatch.setattr(launcher.socket, 'create_connection', refused)
@@ -103,8 +106,25 @@ def test_connection_refusal_only_is_treated_as_available(monkeypatch):
     def timeout(*args, **kwargs):
         raise TimeoutError()
     monkeypatch.setattr(launcher.socket, 'create_connection', timeout)
+    assert launcher.existing_service(8890) is False
+
+
+def test_unexpected_socket_error_is_still_reported(monkeypatch):
+    def broken(*args, **kwargs):
+        raise OSError(10047, 'An address incompatible with the requested protocol was used')
+    monkeypatch.setattr(launcher.socket, 'create_connection', broken)
     with pytest.raises(launcher.StartupError, match='Cannot verify'):
         launcher.existing_service(8890)
+
+
+def test_service_bound_only_to_ipv6_is_found(monkeypatch):
+    def probe(address, **kwargs):
+        if address[0] == '::1':
+            return _FakeSocket()
+        raise TimeoutError()
+    monkeypatch.setattr(launcher.socket, 'create_connection', probe)
+    monkeypatch.setattr(launcher, 'read_local_json', lambda port, path: _runtime_payload(path))
+    assert launcher.existing_service(8890) is True
 
 
 @pytest.mark.parametrize('port', ['0', '1023', '65536', 'not-a-number'])
@@ -132,3 +152,18 @@ def test_redirects_are_not_followed_and_proxy_is_disabled(monkeypatch):
     with pytest.raises(HTTPError):
         opener.open('http://127.0.0.1:8892/openapi.json')
     assert seen == ['http://127.0.0.1:8892/openapi.json']
+
+
+class _FakeSocket:
+    """Stand-in for a successful socket.create_connection() context manager."""
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def _runtime_payload(path):
+    if path == '/openapi.json':
+        return {'info': {'title': 'Trackunit AI Analyzer'}}
+    return {'backend_build': launcher.ASSISTANT_BUILD}

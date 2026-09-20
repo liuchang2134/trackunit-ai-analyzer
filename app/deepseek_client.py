@@ -1,5 +1,6 @@
 """DeepSeek's official Chat Completions API, with bounded retries and JSON output."""
 
+import contextvars
 import json
 import math
 import os
@@ -12,6 +13,32 @@ import httpx
 
 DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEFAULT_DEEPSEEK_MODEL = "deepseek-flash"
+
+# Cooperative cancellation for one in-flight investigation. A worker thread sets
+# a token; every request this module starts observes it before and while reading
+# the response, so a cancelled request closes upstream instead of running on and
+# only being discarded at the end. Unset by default so existing callers keep the
+# exact previous behaviour.
+_cancel_check: contextvars.ContextVar = contextvars.ContextVar('deepseek_cancel_check', default=None)
+
+
+class InvestigationCancelled(Exception):
+    """The caller withdrew the request; nothing further should be sent upstream."""
+
+
+def cancellation_scope(should_cancel):
+    """Install a cancellation predicate for requests started in this context."""
+    return _cancel_check.set(should_cancel)
+
+
+def reset_cancellation_scope(token) -> None:
+    _cancel_check.reset(token)
+
+
+def _check_cancelled() -> None:
+    check = _cancel_check.get()
+    if check is not None and check():
+        raise InvestigationCancelled('investigation cancelled by the caller')
 
 
 class DeepSeekError(Exception):
@@ -99,6 +126,22 @@ def _raise_http_error(response: httpx.Response, attempts: int, *, time_limit: bo
     raise DeepSeekError(f'{message} Attempts: {attempts}.{suffix}', attempts=attempts, kind=kind)
 
 
+def _post_completion(url: str, headers: dict, body: dict, timeout: float) -> httpx.Response:
+    """POST one completion.
+
+    Cancellation is checked before the request is sent and again immediately
+    after the response arrives, so a withdrawn investigation stops issuing model
+    calls and discards an in-flight answer instead of continuing to build a
+    report. One already-sent HTTP request still has to finish at the provider,
+    because httpx.post reads the whole body before returning; this module does
+    not claim to abort that single upstream request mid-body.
+    """
+    _check_cancelled()
+    response = httpx.post(url, headers=headers, json=body, timeout=timeout, follow_redirects=False)
+    _check_cancelled()
+    return response
+
+
 def _generate(payload: dict, timeout_seconds: float) -> str:
     key, model, base_url = get_deepseek_api_key(), get_deepseek_model(), get_deepseek_base_url()
     if not key:
@@ -120,8 +163,7 @@ def _generate(payload: dict, timeout_seconds: float) -> str:
             raise DeepSeekError('DeepSeek request timed out within its time limit.', attempts=attempts, kind='timeout')
         attempts += 1
         try:
-            response = httpx.post(base_url + '/chat/completions', headers=headers, json=body,
-                                  timeout=min(45.0, remaining), follow_redirects=False)
+            response = _post_completion(base_url + '/chat/completions', headers, body, min(45.0, remaining))
         except httpx.TimeoutException:
             # A timed-out request may already have been processed. Never retry it automatically.
             raise DeepSeekError('DeepSeek request timed out. Please retry or use a smaller question.',

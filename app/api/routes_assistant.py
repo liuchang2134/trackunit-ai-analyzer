@@ -161,6 +161,20 @@ def sync_history(request: HistorySyncRequest):
         raise HTTPException(503, "本地同步资料或存储不可用。") from None
 
 
+@router.post('/investigate/stream')
+def stream_investigation_route(request: InvestigationRequest):
+    """Run one investigation as a live event stream.
+
+    The response itself carries the run, so no state has to survive between
+    requests: the stream works the same whether one worker process or several
+    handle the connection. Closing the response cancels the investigation.
+    """
+    from fastapi.responses import StreamingResponse
+    from app.investigation_stream import stream_investigation
+    return StreamingResponse(stream_investigation(request), media_type='text/event-stream',
+                             headers={'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no'})
+
+
 @router.get("/integration-status")
 def last_integration_status():
     from app.integration_status import integration_status
@@ -223,10 +237,16 @@ def investigation_history(machine_id: str | None = Query(default=None, max_lengt
 @router.get("/history/{record_id}")
 def investigation_record(record_id: str):
     from app.investigation_history import read_investigation
+    from app.ai_contribution import ai_contribution
     try:
-        return read_investigation(record_id)
+        record = read_investigation(record_id)
     except ValueError as exc:
         raise HTTPException(404, str(exc)) from None
+    # Reopening a record shows the same AI-contribution summary as the live run.
+    report = record.get('report')
+    if isinstance(report, dict) and 'ai_contribution' not in report:
+        record['report'] = {**report, 'ai_contribution': ai_contribution(report)}
+    return record
 
 
 @router.get("/catalog")
