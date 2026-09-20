@@ -63,7 +63,6 @@ function setView(view,{reason='initial'}={}) {
   activeView=view;
   $('page-title').textContent={demo:'案例演示',queue:'待处理',work:'设备排查',data:'资料管理',history:'诊断记录',states:'工况识别',cooling:'冷却预警'}[view];
   updateDemoDisclosure();
-  $('secondary-nav').open=false;
   $('demo-view').hidden = view !== 'demo';
   $('demo-entry').hidden = view !== 'work' || Boolean(PlatformContext.asset(location.hash));
   $('queue-view').hidden = view !== 'queue';

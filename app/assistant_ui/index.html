@@ -2,19 +2,14 @@
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>机联智检 · 设备服务工作台</title><link rel="icon" type="image/png" href="assets/icon16.png"><link rel="stylesheet" href="style.css?v=3658fa161c34"></head>
 <body><header class="app-header"><img class="xcmg-brand-mark" src="assets/xcmg-logo.png" alt="XCMG 徐工" width="135" height="30"><div class="product-identity"><h1>机联智检</h1><span class="subtitle">设备服务工作台</span></div><span id="source" class="badge">连接中</span></header>
 <nav aria-label="工作区">
-<!-- 交付界面只暴露三个入口：排查、记录、演示。
-     待处理工作台、资料管理，以及冷却预警／工况识别两个模拟实验仍保留代码与数据，
-     但不从界面进入：它们不属于本次演示的三步流程，暴露出来只会分散注意力。
-     需要时把对应 <button data-view="..."> 放回即可恢复入口。 -->
+<!-- 导航只有三个入口：设备排查、诊断记录、演示案例。
+     待处理工作台、资料管理，以及冷却预警／工况识别两个模拟实验仍保留视图容器与脚本：
+     它们的元素与三步流程共用（例如排查任务对话框挂在设备区，由 maintenance-cases.js
+     一并绑定），单独拆开会牵动共享脚本。它们不从任何入口进入，也不再需要隐藏的导航。 -->
 <button type="button" data-view="work" aria-pressed="true">设备排查</button>
 <button type="button" data-view="history" aria-pressed="false">诊断记录</button>
 <button type="button" data-view="demo" aria-pressed="false">演示案例</button>
-<details id="secondary-nav" hidden><summary>更多</summary><div id="secondary-nav-list">
-<button type="button" data-view="data" aria-pressed="false">资料管理</button>
-<span class="nav-section-label">模拟实验</span>
-<button type="button" data-view="cooling" aria-pressed="false">冷却预警实验</button>
-<button type="button" data-view="states" aria-pressed="false">工况识别实验</button>
-</div></details></nav>
+</nav>
 <main><div class="page-heading"><div><p class="eyebrow">设备服务 / 工作台</p><h2 id="page-title">设备排查</h2></div><span id="ai-runtime" class="local-label">正在读取 AI 配置</span></div><ol id="flow-track" class="flow-track" aria-label="交付流程"><li data-step="connect"><span>1</span>设备自动关联</li><li data-step="diagnose"><span>2</span>AI 排查可疑部件</li><li data-step="verify"><span>3</span>同 VIN 图册核对</li></ol><aside id="demo-entry" class="demo-entry"><div><strong>真实 AI 排查回放</strong><p>本机已保存的真实模型输出，可下载证据包</p></div><button type="button" data-view="demo">查看案例</button></aside><section class="device"><div class="device-picker"><div class="row"><label for="machine">当前设备</label><div class="device-picker-actions"><button id="xgss-device-open" type="button" class="quiet" aria-haspopup="dialog" disabled>XGSS 图册</button><button id="case-open" type="button" class="quiet" aria-haspopup="dialog" aria-controls="case-dialog" disabled>排查任务</button><button id="finder-open" type="button" class="quiet" aria-haspopup="dialog" aria-controls="device-finder">查找设备</button><button id="refresh" class="quiet">刷新设备</button></div></div><select id="machine"></select><div class="device-record-summary"><span id="device-fault-summary"></span><button id="device-faults-jump" class="quiet" type="button" hidden>查看故障记录</button></div><dl id="device-vitals" class="device-vitals" aria-label="当前设备概况"></dl></div><details class="device-details workbench-disclosure"><summary>数据详情</summary><dl id="device-facts" class="device-facts"></dl><p id="machine-note" class="muted"></p></details></section>
 
 <div id="demo-view" hidden>
