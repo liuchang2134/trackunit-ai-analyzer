@@ -105,8 +105,11 @@ def test_it_flags_the_manual_redistribution_question(handover):
     assert '授权' in handover and '书面依据' in handover
 
 
-def test_it_records_that_commits_are_unpushed(handover):
-    assert '未推送' in handover
+def test_it_says_where_the_code_lives(handover):
+    # The reader needs to know whether the work is already pushed; saying so avoids a
+    # pointless "did you commit this?" round trip.
+    assert 'origin/main' in handover
+    assert '私有仓库' in handover
 
 
 def test_it_is_long_enough_to_be_useful_and_short_enough_to_finish(handover):
