@@ -8,6 +8,7 @@
 |---|---|
 | **两页读懂项目、AI 做了什么、怎么自己复核** | [参赛说明.md](参赛说明.md) |
 | **照着走一遍演示（约 8 分钟）** | [演示路径.md](演示路径.md)；演示前先跑 `scripts/demo_preflight.py` 预检 |
+| **答辩怎么讲、PPT 每页放什么** | [答辩演示稿大纲.md](答辩演示稿大纲.md)（12 页逐页大纲） |
 | 项目现在到什么程度、哪些没验收 | [PROJECT_ACCEPTANCE_STATUS.md](PROJECT_ACCEPTANCE_STATUS.md) |
 | 怎么启动、怎么跑测试、怎么复核 AI 依据 | [../README.md](../README.md) |
 | 核心排查流程的目标与验收标准 | [CORE_WORKFLOW_PLAN.md](CORE_WORKFLOW_PLAN.md) |
@@ -18,7 +19,7 @@
 | 文件 | 说明 |
 |---|---|
 | `机联智检_参赛Proposal_v9.md / .docx / .pdf` | 参赛提案。撰写时的模型提供方为 Gemini，**其后默认已改为 DeepSeek**，因此文中模型相关表述与当前源码不一致时，以 `PROJECT_ACCEPTANCE_STATUS.md` 为准。 |
-| `机联智检_答辩演示稿_v9.pptx / .pdf` | 答辩演示稿 |
+| `机联智检_答辩演示稿_v9.pptx / .pdf` | **已过时**：讲的是已删除的模拟案例与冷却预警实验。改用 [答辩演示稿大纲.md](答辩演示稿大纲.md) |
 | `机联智检_答辩讲稿_v9.md` | 答辩讲稿 |
 | `机联智检_五分钟演示脚本_v9.md` | 五分钟演示脚本 |
 | `机联智检_v9_原型演示_中文字幕.mp4 / .srt / .md` | 原型演示录屏与字幕 |

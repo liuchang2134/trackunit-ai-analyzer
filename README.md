@@ -96,7 +96,7 @@ AI 的引用是否真的指向已读取的证据，可以自己跑一遍核对�
 
 ## 开发与验证
 
-当前完整测试：Python **827 项通过**、Node **170 项通过**。Chrome 网页已显示 XC918PRO 的 2 条、XC948U 的 3 条真实快照记录；这些是带时间戳的快照通道，不代表连续历史或故障记录。见[设备关联验收证据](docs/evaluation/platform-follow-2026-09-15.json)。此前测试故障、真实 AI 请求、模拟反馈续查、历史重开和报告下载见 [XE55U 验收证据](docs/evaluation/xe55u-first-case-2026-09-15.json)。本轮的界面、设备关联与流式 AI 见[本轮验收记录](docs/evaluation/2026-09-15-industrial-console-and-streamed-ai.md)。XGSS 真实料号及新版扩展实装仍未验收。
+当前完整测试：Python **836 项通过**、Node **170 项通过**。Chrome 网页已显示 XC918PRO 的 2 条、XC948U 的 3 条真实快照记录；这些是带时间戳的快照通道，不代表连续历史或故障记录。见[设备关联验收证据](docs/evaluation/platform-follow-2026-09-15.json)。此前测试故障、真实 AI 请求、模拟反馈续查、历史重开和报告下载见 [XE55U 验收证据](docs/evaluation/xe55u-first-case-2026-09-15.json)。本轮的界面、设备关联与流式 AI 见[本轮验收记录](docs/evaluation/2026-09-15-industrial-console-and-streamed-ai.md)。XGSS 真实料号及新版扩展实装仍未验收。
 
 ```bat
 .venv\Scripts\python.exe -m pytest tests -q
