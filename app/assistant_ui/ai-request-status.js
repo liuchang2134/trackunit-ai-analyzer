@@ -15,16 +15,16 @@ const AIRequestStatus = (()=>{
     const bounded=runtime.investigation_timeout_seconds===120 && runtime.transient_attempt_limit===3;
     return {
       label:cloud && runtime.cloud_credentials_configured===false
-        ?`${name} 密钥未配置 · 本地演示可用`
+        ?`${name} 密钥未配置 · 设备资料可查`
         :`${cloud?name+' 云端推理':'本机推理'} · ${model}`,
       footer:`${cloud?name+' 云端推理':'本机推理'} · 只读辅助分析 · 报告保存在本机`,
-      note:cloud?`分析时会将所选设备的证据、问题和检查反馈发送至 ${name}。密钥由后端保管，报告保存在本机。`
-        +(bounded?'临时服务错误最多尝试 3 次，整次排查限时 120 秒。':'当前后端尚未确认排查时限与重试次数。')
+      note:cloud?`分析时会将所选设备的证据和输入内容发送至 ${name}，报告保存在本机。`
+        +(bounded?'单次排查最长等待 120 秒。':'')
         :'分析与模型推理运行于本机。'
     };
   }
   function view(data){
-    const local='本地趋势、故障资料、备件目录和模拟预警仍可使用。';
+    const local='已载入的运行数据、故障资料和备件目录仍可查看。';
     if(!data)return {title:'请求状态暂时无法读取',tone:'warning',time:null,detail:'没有进行 AI 调用。'+local};
     if(data.configured===false)return {title:providerName(data.provider)+' 密钥未配置',tone:'warning',time:null,
       detail:'完整 AI 排查需要后端配置有效密钥。'+local};
@@ -32,9 +32,9 @@ const AIRequestStatus = (()=>{
     const last=data.last_attempt;
     if(!last || !Number.isFinite(Date.parse(last.finished_at)))return {
       title:data.record_state==='other_configuration'?'配置已变化，尚无对应排查记录':'尚无可核验的完整排查记录',
-      tone:'neutral',time:null,detail:'已配置接口不代表请求一定成功。更新状态只读取本机记录。'};
+      tone:'neutral',time:null,detail:'当前配置尚未完成分析验证。'};
     const prior=last.source==='prior_verification' || last.configuration_match!==true;
-    const prefix=prior?'此前联调：':'最近一次排查：';
+    const prefix=prior?'此前配置的记录：':'最近一次排查：';
     let title, tone='neutral';
     if(last.outcome==='report_saved')title=prefix+'报告已生成并保存';
     else if(last.outcome==='report_unsaved'){title=prefix+'报告已生成，保存失败';tone='warning';}
@@ -42,8 +42,8 @@ const AIRequestStatus = (()=>{
     else return {title:'排查记录无法识别',tone:'warning',time:null,detail:local};
     let detail=prior?'对应当时配置；当前配置尚未核验。':'这是上次完整排查的结果，不代表当前可用性。';
     if(last.older_than_24h)detail+='记录已超过 24 小时。';
-    if(['daily_quota','quota_unavailable'].includes(last.failure?.kind))detail+='等待或更新状态不表示额度已恢复。';
-    if(last.failure?.kind==='insufficient_balance')detail+='请核查 API 账户余额；等待或更新状态不会补充余额。';
+    if(['daily_quota','quota_unavailable'].includes(last.failure?.kind))detail+='请在服务商账户查看可用额度。';
+    if(last.failure?.kind==='insufficient_balance')detail+='请核查 API 账户余额。';
     if(last.failure?.kind==='rate_limit')detail+='请降低请求频率后再手动尝试。';
     if(data.recording_saved===false)detail+='本次状态未写入本机记录，刷新后可能缺失。';
     if(last.outcome!=='report_saved')detail+=local;

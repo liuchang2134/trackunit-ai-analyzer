@@ -18,7 +18,7 @@ import time
 from urllib.parse import quote, urlparse
 
 from app.local_datasets import LocalDataset, load_dataset, save_dataset
-from app.normalizer import normalize_trackunit_machine, normalize_trackunit_telemetry_series
+from app.normalizer import normalize_trackunit_machine, normalize_trackunit_telemetry_series, normalize_trackunit_sensor_observations
 from app.telemetry_evidence import timestamp
 from app.trackunit_client import TrackunitClient, TrackunitError
 
@@ -30,7 +30,7 @@ EQUIPMENT_HINT_PATTERN = r'^[A-Za-z0-9._ -]{1,100}$'
 SUCCESS_TTL = 300
 FAILURE_TTL = 60
 REQUEST_BUDGET = 30
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 MAX_FLEET_PAGES = 3
 FLEET_PATH = '/public/api/aemp/v2/15143/-3/Fleet/'
 
@@ -177,7 +177,7 @@ def _fleet_fallback(asset_id, get, stats):
     stats.update(lookup_route='aemp_fleet', searched_pages=0, identity_matches=0)
     for _ in range(MAX_FLEET_PAGES):
         try:
-            payload = get(endpoint.replace('{page}', str(page)), params={'addMetadata': 'true'})
+            payload = get(endpoint.replace('{page}', str(page)), params={'addMetadata': 'true', 'addExtendedData': 'true'})
         except TrackunitError as exc:
             status = 'upstream_unauthorized' if exc.status_code in {401, 403} else 'upstream_error'
             return _unavailable(asset_id, status, 'AEMP 设备快照暂不可读取；未关联其他设备，故障数据未读取。', http_status=exc.status_code)
@@ -246,7 +246,7 @@ def _fetch_asset(asset_id, skip_asset_status=None, equipment_id_hint=None):
         if equipment_id_hint:
             stats['lookup_route'] = 'aemp_equipment_hint'
             try:
-                payload = get(SNAPSHOT_ENDPOINT + quote(equipment_id_hint, safe=''), params={'addMetadata': 'true'})
+                payload = get(SNAPSHOT_ENDPOINT + quote(equipment_id_hint, safe=''), params={'addMetadata': 'true', 'addExtendedData': 'true'})
                 # A title/DOM identifier is only a lookup hint. The API UUID is
                 # the identity authority, including when a stale title is sent.
                 snapshot = _snapshot_item(payload, asset_id)
@@ -286,7 +286,7 @@ def _fetch_asset(asset_id, skip_asset_status=None, equipment_id_hint=None):
     snapshot = None
     for identifier in identifiers:
         try:
-            payload = get(SNAPSHOT_ENDPOINT + quote(identifier, safe=''), params={'addMetadata': 'true'})
+            payload = get(SNAPSHOT_ENDPOINT + quote(identifier, safe=''), params={'addMetadata': 'true', 'addExtendedData': 'true'})
             snapshot = _snapshot_item(payload, asset_id)
             break
         except TrackunitError as exc:
@@ -309,7 +309,11 @@ def _save_snapshot(asset_id, snapshot, metadata, source_document):
         'model': metadata['model'] if metadata['model'] != '未提供' else machine.model,
         'machine_type': metadata['machine_type'], 'customer': 'Trackunit 已授权设备',
         'serial_number': (snapshot.get('EquipmentHeader', {}).get('PIN') or snapshot.get('EquipmentHeader', {}).get('VIN')
-                          or metadata['serial_number'])})
+                           or metadata['serial_number'])})
+    from app.xgss_identity import apply_binding, binding, source_document as identity_source
+    if binding(machine):
+        source_document = identity_source(source_document)
+    machine = apply_binding(machine)
     now = datetime.now(timezone.utc)
     rows = []
     excluded = 0
@@ -327,12 +331,29 @@ def _save_snapshot(asset_id, snapshot, metadata, source_document):
     missing = [field for field in ('operating_hours', 'idle_hours', 'fuel_remaining_percent') if not any(getattr(row, field) is not None for row in rows)]
     dataset = LocalDataset(name=f'{machine.model} · Trackunit 实测快照',
         source_document=source_document,
-        provenance='user_supplied', machine=machine, telemetry=rows, faults=[])
+        provenance='user_supplied', machine=machine, telemetry=rows,
+        sensors=normalize_trackunit_sensor_observations(snapshot), faults=[])
     saved = save_dataset(dataset)
     return {'state': 'loaded', 'asset_id': asset_id, 'dataset_id': saved['dataset_id'],
             'status': 'imported_snapshot', 'sample_count': len(rows), 'machine': machine.model_dump(),
             'fault_status': 'not_checked', 'telemetry_status': 'data', 'missing_fields': missing,
             'excluded_records': excluded, 'message': '已读取当前设备的实测快照；故障数据未读取，缺失指标不按零处理。'}
+
+
+def correct_cached_identity(asset_id, original_dataset_id, saved):
+    """Point only this asset's exact old import at its verified replacement."""
+    asset_id = canonical_asset(asset_id)
+    path = STATE_DIR / (asset_id + '.json')
+    if not path.exists():
+        return
+    cached = json.loads(path.read_text(encoding='utf-8'))
+    result = cached.get('result')
+    if (not isinstance(result, dict) or result.get('asset_id') != asset_id
+            or result.get('dataset_id') != original_dataset_id
+            or saved['machine']['machine_id'] != asset_id):
+        return
+    result.update(dataset_id=saved['dataset_id'], machine=saved['machine'])
+    _write(path, cached)
 
 
 def load_platform_asset(asset_id, equipment_id_hint=None):

@@ -27,7 +27,9 @@ header{flex:none;background:var(--surface-1);border-bottom:1px solid var(--line)
 
 /* One flat action row instead of stacked toolbars. */
 .actionbar,.panel-controls{flex:none;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:stretch;overflow:hidden;background:var(--surface-1);border-bottom:1px solid var(--line);position:relative;z-index:30}
-.actionbar>button,.actionbar>a,.actionbar>details,.panel-controls>button,.panel-controls>a,.panel-controls>details{flex:1 1 0;min-width:0;display:flex}\n.actionbar>details>summary,.panel-controls>details>summary{flex:1 1 0;min-width:0}\n.actionbar>button,.actionbar>a,.actionbar>details>summary,.panel-controls>button,.panel-controls>a,.panel-controls>details>summary{display:flex;align-items:center;justify-content:center;gap:4px;min-height:38px;padding:0 8px;border:0;border-right:1px solid var(--line);background:transparent;border-radius:0;color:var(--ink-2);font:inherit;font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;text-decoration:none}
+.actionbar>button,.actionbar>a,.actionbar>details,.panel-controls>button,.panel-controls>a,.panel-controls>details{flex:1 1 0;min-width:0;display:flex}
+.actionbar>details>summary,.panel-controls>details>summary{flex:1 1 0;min-width:0}
+.actionbar>button,.actionbar>a,.actionbar>details>summary,.panel-controls>button,.panel-controls>a,.panel-controls>details>summary{display:flex;align-items:center;justify-content:center;gap:4px;min-height:38px;padding:0 8px;border:0;border-right:1px solid var(--line);background:transparent;border-radius:0;color:var(--ink-2);font:inherit;font-size:11.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;text-decoration:none}
 .actionbar>button:hover,.actionbar>a:hover,.actionbar>details>summary:hover,.panel-controls>button:hover,.panel-controls>a:hover,.panel-controls>details>summary:hover{background:var(--surface-3);color:#fff}
 .actionbar>button.primary,.panel-controls>button.primary,.toolbar .primary{background:var(--blue);color:#fff;font-weight:650;flex:1;min-width:0}
 .actionbar>button.primary:hover,.panel-controls>button.primary:hover,.toolbar .primary:hover{background:var(--deep-blue)}
@@ -111,3 +113,50 @@ button:focus-visible,a:focus-visible,summary:focus-visible,select:focus-visible{
 @media(prefers-reduced-motion:reduce){.connection-icon i{animation:none}}
 @media(max-width:400px){.actionbar>button,.actionbar>a,.actionbar>details>summary,.panel-controls>button,.panel-controls>a,.panel-controls>details>summary{padding:0 8px;font-size:11px}.brand-logo{width:78px;height:23px}.brand strong{font-size:14px}}
 @media(max-width:340px){.brand small{display:none}.actionbar>button,.actionbar>a,.actionbar>details>summary,.panel-controls>button,.panel-controls>a,.panel-controls>details>summary{padding:0 6px;font-size:10.5px}}
+
+/* Keep deferred controls mounted for existing event bindings. */
+html.competition-focus [data-deferred-feature]{display:none!important}
+
+/* Normal operation follows the machine; recovery and maintenance stay secondary. */
+.actionbar{display:flex;justify-content:flex-end;min-height:30px}
+.actionbar>details{flex:0 0 auto}
+.actionbar>details>summary{min-height:30px;padding:5px 14px}
+#catalog-options{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+#catalog-options>.settings-panel{position:static;box-shadow:none;max-height:none;padding:10px 0;border:0;background:transparent}
+
+/* Light shell around the embedded service workbench. */
+:root{
+  --blue:#0759c9;--deep-blue:#084493;--accent:#0b6bc9;
+  --bg:#f4f7fb;--surface:#f4f7fb;--surface-1:#fff;--surface-2:#f7faff;--surface-3:#edf3f9;
+  --line:#dce5ef;--line-strong:#bfccdb;
+  --ink:#1d3148;--ink-2:#466078;--muted:#647b92;
+  --ok:#168058;--warn:#a86816;color-scheme:light
+}
+.brand-row{background:#fff;border-bottom:1px solid var(--line)}
+.brand-row::after{background:linear-gradient(90deg,var(--blue) 0 90px,#93c9ef 90px 150px,transparent 150px);height:2px;opacity:1}
+.brand-logo{filter:brightness(0) saturate(100%) invert(25%) sepia(98%) saturate(1774%) hue-rotate(198deg) brightness(88%) contrast(102%)}
+.brand{border-left-color:var(--line)}
+.brand strong,.settings-title,h1{color:#122740}
+.brand small{color:var(--blue)}
+.connection-badge{background:#f4f8fc;border-color:var(--line);color:var(--ink-2)}
+.connection-badge[data-state=connected]{color:#176546}
+.connection-badge[data-state=failed]{color:#8a5819}
+.context-note[data-stale=true]{background:#fff5e8;color:#8a5819}
+.actionbar>button:hover,.actionbar>a:hover,.actionbar>details>summary:hover,.panel-controls>button:hover,.panel-controls>a:hover,.panel-controls>details>summary:hover,
+.actionbar>details[open]>summary,.panel-controls>details[open]>summary{background:var(--surface-3);color:var(--blue)}
+#follow[aria-pressed=true]{background:#e9f2ff;color:var(--deep-blue)}
+.settings-panel{background:#fff;box-shadow:0 15px 36px #1d416329}
+select,input,button{background:#fff;color:var(--ink);border-radius:5px}
+button:hover{background:#e9f2ff;color:var(--deep-blue)}
+.text-button{color:var(--blue)}
+.guidance{background:#edf6ff;border-left-color:var(--blue)}
+.term-list li{background:#e7f2ff;border-color:#c4dcf7;color:var(--deep-blue)}
+.hypo-list li{border-bottom-color:var(--line)}
+.hypo-list strong{color:var(--ink)}
+.step-list li::before{background:#e7f2ff;color:var(--deep-blue)}
+.connection-card{background:#fff;border-color:var(--line);box-shadow:0 8px 28px #21436a14;border-radius:8px}
+.connection-icon{background:#edf6ff}
+#help code{color:var(--deep-blue)}
+
+.actionbar{justify-content:flex-start}
+.actionbar>details#connection-options{margin-left:auto}

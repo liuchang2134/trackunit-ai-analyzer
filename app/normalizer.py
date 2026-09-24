@@ -164,6 +164,46 @@ def normalize_trackunit_telemetry_series(raw: dict[str, Any]) -> list[TelemetryS
         for time,values in sorted(groups.items(),key=lambda item:(item[0]!='Data not available',item[0]))]
 
 
+def normalize_trackunit_sensor_observations(raw: dict[str, Any]) -> list[dict[str, Any]]:
+    # ISO AEMP extended insights have independent sample times. Never align them
+    # by the time the snapshot was requested or by another channel's timestamp.
+    from datetime import datetime, timezone
+    import math
+    from app.telemetry_evidence import timestamp
+
+    channels = (
+        ('engineCoolantTemperature', 'coolant_c', 'temperature', 200),
+        ('engineSpeed', 'engine_rpm', 'speed', 10000),
+        ('engineOilPressure', 'oil_pressure_kpa', 'pressure', 10000),
+        ('enginePercentLoadAtCurrentSpeed', 'engine_load_percent', 'percentage', 100),
+        ('batteryPotential', 'battery_v', 'batteryPotential', 100),
+        ('engineFuelRate', 'fuel_rate_lph', 'engineFuelRate', 1000),
+    )
+    now = datetime.now(timezone.utc)
+    result = []
+    for source, key, value_key, upper in channels:
+        item = mapping(raw.get(source))
+        value, instant = item.get(value_key), timestamp(item.get('datetime'))
+        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= upper or instant is None or instant > now:
+            continue
+        result.append({'key': key, 'value': float(value), 'recorded_at': instant.isoformat()})
+    for source, key, field in (('EngineStatus', 'engine_running', 'Running'),
+                               ('redStopLamp', 'red_stop_lamp', 'state'),
+                               ('amberWarningLamp', 'amber_warning_lamp', 'state')):
+        item = mapping(raw.get(source))
+        value, instant = item.get(field), timestamp(item.get('datetime'))
+        if instant is None or instant > now:
+            continue
+        if type(value) is bool:
+            parsed = value
+        elif value in ('true', 'false'):
+            parsed = value == 'true'
+        else:
+            continue
+        result.append({'key': key, 'value': parsed, 'recorded_at': instant.isoformat()})
+    return result
+
+
 def normalize_trackunit_telemetry(raw: dict[str, Any]) -> TelemetrySnapshot:
     """Compatibility view of latest timestamp only; callers ingesting data use series."""
     return normalize_trackunit_telemetry_series(raw)[-1]

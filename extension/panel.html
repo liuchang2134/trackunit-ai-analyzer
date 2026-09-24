@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>机联智检 · 设备助手</title><link rel="stylesheet" href="panel.css"></head>
+<html lang="zh-CN" class="competition-focus"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>机联智检 · 设备助手</title><link rel="stylesheet" href="panel.css"></head>
 <body>
 <header>
   <div class="brand-row">
@@ -11,10 +11,19 @@
 </header>
 
 <nav class="actionbar" aria-label="设备操作">
-  <button id="identify" class="primary" type="button">读取设备</button>
-  <button id="follow" class="follow-toggle" type="button" aria-pressed="true">跟随</button>
+  <button id="identify" class="primary" type="button">读取当前设备</button>
+  <details id="connection-options" class="sheet">
+    <summary>设置</summary>
+    <div class="settings-panel" hidden>
+      <strong class="settings-title">连接与设备</strong>
+      <button id="follow" class="follow-toggle" type="button" aria-pressed="true">自动跟随 · 开</button>
+      <p id="connection-detail" role="status"></p><p id="device-detail">尚未识别设备。</p><p id="runtime"></p>
+      <form id="service-form"><label for="service-port">优先连接端口</label><div class="settings-row"><select id="service-port"><option value="8890">8890 · 标准启动</option><option value="8892">8892 · 备用端口</option></select><button type="submit">应用</button></div></form>
+      <button id="retry" class="text-button" type="button">重新连接</button>
+      <a id="standalone" class="text-button" target="_blank" rel="noopener noreferrer" aria-disabled="true">在浏览器中打开网页端 ↗</a>
+      <p class="settings-note">重新连接或更改端口会重新载入工作区，未保存的输入将丢失。</p>
   <details id="catalog-options" class="sheet">
-    <summary>图册</summary>
+    <summary>图册维护</summary>
     <div class="settings-panel" hidden>
       <strong class="settings-title">XGSS 图册 · AI 引导</strong>
       <div id="ai-guidance" class="guidance" aria-live="polite">
@@ -22,26 +31,11 @@
         <ul id="ai-guidance-terms" class="term-list" hidden></ul>
         <ol id="ai-guidance-components" class="hypo-list" hidden></ol>
       </div>
-      <ol class="step-list" aria-label="AI 引导的备件核对步骤">
-        <li>AI 依据故障码与手册，推断可疑部件并给出图册检索词</li>
-        <li>在独立标签页打开官方图册，插件把检索词标出（青色）</li>
-        <li>读回真实条目，AI 按部件匹配，给出料号候选与依据</li>
-      </ol>
-      <button id="catalog-open" type="button">在标签页打开图册</button>
+      <button id="catalog-open" type="button">标出 AI 检索条目</button>
       <button id="capture-catalog" type="button">读回当前图册条目</button>
-      <p id="catalog-status" role="status">读取会核对设备 VIN，只覆盖当前已显示的行。</p>
+      <p id="catalog-status" role="status">仅读取同 VIN 图册中已显示的条目。</p>
     </div>
   </details>
-  <details id="connection-options" class="sheet">
-    <summary>设置</summary>
-    <div class="settings-panel" hidden>
-      <strong class="settings-title">连接与设备</strong>
-      <p id="connection-detail" role="status"></p><p id="device-detail">尚未识别设备。</p><p id="runtime"></p>
-      <form id="service-form"><label for="service-port">优先连接端口</label><div class="settings-row"><select id="service-port"><option value="8890">8890 · 标准启动</option><option value="8892">8892 · 备用端口</option></select><button type="submit">应用</button></div></form>
-      <button id="retry" class="text-button" type="button">重新连接</button>
-      <button id="open-demo" class="text-button" type="button">打开演示回放（模拟案例）</button>
-      <a id="standalone" class="text-button" target="_blank" rel="noopener noreferrer" aria-disabled="true">在浏览器中打开网页端 ↗</a>
-      <p class="settings-note">更改连接或打开演示会重新载入工作区，请先保存草稿。</p>
       <div class="about"><strong>关于机联智检</strong><p>独立辅助工具，非徐工官方产品。徐工标识仅用于品牌识别；诊断建议需结合现场检查确认。</p></div>
     </div>
   </details>
@@ -53,5 +47,5 @@
 </main>
 
 <footer>机联智检 · AI 设备服务</footer>
-<script src="context.js"></script><script src="xgss-catalog.js"></script><script src="panel.js"></script>
+<script src="context.js"></script><script src="xgss-catalog.js"></script><script src="panel.js"></script><script src="trackunit-sensor-page.js"></script><script src="sensor-series-bridge.js"></script><script src="xgss-research-runner.js"></script><script src="research-bridge.js"></script>
 </body></html>

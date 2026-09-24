@@ -44,9 +44,9 @@ async function api(path, options) {
   try{data=await r.json();}catch(e){throw new Error(r.ok?'服务返回的数据格式异常，请刷新重试。':'服务暂时无法响应，请稍后重试。');}
   if(path==='/assistant/investigate' && data.ai_status)applyAIRequestStatus(data.ai_status);
   if (!r.ok) {
-    let message=typeof data.detail === 'string' ? data.detail : `请求失败 (${r.status})，请检查输入格式。`;
+    let message=typeof data.detail === 'string' ? data.detail : typeof data.detail?.message==='string' ? data.detail.message : `请求失败 (${r.status})，请检查输入格式。`;
       if(path==='/assistant/investigate' && ((data.provider_error && (data.ai_status?.provider||aiProvider)==='deepseek') || /DeepSeek|DEEPSEEK_API_KEY/.test(message)))message=formatDeepSeekFailure(data.provider_error);
-      else if(/GEMINI_API_KEY is not configured/.test(message))message='AI 服务尚未配置，请检查连接设置。设备资料与演示仍可使用。';
+      else if(/GEMINI_API_KEY is not configured/.test(message))message='AI 服务尚未配置，请检查连接设置。设备资料仍可使用。';
       else if(/Gemini returned HTTP 5\d\d/.test(message)){
         const attempts=message.match(/Attempts: (\d+)/)?.[1];
         message=`Gemini 服务暂时不可用${attempts?`，本次请求已尝试 ${attempts} 次`:''}。请稍后重试；本次未生成报告。`;
@@ -55,24 +55,31 @@ async function api(path, options) {
       else if(/Investigation reached its step limit/.test(message))message='AI 在限定步骤内未给出符合证据要求的报告。请缩小排查范围后重试。';
     else if(/Gemini.*(rate limit|quota)/i.test(message))message=formatGeminiQuotaFailure(data.provider_error)||'Gemini 调用频率或额度已达到限制。请核查 API 项目配额，暂不要反复重试。';
     else if(/Gemini.*(timed out|network|connect)/i.test(message))message='Gemini 请求超时或网络不可用。请检查网络后重试。';
-    const error=new Error(message);error.status=r.status;throw error;
+    const error=new Error(message);error.status=r.status;error.code=data.detail?.code||null;throw error;
   }
   return data;
 }
 function setView(view,{reason='initial'}={}) {
+  // Presentation only: deferred views remain available when competition-focus is removed.
+  if(document.documentElement?.classList?.contains?.('competition-focus') && !['work','risk'].includes(view))view='work';
   activeView=view;
-  $('page-title').textContent={demo:'案例演示',queue:'待处理',work:'设备排查',data:'资料管理',history:'诊断记录',states:'工况识别',cooling:'冷却预警'}[view];
+  $('page-title').textContent={can:'CAN 工况',demo:'历史分析回放',queue:'待处理',work:'AI 设备服务',risk:'风险预警',data:'资料管理',history:'诊断记录',states:'工况识别',cooling:'冷却预警'}[view];
   updateDemoDisclosure();
   $('demo-view').hidden = view !== 'demo';
-  $('demo-entry').hidden = view !== 'work' || Boolean(PlatformContext.asset(location.hash));
+  $('can-view').hidden = view !== 'can';
+  if(typeof enterCanWorkspace==='function')enterCanWorkspace(view==='can');
+  $('demo-entry').hidden = true;
   $('queue-view').hidden = view !== 'queue';
   $('work-view').hidden = view !== 'work';
+  if($('risk-view'))$('risk-view').hidden=view!=='risk';
+  if(view==='risk'&&typeof window.renderRiskDemo==='function')void window.renderRiskDemo();
   $('data-view').hidden = view !== 'data';
   $('history-view').hidden = view !== 'history';
   $('states-view').hidden = view !== 'states';
   $('cooling-view').hidden = view !== 'cooling';
   updateRuntimeLabel();
-  document.querySelector('.device').hidden=['demo','states','cooling','queue'].includes(view);
+  document.querySelector('.device').hidden=['demo','states','cooling','queue','can'].includes(view)||
+    view==='risk'&&window.JilianDataMode?.mode==='demo';
   if(view==='demo' && typeof enterDemoReplay==='function')enterDemoReplay();
   if(view==='cooling' && typeof enterCoolingView==='function')enterCoolingView();
   if(view!=='cooling' && typeof leaveCoolingView==='function')leaveCoolingView();
@@ -80,7 +87,8 @@ function setView(view,{reason='initial'}={}) {
   if(view!=='states' && typeof stopWorkStatePlayback==='function') stopWorkStatePlayback();
   if(view==='history') refreshHistory();
   if(view==='queue' && typeof enterWorklist==='function')enterWorklist();
-  document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===view)));
+  const navigationView = view === 'demo' ? 'history' : view;
+  document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===(b.closest('nav') ? navigationView : view))));
   window.scrollTo({top:0});
   if(view==='work' && typeof resizeDeviceOverview==='function')requestAnimationFrame(resizeDeviceOverview);
   // The track belongs to the troubleshooting view only: on the case demo it would
@@ -148,7 +156,8 @@ async function refresh(focusPlatformSelection=false) {
     const previousSelection = $('machine').value;
     defaultSource = index.data_source;
     machines = index.devices;deviceIndexWarnings=index.warnings;platformIndexState='ready';
-    $('source').textContent = defaultSource === 'mock' ? '模拟数据' : 'Trackunit 数据';
+    $('source').textContent = defaultSource === 'trackunit_cache' ? 'Trackunit 数据' : defaultSource === 'demo' ? '演示数据' : '模拟数据';
+    window.JilianDataMode?.display(defaultSource==='trackunit_cache'?'live':'demo');
     const groups = new Map();
     for(const m of machines) {
       const group = machineSourceLabel(m);
@@ -176,13 +185,14 @@ function machineSampleTime(machine){
 function machineSourceLabel(machine){
   if(machine?.provenance==='synthetic'||machine?.source==='mock'||machine?.source==='imported_synthetic')return '模拟数据';
   if(machine?.dataset_id)return /^Trackunit\b/i.test(machine.source_document||'')?'Trackunit 数据':'导入数据';
-  return defaultSource==='mock'?'模拟数据':'Trackunit 数据';
+  return defaultSource==='trackunit_cache'?'Trackunit 数据':defaultSource==='demo'?'演示数据':'模拟数据';
 }
+function displayMachineModel(value){return /^(?:Data not available|未提供|unknown)$/i.test(value||'')||!value?'机型待确认':value;}
 function machineOptionLabel(machine){
   const versions=machines.filter(row=>row.machine_id===machine.machine_id)
     .map(row=>row.selection_id).sort();
   const version=versions.length>1?' · 版本 '+(versions.indexOf(machine.selection_id)+1):'';
-  return `${machine.model} · ${machine.serial_number} · ${displayDate(machineSampleTime(machine))}${version}`;
+  return `${displayMachineModel(machine.model)} · ${machine.serial_number} · ${displayDate(machineSampleTime(machine))}${version}`;
 }
 /**
  * Show an identifier in a form a person can read out loud.
@@ -202,14 +212,17 @@ function machineRecordNote(machine){
   return machine?`最近采样 ${displayDate(machineSampleTime(machine))}${machine.dataset_id?' · '+machine.sample_count+' 条记录':''}`:'等待设备数据';
 }
 function renderDeviceVitals(machine){
+  if(typeof window!=='undefined')window.MachinePhotos?.renderDevice(machine);
   const root=$('device-vitals');
   const wide=new Set(['VIN / PIN','数据版本','来源说明']);
   root.replaceChildren();
   if(!machine){const cell=document.createElement('div');cell.dataset.wide='1';
     const dd=document.createElement('dd');dd.textContent='尚未识别设备';cell.append(dd);root.append(cell);return;}
-  const facts=[['机型',machine.model],['VIN / PIN',machine.serial_number],
-    ['最近采样',displayDate(machineSampleTime(machine))],['数据来源',machineSourceLabel(machine)]];
-  if(machine.dataset_id)facts.push(['数据记录',machine.sample_count+' 条']);
+  const compact=document.documentElement?.classList?.contains?.('competition-focus')===true;
+  const uncertain=/^\d{1,16}$/.test(machine.serial_number||'')&&machine.serial_number===machine.equipment_id;
+  const facts=[['机型',displayMachineModel(machine.model)],[uncertain?'设备编号':'VIN / PIN',machine.serial_number]];
+  if(!compact){facts.push(['最近采样',displayDate(machineSampleTime(machine))],['数据来源',machineSourceLabel(machine)]);
+    if(machine.dataset_id)facts.push(['数据记录',machine.sample_count+' 条']);}
   for(const [label,value] of facts){
     const cell=document.createElement('div'),term=document.createElement('dt'),definition=document.createElement('dd');
     if(wide.has(label))cell.dataset.wide='1';
@@ -218,11 +231,17 @@ function renderDeviceVitals(machine){
 }
 function renderDeviceFacts(machine,selectionNote='',platformId=''){
   renderDeviceVitals(machine);
+  const compact=document.documentElement?.classList?.contains?.('competition-focus')===true;
+  if(compact){
+    const maintenance=document.querySelector?.('.device-maintenance'),details=document.querySelector?.('.device-details');
+    if(maintenance&&details&&!maintenance.hidden){details.append($('machine'),$('refresh'));maintenance.hidden=true;}
+  }
   $('device-facts').replaceChildren();
-  const facts=machine?[['机型',machine.model],['VIN / PIN',machine.serial_number],
+  const facts=machine?[['机型',displayMachineModel(machine.model)],['VIN / PIN',machine.serial_number],
     ['最近采样',displayDate(machineSampleTime(machine))],['数据来源',machineSourceLabel(machine)],
     ['设备 ID',machine.machine_id],...(machine.dataset_id?[['数据版本',machine.dataset_id],['来源说明',machine.source_document]]:[])]:[];
   if(selectionNote)facts.push(['版本选择',selectionNote]);
+  if(compact&&machine?.dataset_id)facts.push(['数据记录',machine.sample_count+' 条']);
   if(!machine&&platformId)facts.push(['设备 ID',platformId]);
   for(const [label,value] of facts){
     const cell=document.createElement('div'),term=document.createElement('dt'),definition=document.createElement('dd');
@@ -231,6 +250,8 @@ function renderDeviceFacts(machine,selectionNote='',platformId=''){
 }
 function selectMachine() {
   const m=selected();
+  const evidence=document.querySelector('.device-evidence-disclosure');if(evidence)evidence.open=false;
+  const telemetry=document.getElementById('overview-telemetry');if(telemetry)telemetry.open=false;
   // Leaving the device a streamed analysis belongs to retires that analysis, so
   // its late progress or report can never land on the newly selected machine.
   const root=document.documentElement;
@@ -262,7 +283,9 @@ function selectMachine() {
   if(typeof updateDeviceFinder==='function')updateDeviceFinder();
   if(typeof selectLocalDraft==='function')selectLocalDraft();
   if(typeof updateFlowTrack==='function')updateFlowTrack();
+  // The panel must receive the new dataset before the sensor bridge probes it.
   notifyPlatformContext();
+  if(activeView==='risk'&&typeof window.renderRiskDemo==='function')void window.renderRiskDemo();
 }
 /**
  * Label the demo view. It shows saved real model output and nothing else, so the
@@ -292,21 +315,26 @@ function applyPlatformContext(focusSelection=false,refreshSelection=false) {
   const id=location.hash.slice('#trackunit-asset='.length);
   const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
   const matches=valid?PlatformContext.candidates(machines,defaultSource,id):[];
-  const choice=PlatformContext.selectDefault(machines,defaultSource,id,previousSelection);
+  let choice=PlatformContext.selectDefault(machines,defaultSource,id,previousSelection);
+  const linkQuery=new URLSearchParams(location.search),linkedDataset=linkQuery.get('dataset');
+  if(!window.researchLinkContextApplied&&/^[a-f0-9]{32}$/.test(linkQuery.get('research')||'')&&/^[a-f0-9]{64}$/.test(linkedDataset||'')){
+    window.researchLinkContextApplied=true;
+    choice={selected:matches.find(m=>m.dataset_id===linkedDataset)||null,reason:'research_link'};
+  }
   $('machine').replaceChildren(...matches.map(m=>{const o=document.createElement('option');o.value=m.selection_id;o.textContent=machineOptionLabel(m);return o;}));
   if(!matches.length){const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='正在关联当前设备';$('machine').append(placeholder);}
   $('machine').value=choice.selected?.selection_id || '';
   const selectedVersion=choice.selected;
   if(refreshSelection||previousSelection!==$('machine').value)selectMachine();
   else notifyPlatformContext();
-  const choiceNote={retained:'已保留当前版本',latest_sample:'已自动载入最近采样版本',equal_latest_sample:`${choice.tied} 个版本最近采样时间相同，已自动载入其中一个`,undated_default:'已自动载入默认版本，采样时间待核实'}[choice.reason];
+  const choiceNote={retained:'已保留当前版本',latest_sample:'已自动载入最近采样版本',equal_latest_sample:`${choice.tied} 个版本最近采样时间相同，已自动载入其中一个`,undated_default:'已自动载入默认版本，采样时间待核实',research_link:'已载入当前排查使用的数据版本'}[choice.reason];
   $('machine-note').textContent=machineRecordNote(selectedVersion);
   renderDeviceFacts(selectedVersion,selectedVersion?`${matches.length} 个数据版本 · ${choiceNote}`:'',valid?id:'格式无效');
   $('status').textContent=!valid?'设备链接无效，请重新读取当前设备。':selectedVersion?'当前设备已关联，可开始分析。':'正在关联当前设备。';
   if(!selectedVersion)$('source').textContent='等待设备数据';
   if(valid)$('demo-entry').hidden=true;
-  if(focusSelection||platformChanged)setView('work',{reason:'platform'});
-  if(focusSelection){$('machine').focus({preventScroll:true});document.querySelector('.device').scrollIntoView({block:'start'});}
+  if(focusSelection||platformChanged)setView(activeView==='can'?'can':'work',{reason:'platform'});
+  if(focusSelection&&activeView!=='can'){$('machine').focus({preventScroll:true});document.querySelector('.device').scrollIntoView({block:'start'});}
   if(typeof platformLoaderChanged==='function')platformLoaderChanged();
 }
 window.addEventListener('hashchange',()=>{if($('run').disabled){pendingPlatformContext=true;notifyPlatformContext();$('status').textContent='正在等待当前操作完成，随后应用新的平台设备上下文。';return;}if(location.hash.startsWith('#trackunit-asset='))applyPlatformContext(true);else refresh();});
@@ -314,6 +342,7 @@ $('refresh').onclick=refresh;
 $('machine').onchange=selectMachine;
 $('form').onsubmit=async e=>{
   e.preventDefault();
+  if($('form').getAttribute('aria-busy')==='true')return;
   if (!selected()) {$('status').textContent='请先选择可分析的设备或数据版本。';$('machine').focus();return;}
   const question=$('question').value.trim() || taskQuestions[$('task').value];
   if(!question){$('question-details').open=true;$('status').textContent='请填写要分析的问题。';$('question').focus();return;}
@@ -321,7 +350,7 @@ $('form').onsubmit=async e=>{
   const engineeringFault=typeof getEngineeringFault==='function'?getEngineeringFault():null;
   if(manualFault&&engineeringFault){$('status').textContent='一次排查只能使用一套故障资料，请移除不适用的故障码关联。';return;}
   if(!manualFault&&typeof getManualFaultDraftReference==='function'&&getManualFaultDraftReference()){
-    $('status').textContent='草稿中的故障码尚未重新确认。请先核对并带入，或移除该代码后再开始分析。';
+    $('status').textContent='故障码尚未确认适用范围。请先核对并带入，或移除该代码后再开始分析。';
     $('status').dataset.state='error';$('fault-reference-panel').open=true;
     $('fault-reference-panel').scrollIntoView({block:'nearest'});$('fault-reference-confirm').focus();return;
   }
@@ -340,15 +369,16 @@ $('form').onsubmit=async e=>{
   const analysisMachine=selected(),analysisSelection=analysisMachine.selection_id,analysisHash=location.hash;
   const analysisKey=analysisSelection+'@'+(analysisMachine.dataset_id||defaultSource);
   try {
+    const competitionFocus=document.documentElement?.classList?.contains?.('competition-focus')===true;
     const completed=await runStreamedInvestigation({
       machine_id:analysisMachine.machine_id,dataset_id:analysisMachine.dataset_id || null,question,
-      observations:$('observations').value,language:$('language').value,task:$('task').value,
-      prior_record_id:priorRecordId,
+      observations:competitionFocus?'':$('observations').value,language:$('language').value,task:$('task').value,
+      prior_record_id:competitionFocus?null:priorRecordId,
       ...(manualFault?{manual_fault:manualFault}:{}),...(engineeringFault?{engineering_fault:engineeringFault}:{})},analysisKey);
     if(completed===null)return;
-    if(selected()?.selection_id!==analysisSelection||location.hash!==analysisHash){$('status').textContent='原设备分析已完成并保留在其诊断记录中；正在切换当前设备。';return;}
+    if(selected()?.selection_id!==analysisSelection||location.hash!==analysisHash){$('status').textContent='原设备分析已完成；正在切换当前设备。';return;}
     report=completed;
-    const historyNote=completed.history_saved===false?'记录保存失败，请导出备份':'已保存诊断记录';
+    const historyNote=competitionFocus?'':completed.history_saved===false?'记录保存失败，请导出备份':'已保存诊断记录';
     renderInvestigationReport(completed,started,(text,state)=>{$('status').textContent=text;$('status').dataset.state=state;},historyNote);
     setView('work');$('result').focus();$('result').scrollIntoView({block:'start'});
   } catch(e){$('status').setAttribute('role','alert');$('status').dataset.state='error';$('status').textContent=`分析未完成：${e.message}${report?' 下方保留上次成功报告，本次未更新。':''}`;$('status').scrollIntoView({block:'nearest'});}
@@ -371,7 +401,7 @@ function renderAIContribution(report, target){
   const ai=summary.ai||{},program=summary.program||{};
   const head=document.createElement('div');head.className='ai-contribution-head';
   const badge=document.createElement('span');badge.className='ai-badge';badge.textContent='AI';
-  const title=document.createElement('strong');title.textContent='本次排查中 AI 做了什么';
+  const title=document.createElement('strong');title.textContent='分析概况';
   const model=(summary.model||{}).model;
   const meta=document.createElement('span');meta.className='ai-contribution-meta';
   meta.textContent=[model,ai.duration_seconds!=null?`${ai.duration_seconds} 秒`:null].filter(Boolean).join(' · ');
@@ -387,12 +417,11 @@ function renderAIContribution(report, target){
     if(note){const small=document.createElement('small');small.textContent=note;li.append(small);}
     facts.append(li);
   };
-  add('模型决策',`${ai.model_decisions||0} 次`,'每轮决定下一步读取什么、何时收尾');
-  add('它自己选择的读取',(ai.model_selected_actions||[]).length?ai.model_selected_actions.join(' / '):'无');
+  add('分析轮次',`${ai.model_decisions||0} 次`);
+  add('追加资料',(ai.model_selected_actions||[]).length?ai.model_selected_actions.join(' / '):'无');
   add('推断的可疑部件',`${ai.hypothesis_count||0} 个`);
   add('提出的检查方向',`${ai.check_directions||0} 条`);
   add('引用的证据',`${ai.citation_count||0} 条`);
-  if(ai.format_repair_attempts)add('格式修正',`${ai.format_repair_attempts} 次`,'首次输出未满足格式约定，修正后才生成报告');
   root.append(facts);
   // Every reference the report makes is resolved against the recorded evidence.
   // A dangling citation is the one defect that would make the whole report
@@ -403,8 +432,8 @@ function renderAIContribution(report, target){
     line.className='ai-audit';
     line.dataset.verdict=audit.verdict;
     line.textContent=audit.dangling_count===0
-      ?`依据核对：${audit.checked} 条引用全部指向已读取的证据，没有悬空引用。`
-      :`依据核对：${audit.checked} 条引用中有 ${audit.dangling_count} 条找不到对应证据，请以下方悬空条目为准。`;
+      ?`来源核对：${audit.checked} 条引用均有对应资料。`
+      :`来源核对：${audit.checked} 条引用中有 ${audit.dangling_count} 条缺少对应资料，相关结论待核实。`;
     root.append(line);
     if(audit.dangling_count){
       const list=document.createElement('ul');list.className='ai-dangling';
@@ -432,7 +461,7 @@ function renderAIContribution(report, target){
   }
   const programLine=document.createElement('p');programLine.className='ai-program';
   const families=Object.entries(program.evidence_by_family||{}).map(([name,count])=>`${name} ${count}`).join('，');
-  programLine.textContent=`程序侧：读取 ${program.reads_total||0} 项（其中 ${program.reads_by_task||0} 项由任务规定）、证据来源 ${program.evidence_sources||0} 处${families?`（${families}）`:''}、整理数据事实 ${program.data_facts||0} 条。`;
+  programLine.textContent=`已读取 ${program.reads_total||0} 项资料 · ${program.evidence_sources||0} 处来源${families?`（${families}）`:''} · ${program.data_facts||0} 条数据记录。`;
   root.append(programLine);
   const boundary=document.createElement('p');boundary.className='muted ai-boundary';
   boundary.textContent=(summary.boundary||[]).join(' ');
@@ -440,19 +469,21 @@ function renderAIContribution(report, target){
 }
 /**
  * Light up the three-step track from state the workspace actually reached:
- * the machine is associated, an AI report exists, and that report carries
- * catalog-bound part candidates. Nothing is marked done on a timer or a guess.
+ * the machine is selected, its current analysis has a plan/report, and current
+ * catalog evidence has been analyzed. A URL or saved image alone is not completion.
  */
 function updateFlowTrack(){
   const root=document.getElementById('flow-track');
   if(!root)return;
-  const associated=Boolean(
-    PlatformContext.asset(location.hash)||
-    (typeof platformLoaderChanged==='function'&&$('machine')&&$('machine').value));
-  const diagnosed=Boolean(report);
-  const verified=Boolean(report&&(
-    (report.parts_candidates||[]).some(p=>String(p.source_id||'').startsWith('xgss:')||p.provenance==='xgss_visible_dom')||
-    report.xgss_catalog_context));
+  const machine=selected(),asset=PlatformContext.asset(location.hash);
+  const associated=Boolean(machine&&(!location.hash.startsWith('#trackunit-asset=')||asset===machine.machine_id));
+  const research=window.currentXGSSResearchProgress?.();
+  const currentReport=associated&&report&&report.machine_id===machine.machine_id&&
+    (report.dataset_id||null)===(machine.dataset_id||null)?report:null;
+  const diagnosed=associated&&Boolean(research?research.diagnosed:currentReport);
+  const verified=associated&&Boolean(research?research.verified:currentReport&&(
+    (currentReport.parts_candidates||[]).some(p=>String(p.source_id||'').startsWith('xgss:')||p.provenance==='xgss_visible_dom')||
+    currentReport.xgss_catalog_context));
   const order=['connect','diagnose','verify'];
   const done={connect:associated,diagnose:diagnosed,verify:verified};
   let activeSet=false;
@@ -595,7 +626,7 @@ $('result-history').onclick=()=>{$('history-scope').value='current';setView('his
 $('result-feedback').onclick=async()=>{
   if(!report?.record_id)return;
   let panel=$('current-feedback');
-  if(!panel){panel=document.createElement('div');panel.id='current-feedback';$('result').append(panel);}
+  if(!panel){panel=document.createElement('div');panel.id='current-feedback';panel.setAttribute('data-deferred-feature','inspection-feedback');$('result').append(panel);}
   $('result-feedback').disabled=true;
   try{await renderFeedbackPanel(report.record_id,panel);panel.scrollIntoView({block:'start'});panel.querySelector('select')?.focus();}
   catch(e){panel.textContent='无法读取反馈记录，请稍后重试。';}
@@ -682,6 +713,8 @@ function notifyPanelView(reason='initial') {
 }
 document.addEventListener('DOMContentLoaded',()=>notifyPanelView('initial'),{once:true});
 function notifyPlatformContext(){
+  if(typeof syncXGSSResearch==='function')syncXGSSResearch();
+  if(typeof syncCanWorkspace==='function')syncCanWorkspace();
   if(window.parent===window)return;
   const origin=location.ancestorOrigins?.[0];
   if(!/^chrome-extension:\/\/[a-p]{32}$/.test(origin||''))return;
@@ -827,37 +860,43 @@ function renderInvestigationProgress(event){
 async function runStreamedInvestigation(payload,analysisKey){
   let settle;
   const outcome=new Promise(resolve=>{settle=resolve;});
-  investigationRunner=InvestigationRunner.create({
+  const runner=InvestigationRunner.create({
     machineKey:()=>analysisKey,
-    onProgress:event=>renderInvestigationProgress(event),
+    onProgress:event=>{if(investigationRunner===runner)renderInvestigationProgress(event);},
     onTerminal:event=>settle(event),
   });
+  investigationRunner=runner;
   investigationProgressStartedAt=Date.now();
   investigationProgressTimer=setInterval(()=>{
     const elapsed=$('ai-progress-elapsed'),panel=$('ai-progress');
     if(elapsed&&panel&&!panel.hidden)elapsed.textContent=`已等待 ${Math.floor((Date.now()-investigationProgressStartedAt)/1000)} 秒`;
   },1000);
-  const accepted=await investigationRunner.start(payload,analysisKey);
-  if(!accepted){resetInvestigationProgress();return null;}
-  const event=await outcome;
-  resetInvestigationProgress();
-  if(event?.type==='result')return event.report;
-  if(event?.type==='cancelled'){$('status').dataset.state='idle';$('status').textContent=event.message;return null;}
-  const error=new Error(event?.message||'分析未完成。');error.kind=event?.kind;throw error;
+  // Await completion, not response headers: stopping must unlock the form even
+  // while fetch is still pending. Submission failures use the same error path.
+  runner.start(payload,analysisKey).catch(error=>settle({type:'error',message:error.message,kind:'network'}));
+  try{
+    const event=await outcome;
+    if(event?.type==='result')return event.report;
+    if(event?.type==='cancelled'){
+      if(investigationRunner===runner){$('status').dataset.state='idle';$('status').textContent=event.message;}
+      return null;
+    }
+    const error=new Error(event?.message||'分析未完成。');error.kind=event?.kind;throw error;
+  }finally{
+    if(investigationRunner===runner){resetInvestigationProgress();investigationRunner=null;}
+  }
 }
-/** Withdraw the running investigation. Returns the backend acknowledgement. */
+/** Withdraw locally; this does not acknowledge an upstream provider abort. */
 async function stopStreamedInvestigation(){
   if(!investigationRunner)return null;
-  const outcome=await investigationRunner.stop('user');
-  resetInvestigationProgress();
   const root=document.documentElement;
   if(root)delete root.dataset.runningAnalysisDevice;
-  return outcome;
+  return investigationRunner.stop('user');
 }
 $('ai-progress-stop')?.addEventListener('click',async()=>{
   await stopStreamedInvestigation();
   $('status').dataset.state='idle';
-  $('status').textContent='已停止本次分析；不会再发起新的模型请求。已读取的证据和输入仍然保留。';
+  $('status').textContent='分析已停止，已读取的资料和输入已保留。';
 });
 $('ai-retry')?.addEventListener('click',()=>{$('form').requestSubmit();});
 
@@ -930,6 +969,6 @@ function renderInvestigationReport(report, started, onStatus, historyNote=''){
   }
   $('result').hidden=false; $('empty-result').hidden=true;
   $('result-feedback').disabled=!report.record_id;
-  onStatus(`分析完成 · 用时 ${Math.round((Date.now()-started)/1000)} 秒 · ${historyNote}`,'complete');
+  onStatus([`分析完成 · 用时 ${Math.round((Date.now()-started)/1000)} 秒`,historyNote].filter(Boolean).join(' · '),'complete');
   if(typeof updateFlowTrack==='function')updateFlowTrack();
 }

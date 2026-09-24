@@ -61,7 +61,7 @@ def test_asset_snapshot_import_is_isolated_and_independently_timestamped(fixture
     assert dataset.telemetry[0].operating_hours is None
     assert dataset.telemetry[1].idle_hours is None
     assert all('/fault' not in endpoint.lower() for endpoint, _ in calls)
-    assert calls[1][1]['params'] == {'addMetadata': 'true'}
+    assert calls[1][1]['params'] == {'addMetadata': 'true', 'addExtendedData': 'true'}
     again = loader.load_platform_asset(ASSET)
     assert again['dataset_id'] == result['dataset_id'] and again['cache_hit']
     assert len(calls) == 2
@@ -175,7 +175,7 @@ def test_fleet_fallback_skips_other_assets_and_stores_only_exact_match(fixture, 
     assert 'AEMP Fleet' in saved.source_document and 'single-equipment' not in saved.source_document
     files = list(local_datasets.DATASETS.glob('*.json'))
     assert len(files) == 1 and OTHER not in files[0].read_text(encoding='utf-8')
-    assert all(kwargs['params'] == {'addMetadata': 'true'} for _, kwargs in calls[1:])
+    assert all(kwargs['params'] == {'addMetadata': 'true', 'addExtendedData': 'true'} for _, kwargs in calls[1:])
 
 
 def test_fleet_search_has_three_page_limit_and_never_claims_no_faults(fixture, monkeypatch):
@@ -316,3 +316,23 @@ def test_equipment_hint_encodes_internal_spaces_and_trims_outer_spaces(fixture, 
     calls = mock_client(monkeypatch, [page([SNAPSHOT])])
     assert loader.load_platform_asset(ASSET, ' TEST MACHINE ')['state'] == 'loaded'
     assert calls[0][0].endswith('/TEST%20MACHINE')
+
+
+def test_extended_snapshot_import_keeps_each_sensor_timestamp(fixture, monkeypatch):
+    snapshot = {**SNAPSHOT,
+        'engineCoolantTemperature': {'temperature': 86.0, 'datetime': '2026-01-01T09:57:00Z'},
+        'engineSpeed': {'speed': 1487.5, 'datetime': '2026-01-01T09:58:00Z'},
+        'engineOilPressure': {'pressure': 0.0, 'datetime': '2026-01-01T10:00:00Z'},
+        'EngineStatus': {'Running': False, 'datetime': '2026-01-01T10:00:00Z'},
+        'redStopLamp': {'state': 'true', 'datetime': '2026-01-01T09:59:00Z'}}
+    mock_client(monkeypatch, [META, {'equipment': [snapshot]}])
+    result = loader.load_platform_asset(ASSET)
+    assert result['state'] == 'loaded'
+    sensors = {row.key: row for row in local_datasets.load_dataset(result['dataset_id']).sensors}
+    assert len(sensors) == 5
+    assert sensors['coolant_c'].value == 86.0
+    assert sensors['engine_rpm'].value == 1487.5
+    assert sensors['engine_running'].value is False
+    assert sensors['red_stop_lamp'].value is True
+    assert sensors['coolant_c'].recorded_at != sensors['engine_rpm'].recorded_at
+    assert sensors['oil_pressure_kpa'].recorded_at == sensors['engine_running'].recorded_at

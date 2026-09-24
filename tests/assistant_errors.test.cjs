@@ -24,7 +24,7 @@ test('unstructured limits stay unknown and arbitrary data is not echoed',()=>{
 });
 test('DeepSeek balance and rate limit errors suggest distinct actions without Gemini quota claims',()=>{
  const balance=formatDeepSeekFailure({kind:'insufficient_balance',message:'secret upstream body'});
- assert.match(balance,/DeepSeek API 账户余额不足/);assert.match(balance,/不会补充余额/);
+ assert.match(balance,/DeepSeek API 账户余额不足/);assert.match(balance,/核查账户余额/);
  assert.doesNotMatch(balance,/Gemini|每日|secret/);
  const rate=formatDeepSeekFailure({kind:'rate_limit',retry_after_seconds:5});
  assert.match(rate,/降低请求频率/);assert.match(rate,/不保证/);assert.doesNotMatch(rate,/每日|零点|余额不足/);

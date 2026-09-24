@@ -85,6 +85,30 @@ def selected_device_overview(machine_id: str = Query(min_length=1,max_length=200
         raise HTTPException(503,'设备资料暂时无法读取，请稍后重试。') from None
 
 
+@router.get('/risk-overview')
+def selected_risk_overview(machine_id: str = Query(min_length=1, max_length=200),
+                           dataset_id: str = Query(pattern=r'^[0-9a-f]{64}$')):
+    from fastapi.responses import JSONResponse
+    from app.sensor_risk import overview
+    try:
+        return JSONResponse(overview(machine_id, dataset_id), headers={'Cache-Control': 'no-store'})
+    except ValueError:
+        raise HTTPException(404, '当前设备没有可核对的 Trackunit 传感器快照。') from None
+
+
+@router.post('/risk-analyze')
+def analyze_sensor_risk(machine_id: str = Query(min_length=1, max_length=200),
+                        dataset_id: str = Query(pattern=r'^[0-9a-f]{64}$')):
+    from fastapi.responses import JSONResponse
+    from app.sensor_risk import analyze
+    try:
+        return JSONResponse(analyze(machine_id, dataset_id), headers={'Cache-Control': 'no-store'})
+    except ValueError:
+        raise HTTPException(422, '传感器样本不足，或 AI 优先级未通过依据校验。') from None
+    except DeepSeekError:
+        raise HTTPException(503, 'XCMG AI 暂时无法完成分析，请稍后重试。传感器原始证据仍可查看。') from None
+
+
 @router.get('/device-index')
 def local_device_index():
     from fastapi.responses import JSONResponse

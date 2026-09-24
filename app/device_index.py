@@ -51,6 +51,8 @@ def summarize_faults(machine_id, faults, cutoff):
 def device_index():
     now = datetime.now(timezone.utc)
     source = data_store.get_data_source()
+    from app.request_data_mode import selected_mode
+    request_mode = selected_mode()
     warnings, devices = [], []
     try:
         fleet = data_store.load_machines()
@@ -77,6 +79,10 @@ def device_index():
             continue
         try:
             dataset = local_datasets.load_dataset(path.stem)
+            if request_mode == 'demo' and dataset.provenance != 'synthetic':
+                continue
+            if request_mode == 'live' and dataset.provenance != 'user_supplied':
+                continue
             metadata = local_datasets.dataset_summary(path.stem, dataset)
         except (OSError, ValueError, TypeError):
             unreadable += 1

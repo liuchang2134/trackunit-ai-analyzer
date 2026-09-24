@@ -74,8 +74,8 @@ def test_the_replay_credits_only_the_reads_the_model_chose(history):
     stage = demo_replay.build_replay('rec1')['stages'][0]
     assert stage['origin'] == 'program'
     joined = ' '.join(stage['lines'])
-    assert '模型自己选择追加读取：parts' in joined
-    assert '其余 1 项由任务规定' in joined, 'task-forced reads must not be credited to the model'
+    assert 'AI 追加读取：parts' in joined
+    assert '任务预设读取 1 项' in joined, 'task-forced reads must not be credited to the model'
 
 
 def test_each_hypothesis_keeps_its_manual_page_and_stays_a_direction(history):
@@ -100,7 +100,7 @@ def test_the_model_summary_is_reproduced_verbatim(history):
     write_record(history, 'rec1', summary='原样保留的摘要，含 0 条记录与配置未知。')
     stage = next(item for item in demo_replay.build_replay('rec1')['stages'] if item['stage_id'] == 'summary')
     assert stage['lines'] == ['原样保留的摘要，含 0 条记录与配置未知。']
-    assert '原文未改写' in stage['note']
+    assert '原文' in stage['title']
 
 
 def test_a_test_fault_code_is_marked_as_not_a_reported_event(history):

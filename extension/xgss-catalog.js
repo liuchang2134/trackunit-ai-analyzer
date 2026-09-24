@@ -81,6 +81,17 @@ var XGSSCatalog = (() => {
     const assembly_path = [];
     const crumbs = [...doc.querySelectorAll('[aria-label="breadcrumb"] li,.el-breadcrumb__item,.ant-breadcrumb li')].filter(visible);
     crumbs.forEach(el => assembly_path.push(textOf(el)));
+    // XGSS production uses iView: the selected label wraps a second title span.
+    const ivuSelected = [...doc.querySelectorAll('.ivu-tree-title-selected')].find(visible);
+    if (ivuSelected) {
+      const chain=[];
+      for (let node=ivuSelected.parentElement;node && chain.length<12;node=node.parentElement) {
+        if (node.tagName!=='LI') continue;
+        const label=node.querySelector(':scope > .ivu-tree-title > .ivu-tree-title[title]');
+        if (label && visible(label)) chain.unshift(textOf(label));
+      }
+      assembly_path.push(...chain);
+    }
     const selected = [...doc.querySelectorAll('.el-tree-node.is-current,[role="treeitem"][aria-selected="true"],.ant-tree-treenode-selected')].find(visible);
     if (selected) {
       const chain=[]; let node=selected;

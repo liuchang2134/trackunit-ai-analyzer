@@ -144,7 +144,6 @@ def ai_contribution(report: dict | None) -> dict | None:
         },
         'boundary': [
             '可疑部件是待核查方向，不是已确认故障；部件存在于图册也不代表它已损坏。',
-            '设备数据由程序按证据规则读取与计算，模型负责选择读取、推断部件并撰写解释。',
             '检查步骤需由现场人员按适用手册与整机配置核实后执行。',
         ],
         'model': {key: report.get(key) for key in ('provider', 'model', 'inference_location', 'thinking_mode')

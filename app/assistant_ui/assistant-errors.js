@@ -19,7 +19,7 @@ function formatDeepSeekFailure(error) {
     configuration_missing:'尚未配置 DeepSeek 密钥。请更新后端密钥配置后重启本机服务；模拟数据、趋势图和预警演示仍可使用。',
     configuration_invalid:'DeepSeek 请求配置或格式不匹配。请检查后端的模型与接口设置；本次未生成报告。',
     authentication:'DeepSeek 密钥认证失败。请核查后端配置的有效密钥；本次未生成报告。',
-    insufficient_balance:'DeepSeek API 账户余额不足。请核查 API 账户余额；等待或反复重试不会补充余额。本次未生成报告。',
+    insufficient_balance:'DeepSeek API 账户余额不足，请核查账户余额。本次未生成报告。',
     rate_limit:'DeepSeek 调用频率受限。请降低请求频率后再手动尝试；等待不保证下一次请求成功。本次未生成报告。',
     service_unavailable:'DeepSeek 服务暂时不可用。请稍后重试；本次未生成报告。',
     timeout:'DeepSeek 请求超时，本次未生成报告。问题和设备数据已保留，可稍后重试。',

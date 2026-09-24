@@ -68,7 +68,7 @@
     const root = byId('engineering-catalog-items'); root.replaceChildren();
     byId('engineering-catalog-status').textContent = message || (!realContext() ? '当前为模拟设备，用于验证手册排查。XGSS 图册读取需要选择对应的实测设备。' : catalog?.items?.length
       ? `已读取 ${catalog.items.length} 条可见图册条目 · ${typeof displayDate === 'function' ? displayDate(catalog.captured_at) : catalog.captured_at || ''}。仅覆盖已打开页面，不代表整机完整 BOM。`
-      : '尚未读取图册条目。打开对应 VIN 的 XGSS 图册，在 Chrome 助手中点击“读取当前 XGSS 图册”，再回到这里继续分析。');
+      : '尚未读取图册条目。打开对应 VIN 的 XGSS 图册，在 Chrome 助手的“图册”中点击“读回当前图册条目”，再回到这里继续分析。');
     if (catalog?.items?.length) {
       const table = document.createElement('table'), head = table.createTHead().insertRow();
       ['图册条目 / 料号', '图号 / 位置'].forEach(label => { const th = text('th', label); th.scope = 'col'; head.append(th); });
@@ -151,6 +151,7 @@
       if (JSON.stringify(prior) !== JSON.stringify(attached) && typeof priorRecordId !== 'undefined') priorRecordId = null;
       if (typeof restoreManualFaultReference === 'function') restoreManualFaultReference(null);
       renderInput(); draftChanged();
+      if(typeof global.focusXGSSResearch==='function'){global.focusXGSSResearch(attached.code);return;}
       byId('status').textContent = '已带入故障与配置。点击“开始分析”，AI 将结合设备数据和适用手册排查。';
     } catch (error) { byId('engineering-source-note').textContent = error.message; }
   };
@@ -165,8 +166,11 @@
   byId('engineering-catalog-refresh').onclick = refreshCatalog;
   byId('engineering-catalog-continue').onclick = () => {
     if (locked || !catalog?.items?.length || !state.payload(machine(), source())) return;
-    if (typeof report !== 'undefined' && report?.record_id) priorRecordId = report.record_id;
-    byId('question').value = '结合本次故障、已保存检查反馈与当前 VIN 的 XGSS 图册条目，更新可疑部件排序，说明候选料号的依据和待核对事项。';
+    const competitionFocus=document.documentElement?.classList?.contains?.('competition-focus')===true;
+    if (!competitionFocus && typeof report !== 'undefined' && report?.record_id) priorRecordId = report.record_id;
+    byId('question').value = competitionFocus
+      ? '结合本次故障与当前 VIN 的 XGSS 图册条目，更新可疑部件排序，说明候选料号的依据和待核对事项。'
+      : '结合本次故障、已保存检查反馈与当前 VIN 的 XGSS 图册条目，更新可疑部件排序，说明候选料号的依据和待核对事项。';
     byId('question-details').open = true; draftChanged(); byId('form').requestSubmit();
   };
   global.addEventListener('message', async event => {

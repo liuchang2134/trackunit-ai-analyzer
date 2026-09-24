@@ -1,1 +1,1 @@
-ASSISTANT_BUILD = '20260915.20-docs-index'
+ASSISTANT_BUILD = '20260924.4-fault-causality'

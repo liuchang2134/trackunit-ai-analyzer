@@ -59,12 +59,15 @@ if(typeof document!=='undefined') {
     for(const item of rows) {
       const row=document.createElement('li');row.className='finder-result';
       row.dataset.current=String(item.selection_id===$('machine').value);
-      const identity=document.createElement('div'),title=document.createElement('strong'),serial=document.createElement('span');
+      const identity=document.createElement('div'),identityCopy=document.createElement('div'),title=document.createElement('strong'),serial=document.createElement('span');
+      identity.className='finder-identity';identityCopy.className='finder-identity-copy';
+      const photo=window.MachinePhotos?.create(item.model,{thumbnail:true});
+      if(photo)identity.append(photo);
       title.textContent=item.model || '未知机型';serial.textContent=item.serial_number || item.machine_id;
-      identity.append(title,serial);
-      const source=document.createElement('span');source.className='finder-source-label';source.textContent=DeviceFinder.sourceLabel(item);identity.append(source);
+      identityCopy.append(title,serial);identity.append(identityCopy);
+      const source=document.createElement('span');source.className='finder-source-label';source.textContent=DeviceFinder.sourceLabel(item);identityCopy.append(source);
       const version=document.createElement('p');version.className='muted';
-      version.textContent=item.dataset_id?`${item.dataset_name} · 版本 ${item.dataset_id.slice(0,8)} · ${item.sample_count} 条采样`:'当前缓存版本';identity.append(version);
+      version.textContent=item.dataset_id?`${item.dataset_name} · 版本 ${item.dataset_id.slice(0,8)} · ${item.sample_count} 条采样`:'当前缓存版本';identityCopy.append(version);
       const evidence=document.createElement('div'),state=document.createElement('span'),date=document.createElement('p');
       state.className='finder-fault-label';state.dataset.attention=String(DeviceFinder.needsAttention(item));
       state.textContent=DeviceFinder.faultLabel(item.fault_summary);
@@ -90,7 +93,8 @@ if(typeof document!=='undefined') {
   }
   window.updateDeviceFinder=()=>{
     const item=selected(),summary=item?.fault_summary;
-    $('device-fault-summary').textContent=item?DeviceFinder.faultLabel(summary):'';
+    const compact=document.documentElement?.classList?.contains?.('competition-focus')===true;
+    $('device-fault-summary').textContent=item&&(!compact||summary?.valid_records)?DeviceFinder.faultLabel(summary):'';
     $('finder-open').disabled=$('machine').disabled;
     $('device-faults-jump').hidden=!summary?.valid_records;
     $('device-faults-jump').disabled=typeof overview==='undefined'||!overview||overview.machine_id!==item?.machine_id||
@@ -102,7 +106,7 @@ if(typeof document!=='undefined') {
     finderPage=0;renderFinder();$('device-finder').returnValue='';$('device-finder').showModal();$('finder-search').focus();
   };
   $('finder-close').onclick=()=>$('device-finder').close();
-  $('device-finder').addEventListener('close',()=>($('device-finder').returnValue==='selected'?$('machine'):$('finder-open')).focus());
+  $('device-finder').addEventListener('close',()=>($('device-finder').returnValue==='selected'&&!document.documentElement?.classList?.contains?.('competition-focus')?$('machine'):$('finder-open')).focus());
   const filterChanged=()=>{finderPage=0;renderFinder();};
   $('finder-search').oninput=filterChanged;
   for(const id of ['finder-source','finder-sort','finder-attention'])$(id).onchange=filterChanged;
@@ -114,6 +118,8 @@ if(typeof document!=='undefined') {
     finderPage+=delta;renderFinder();$('finder-count').focus();
   };
   $('device-faults-jump').onclick=()=>{
+    if(typeof window.focusXGSSResearch==='function'){setView('work');window.focusXGSSResearch();return;}
+    const evidence=document.querySelector('.device-evidence-disclosure');if(evidence)evidence.open=true;
     setView('work');$('overview-fault-title').scrollIntoView({block:'start'});$('overview-fault-title').focus();
   };
   updateDeviceFinder();

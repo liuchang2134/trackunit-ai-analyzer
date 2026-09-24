@@ -3,9 +3,9 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
 const asset='00000000-0000-0000-0000-000000000001';
 const cloud={provider:'gemini',model:'gemini-flash-latest',backend_build:'20260915.9-platform-follow'};
-function setup(url='https://example.com',savedPort,auto=false){
+function setup(url='https://example.com',savedPort,auto=false,savedDataMode=null){
  const outgoing=[],tabHandlers={},confirmations=[],scriptCalls=[],scriptResults=[];
- const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','catalog-options','open-demo','follow','capture-catalog','catalog-open','catalog-status','ai-guidance','ai-guidance-status','ai-guidance-terms','ai-guidance-components'];
+ const ids=['assistant','connection','help','context','retry','identify','runtime','standalone','service-form','service-port','workspace','connection-cover','cover-title','cover-detail','connection-detail','start-command','cover-retry','connection-options','catalog-options','open-demo','mode-demo','mode-live','follow','capture-catalog','catalog-open','catalog-status','ai-guidance','ai-guidance-status','ai-guidance-terms','ai-guidance-components'];
  // Minimal element stand-in with the few DOM methods the panel actually calls.
  const makeElement = tag => ({
   tag, children: [], textContent: '', hidden: false, disabled: false, dataset: {}, attributes: {},
@@ -33,6 +33,7 @@ function setup(url='https://example.com',savedPort,auto=false){
  const elements=Object.fromEntries(ids.map(id=>[id,Object.assign(makeElement(id),
   {contentWindow:{postMessage:(data,origin)=>outgoing.push({data,origin})}})]));
  const storage=new Map(savedPort?[['jilian-service-port',savedPort]]:[]);
+ if(savedDataMode)storage.set('jilian-data-mode',savedDataMode);
  const timers=new Map(),handlers={};let counter=0;
  const box={URL,URLSearchParams,Date,
   document:{getElementById:id=>elements[id],createElement:makeElement,
@@ -40,7 +41,7 @@ function setup(url='https://example.com',savedPort,auto=false){
    querySelectorAll:()=>[],
    documentElement:{dataset:{},style:{setProperty(){},removeProperty(){}}}},
   window:{addEventListener:(name,handler)=>handlers[name]=handler,confirm:message=>{confirmations.push(message);return true;}},
-  localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
+  localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
   chrome:{tabs:{query:async()=>[{url,id:10,windowId:1}],onActivated:{addListener:fn=>tabHandlers.activated=fn},onUpdated:{addListener:fn=>tabHandlers.updated=fn}},
    scripting:{executeScript:async request=>{scriptCalls.push(request);return scriptResults.length?scriptResults.shift():[];}}},
   fetch:()=>{throw new Error('Connection probing must not use fetch');},
@@ -70,6 +71,45 @@ test('initial frame stays covered until runtime and readiness both arrive',()=>{
  assert.equal(p.elements['connection-cover'].hidden,true);assert.equal(p.elements.assistant.attributes['aria-hidden'],'false');
  assert.match(p.elements.runtime.textContent,/实际分析结果/);assert.doesNotMatch(p.elements.connection.textContent,/Gemini.*成功/);
  const link=new URL(p.elements.standalone.href);assert.equal(link.port,'8890');assert.equal(link.searchParams.has('panel'),false);
+});
+
+test('competition panel has no demo controls and a stored demo preference is retired',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../extension/panel.html'),'utf8');
+ assert.doesNotMatch(html,/id="mode-demo"|id="mode-live"|id="open-demo"/);
+ const p=setup(assetURL(asset),undefined,false,'demo');
+ assert.equal(new URL(p.elements.assistant.src).searchParams.get('mode'),'live');
+ assert.equal(p.storage.has('jilian-data-mode'),false);
+ assert.equal(p.elements.identify.hidden,false);
+});
+test('legacy data switch isolates demo from Trackunit and re-reads the current asset on return',async()=>{
+ const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);
+ assert.equal(new URL(p.elements.assistant.src).searchParams.get('mode'),'live');
+ p.elements['mode-demo'].onclick();let url=new URL(p.elements.assistant.src);
+ assert.equal(url.searchParams.get('mode'),'demo');assert.equal(url.hash,'');
+ assert.equal(p.storage.get('jilian-data-mode'),'demo');
+ assert.equal(p.elements['mode-demo'].attributes['aria-pressed'],'true');
+ ready(p);assert.match(p.elements.context.textContent,/自动跟随已暂停/);
+ assert.equal([...p.timers.values()].filter(timer=>timer.ms===150).length,0);
+ p.elements['mode-live'].onclick();url=new URL(p.elements.assistant.src);
+ assert.equal(url.searchParams.get('mode'),'live');assert.equal(p.elements['mode-live'].attributes['aria-pressed'],'true');
+ ready(p);await p.follow();
+ assert.equal(new URL(p.elements.assistant.src).hash,'#trackunit-asset='+asset);
+});
+
+test('normal automatic association keeps manual device refresh available',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ assert.equal(p.elements.identify.hidden,false);
+ reply(p,'jilian:context',{asset_id:asset,state:'unavailable'});
+ assert.equal(p.elements.identify.hidden,false);
+ matched(p);assert.equal(p.elements.identify.hidden,false);
+});
+
+test('catalog maintenance opens inside settings without closing its parent',()=>{
+ const p=setup();p.elements['connection-options'].open=true;
+ p.elements['connection-options'].contains=element=>element===p.elements['catalog-options'];
+ p.elements['catalog-options'].open=true;p.elements['catalog-options'].dispatch('toggle');
+ assert.equal(p.elements['connection-options'].open,true);
+ assert.equal(p.elements['catalog-options']._panel.hidden,false);
 });
 
 test('DeepSeek runtime is displayed without claiming a successful AI request',()=>{
@@ -172,12 +212,13 @@ test('demo asks before replacing connected work and cancel preserves frame and c
  const before=p.elements.assistant.src,context=p.elements.context.textContent;
  p.box.window.confirm=message=>{p.confirmations.push(message);return false;};p.elements['open-demo'].onclick();
  assert.equal(p.elements.assistant.src,before);assert.equal(p.elements.context.textContent,context);assert.equal(state(p),'connected');
- assert.match(p.confirmations[0],/保存本机草稿/);
+ assert.equal(p.confirmations[0],'打开历史分析回放会重新载入工作区，未保存的输入将丢失。是否继续？');
  p.box.window.confirm=()=>true;p.elements['open-demo'].onclick();const demo=new URL(p.elements.assistant.src);
  assert.equal(demo.searchParams.get('demo'),'1');assert.ok(demo.searchParams.get('panel'));assert.equal(demo.hash,'');
  assert.notEqual(demo.searchParams.get('panel'),new URL(before).searchParams.get('panel'));assert.equal(state(p),'connecting');
  reply(p,'jilian:ready',{},new URL(before));reply(p,'jilian:runtime',cloud,new URL(before));assert.equal(state(p),'connecting');
- ready(p);assert.match(p.elements.context.textContent,/模拟案例/);assert.equal(new URL(p.elements.standalone.href).search,'?demo=1');
+ ready(p);assert.match(p.elements.context.textContent,/模拟案例/);
+ assert.equal(new URL(p.elements.standalone.href).searchParams.get('demo'),'1');
  const unchanged=p.elements.assistant.src;p.elements['open-demo'].onclick();assert.equal(p.elements.assistant.src,unchanged);
 });
 
@@ -229,6 +270,74 @@ const assetURL=id=>`https://new.manager.trackunit.com/assets/${id}/status`;
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const tab=(id=asset,tabId=10,windowId=1)=>({url:assetURL(id),id:tabId,windowId,status:'complete'});
 const matched=(p,id=asset)=>reply(p,'jilian:context',{asset_id:id,machine_id:id,state:'matched',source:'trackunit_cache',dataset_id:null,selection_id:'fleet:'+id});
+
+test('installed panel forwards visible Trackunit Events fault cards to the matched machine',async()=>{
+ const url=`https://new.manager.trackunit.com/assets/${asset}/events`;
+ const p=setup(url,undefined,true);ready(p);await p.follow();matched(p);await flush();
+ const capture={schema_version:1,source:'trackunit_visible_events_page',asset_id:asset,
+  capture_status:'visible_fault_cards',coverage:'rendered_active_fault_cards_only',
+  observed_at:'2026-09-23T06:00:00Z',faults:[{code:'SPN 2664 / FMI 3',spn:2664,fmi:3,sa:160,
+   description:'Joystick 1 Theta-Axis Position - Voltage Above Normal',severity:'Low',displayed_at:'Sep 12, 2026, 7:37 AM'}]};
+ p.scriptResults.push([],[{result:capture}]);
+ const pending=[...p.timers.entries()].find(([,timer])=>timer.ms===900);
+ assert.ok(pending,'fault card capture should be scheduled after matching the device');
+ p.timers.delete(pending[0]);pending[1].fn();await flush();
+ assert.equal(p.scriptCalls.length,2);
+ assert.deepEqual(Array.from(p.scriptCalls[0].files),['trackunit-fault-page.js']);
+ const forwarded=p.outgoing.find(item=>item.data.type==='jilian:trackunit-page-faults');
+ assert.equal(forwarded.origin,'http://127.0.0.1:8890');
+ assert.equal(forwarded.data.asset_id,asset);
+ assert.equal(forwarded.data.capture.faults[0].code,'SPN 2664 / FMI 3');
+});
+
+test('panel reports a same-device page read failure without calling it an empty fault result',async()=>{
+ const url=`https://new.manager.trackunit.com/assets/${asset}/events`;
+ const p=setup(url,undefined,true);ready(p);await p.follow();matched(p);await flush();
+ p.box.chrome.scripting.executeScript=async()=>{throw new Error('site permission denied');};
+ const pending=[...p.timers.entries()].find(([,timer])=>timer.ms===900);
+ assert.ok(pending);p.timers.delete(pending[0]);pending[1].fn();await flush();
+ assert.ok(p.outgoing.some(item=>item.data.type==='jilian:trackunit-page-faults-error'&&item.data.asset_id===asset));
+ assert.equal(p.outgoing.some(item=>item.data.type==='jilian:trackunit-page-faults'),false);
+});
+
+test('manual page-fault request reads only the matched active Events tab',async()=>{
+ const url=`https://new.manager.trackunit.com/assets/${asset}/events`;
+ const p=setup(url,undefined,true);ready(p);await p.follow();matched(p);await flush();
+ const capture={schema_version:1,source:'trackunit_visible_events_page',asset_id:asset,
+  capture_status:'visible_fault_cards',coverage:'rendered_active_fault_cards_only',
+  observed_at:'2026-09-23T06:00:00Z',faults:[{code:'SPN 2664 / FMI 3',spn:2664,fmi:3,sa:160,
+   description:'Joystick fault',severity:'Low',displayed_at:'Sep 12, 2026'}]};
+ p.scriptResults.push([],[{result:capture}]);
+ reply(p,'jilian:trackunit-page-faults-request',{asset_id:otherAsset,dataset_id:null});await flush();
+ assert.equal(p.scriptCalls.length,0,'wrong device cannot read the page');
+ reply(p,'jilian:trackunit-page-faults-request',{asset_id:asset,dataset_id:null});await flush();
+ assert.equal(p.scriptCalls.length,2);
+ assert.ok(p.outgoing.some(item=>item.data.type==='jilian:trackunit-page-faults'&&item.data.capture.faults[0].spn===2664));
+});
+
+test('manual page-fault request explains when the active tab is not this device Events page',async()=>{
+  const p=setup(assetURL(asset),undefined,true);ready(p);await p.follow();matched(p);await flush();
+  reply(p,'jilian:trackunit-page-faults-request',{asset_id:asset,dataset_id:null});await flush();
+  assert.equal(p.scriptCalls.length,0);
+  assert.ok(p.outgoing.some(item=>item.data.type==='jilian:trackunit-page-faults-error'&&item.data.reason==='wrong_page'));
+});
+
+test('manual fault read reports identity verification instead of silently timing out',async()=>{
+  const url=`https://new.manager.trackunit.com/assets/${asset}/events`;
+  const p=setup(url,undefined,true);ready(p);await p.follow();matched(p);await flush();
+  p.tabHandlers.updated(10,{status:'loading'});
+  reply(p,'jilian:trackunit-page-faults-request',{asset_id:asset,dataset_id:null});await flush();
+  assert.equal(p.scriptCalls.length,0);
+  assert.ok(p.outgoing.some(item=>item.data.type==='jilian:trackunit-page-faults-error'&&item.data.reason==='identity_pending'));
+});
+
+test('invalid fault-page capture returns an error instead of leaving manual read pending',async()=>{
+  const url=`https://new.manager.trackunit.com/assets/${asset}/events`;
+  const p=setup(url,undefined,true);ready(p);await p.follow();matched(p);await flush();
+  p.scriptResults.push([],[{result:{schema_version:1,asset_id:otherAsset,capture_status:'visible_fault_cards'}}]);
+  reply(p,'jilian:trackunit-page-faults-request',{asset_id:asset,dataset_id:null});await flush();
+  assert.ok(p.outgoing.some(item=>item.data.type==='jilian:trackunit-page-faults-error'&&item.data.reason==='read_failed'));
+});
 
 test('startup automatically reads UUID during connection without changing its nonce or making API calls',async()=>{
  const p=setup(assetURL(asset)+'?session=do-not-forward',undefined,true),before=new URL(p.elements.assistant.src);
@@ -409,9 +518,11 @@ test('catalog read does not expose raw browser errors and rejects mid-read devic
  let resolve;p.box.chrome.scripting.executeScript=async options=>options.files?[]:new Promise(done=>resolve=done);
  const pending=p.elements['capture-catalog'].onclick();await flush();
  p.box.chrome.tabs.query=async()=>[tab(otherAsset)];await p.elements.identify.onclick();matched(p,otherAsset);
+ const currentStatus=p.elements['catalog-status'].textContent;
  const capture=require('../extension/xgss-catalog.js').parse(require('./fixtures/xgss-visible-catalog-test.json'));
  resolve([{result:capture}]);await pending;
- assert.match(p.elements['catalog-status'].textContent,/设备或数据版本已切换/);
+ assert.equal(p.elements['catalog-status'].textContent,currentStatus,'an old read must not overwrite the new device status');
+ assert.match(currentStatus,/设备已切换/);
  assert.equal(p.outgoing.some(item=>item.data.type==='jilian:xgss-catalog-capture'),false);
 });
 
@@ -552,14 +663,14 @@ test('the panel asks the workbench for AI guidance and shows the terms it return
 test('without an AI report the panel says so instead of offering empty marks',async()=>{
  const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
  await guidanceRound(p,{terms:[],components:[],fault_code:null,has_report:false});
- assert.match(p.elements['ai-guidance-status'].textContent,/尚无 AI 建议/);
+ assert.match(p.elements['ai-guidance-status'].textContent,/尚无 AI 检索词/);
  assert.equal(p.elements['ai-guidance-terms'].hidden,true);
  assert.equal(p.elements['ai-guidance-components'].hidden,true);
 });
 
 test('marking on the XGSS page passes exactly the AI terms and reports what was marked',async()=>{
- const p=setup('https://xgss.xcmg.com/catalog',undefined);ready(p);
- await p.elements.identify.onclick();
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog',id:11,windowId:1,status:'complete'}];
  await guidanceRound(p,guidance);
  p.scriptCalls.length=0;
  // First injection loads the helper file (no result), second runs the mark call.
@@ -575,11 +686,188 @@ test('marking on the XGSS page passes exactly the AI terms and reports what was 
 
 test('marking tells the engineer where to open the catalog when the tab is not XGSS',async()=>{
  const p=setup('https://manager.trackunit.com/assets/'+asset,undefined);ready(p);
- await p.elements.identify.onclick();
+ await p.elements.identify.onclick();matched(p);
  await guidanceRound(p,guidance);
  p.scriptCalls.length=0;
  await p.elements['catalog-open'].onclick();
  assert.equal(p.scriptCalls.length,0,'nothing may be injected into a non-XGSS page');
  assert.match(p.elements['catalog-status'].textContent,/XGSS 图册/);
- assert.match(p.elements['catalog-status'].textContent,/标出 AI 目标/);
+ assert.match(p.elements['catalog-status'].textContent,/标出 AI 检索条目/);
+});
+
+test('late AI guidance cannot survive device, dataset, connection or scope round trips',async()=>{
+ for(const change of ['device','dataset','connection','roundtrip']){
+  const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+  const oldURL=new URL(p.elements.assistant.src),old=openSheet(p),oldRequest=p.outgoing.at(-1).data;
+  if(change==='dataset'){
+   reply(p,'jilian:context',{asset_id:asset,machine_id:asset,state:'matched',source:'imported_user_supplied',
+    dataset_id:'a'.repeat(64),selection_id:'dataset:'+'a'.repeat(64)});
+  }else if(change==='connection'){
+   p.elements.retry.onclick();ready(p);matched(p);
+  }else{
+   p.box.chrome.tabs.query=async()=>[tab(otherAsset)];await p.elements.identify.onclick();matched(p,otherAsset);
+   if(change==='roundtrip'){
+    p.box.chrome.tabs.query=async()=>[tab(asset)];await p.elements.identify.onclick();matched(p);
+   }
+  }
+  const current=openSheet(p),currentRequest=p.outgoing.at(-1).data;
+  reply(p,'jilian:ai-guidance',{request_id:currentRequest.request_id,terms:['current-device-part'],components:[],has_report:true});await current;
+  reply(p,'jilian:ai-guidance',{request_id:oldRequest.request_id,terms:['old-device-part'],components:[],has_report:true},oldURL);await old;
+  assert.deepEqual(p.elements['ai-guidance-terms'].children.map(node=>node.textContent),['current-device-part'],change);
+  p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog',id:11,windowId:1,status:'complete'}];
+  p.scriptResults.push([], [{result:{marked_rows:1,terms:['current-device-part'],unmatched:[]}}]);
+  await p.elements['catalog-open'].onclick();
+  assert.deepEqual(p.scriptCalls.find(call=>call.func).args[0],['current-device-part'],change);
+ }
+});
+
+test('AI guidance waits for a confirmed device instead of reading the previous iframe selection',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();
+ p.outgoing.length=0;await openSheet(p);
+ assert.equal(p.outgoing.length,0);
+ assert.equal(p.elements['ai-guidance-terms'].hidden,true);
+ assert.match(p.elements['ai-guidance-status'].textContent,/确认实测数据/);
+ await p.elements['catalog-open'].onclick();assert.equal(p.scriptCalls.length,0);
+ matched(p);await guidanceRound(p,guidance);
+ assert.deepEqual(p.elements['ai-guidance-terms'].children.map(node=>node.textContent),guidance.terms);
+});
+
+test('only the newest concurrent AI guidance response may update the same device',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ const old=openSheet(p),oldRequest=p.outgoing.at(-1).data;
+ const current=openSheet(p),currentRequest=p.outgoing.at(-1).data;
+ reply(p,'jilian:ai-guidance',{request_id:currentRequest.request_id,terms:['latest-part'],components:[],has_report:true});await current;
+ reply(p,'jilian:ai-guidance',{request_id:oldRequest.request_id,terms:['outdated-part'],components:[],has_report:true});await old;
+ assert.deepEqual(p.elements['ai-guidance-terms'].children.map(node=>node.textContent),['latest-part']);
+});
+
+test('cached AI guidance is retired when the device, dataset or connection changes',async()=>{
+ for(const change of ['device','dataset','connection']){
+  const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+  await guidanceRound(p,guidance);
+  if(change==='device'){
+   p.box.chrome.tabs.query=async()=>[tab(otherAsset)];await p.elements.identify.onclick();matched(p,otherAsset);
+  }else if(change==='dataset'){
+   reply(p,'jilian:context',{asset_id:asset,machine_id:asset,state:'matched',source:'imported_user_supplied',
+    dataset_id:'a'.repeat(64),selection_id:'dataset:'+'a'.repeat(64)});
+  }else{
+   p.elements.retry.onclick();ready(p);matched(p);
+  }
+  assert.equal(p.elements['ai-guidance-terms'].hidden,true,change);
+  assert.equal(p.elements['ai-guidance-components'].hidden,true,change);
+  assert.deepEqual(p.elements['ai-guidance-terms'].children,[],change);
+ }
+});
+
+test('an old catalog read cannot clear a replacement read or its persistence acknowledgement',async()=>{
+ for(const replacementPhase of ['reading','saving'])for(const oldOutcome of ['capture','error']){
+  const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+  const xgss=async()=>[{url:'https://xgss.xcmg.com/catalog',id:11,windowId:1,status:'complete'}];
+  p.box.chrome.tabs.query=xgss;
+  let resolveOld,rejectOld;
+  p.box.chrome.scripting.executeScript=async options=>options.files?[]:new Promise((done,fail)=>{resolveOld=done;rejectOld=fail;});
+  const old=p.elements['capture-catalog'].onclick();await flush();
+  p.box.chrome.tabs.query=async()=>[tab(otherAsset)];await p.elements.identify.onclick();matched(p,otherAsset);
+  p.box.chrome.tabs.query=xgss;
+  const capture=require('../extension/xgss-catalog.js').parse(require('./fixtures/xgss-visible-catalog-test.json'));
+  let resolveCurrent;
+  p.box.chrome.scripting.executeScript=async options=>options.files?[]:
+   replacementPhase==='reading'?new Promise(done=>resolveCurrent=done):[{result:capture}];
+  const current=p.elements['capture-catalog'].onclick();await flush();
+  const status=p.elements['catalog-status'].textContent;
+  if(oldOutcome==='capture')resolveOld([{result:capture}]);else rejectOld(new Error('old browser read failed'));
+  await old;
+  assert.equal(p.elements['capture-catalog'].disabled,true,replacementPhase);
+  assert.equal(p.elements['catalog-status'].textContent,status,replacementPhase);
+  if(resolveCurrent)resolveCurrent([{result:capture}]);await current;
+  const request=p.outgoing.at(-1).data;
+  assert.equal(request.type,'jilian:xgss-catalog-capture');assert.equal(request.asset_id,otherAsset);
+  reply(p,'jilian:xgss-catalog-result',{request_id:request.request_id,success:true,message:'Current device capture saved'});
+  assert.equal(p.elements['capture-catalog'].disabled,false);
+  assert.equal(p.elements['catalog-status'].textContent,'Current device capture saved');
+ }
+});
+
+test('active research opens in the standalone link without changing or reloading the embedded workbench',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ const embedded=p.elements.assistant.src,researchId='1a'.repeat(16);
+ reply(p,'jilian:research-active',{asset_id:asset,dataset_id:null,research_id:researchId});
+ const link=new URL(p.elements.standalone.href);
+ assert.equal(link.searchParams.get('research'),researchId);
+ assert.equal(link.searchParams.has('dataset'),false,'fleet-cache links do not invent a dataset');
+ assert.equal(link.searchParams.has('panel'),false);assert.equal(link.hash,'#trackunit-asset='+asset);
+ assert.equal(p.elements.assistant.src,embedded);
+ assert.equal(new URL(p.elements.assistant.src).searchParams.has('research'),false);
+ matched(p);await guidanceRound(p,guidance);
+ assert.equal(new URL(p.elements.standalone.href).searchParams.get('research'),researchId,
+  'same-device acknowledgement and AI guidance refresh must preserve the active record');
+ reply(p,'jilian:research-active',{asset_id:asset,dataset_id:null,research_id:null});
+ assert.equal(new URL(p.elements.standalone.href).searchParams.has('research'),false);
+ assert.equal(p.elements.assistant.src,embedded);
+});
+
+test('active research messages require the current trusted frame, connection and matched device scope',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();
+ const researchId='2b'.repeat(16),message={asset_id:asset,dataset_id:null,research_id:researchId};
+ reply(p,'jilian:research-active',message);
+ assert.equal(new URL(p.elements.standalone.href).searchParams.has('research'),false,'unmatched device');
+ matched(p);reply(p,'jilian:research-active',message);
+ const original=p.elements.standalone.href,url=new URL(p.elements.assistant.src);
+ for(const fields of [
+  {asset_id:otherAsset,research_id:null},{dataset_id:'c'.repeat(64),research_id:null},
+  {dataset_id:undefined,research_id:null},{connection_id:'obsolete',research_id:null},{protocol:2,research_id:null},
+  ...['bad','a'.repeat(31),'a'.repeat(33),'A'.repeat(32),'a'.repeat(32)+'&panel=old',123,{},undefined].map(research_id=>({research_id})),
+ ]){
+  reply(p,'jilian:research-active',{...message,...fields});
+  assert.equal(p.elements.standalone.href,original);
+ }
+ const envelope={type:'jilian:research-active',protocol:1,connection_id:url.searchParams.get('panel'),...message,research_id:null};
+ p.handlers.message({origin:'https://xgss.xcmg.com',source:p.elements.assistant.contentWindow,data:envelope});
+ p.handlers.message({origin:url.origin,source:{},data:envelope});
+ assert.equal(p.elements.standalone.href,original);
+ p.tabHandlers.updated(10,{status:'loading'});
+ reply(p,'jilian:research-active',{...message,research_id:null});
+ assert.equal(p.elements.standalone.href,original,'unconfirmed navigation cannot mutate the record');
+});
+
+test('active research is cleared on device, dataset, context, connection and demo changes',async()=>{
+ for(const change of ['device','dataset','context','connection','failed-connection','demo']){
+  const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+  const oldURL=new URL(p.elements.assistant.src),researchId='3c'.repeat(16);
+  reply(p,'jilian:research-active',{asset_id:asset,dataset_id:null,research_id:researchId});
+  if(change==='device'){
+   p.box.chrome.tabs.query=async()=>[tab(otherAsset)];await p.elements.identify.onclick();matched(p,otherAsset);
+  }else if(change==='dataset'){
+   reply(p,'jilian:context',{asset_id:asset,machine_id:asset,state:'matched',source:'imported_user_supplied',
+    dataset_id:'d'.repeat(64),selection_id:'dataset:'+'d'.repeat(64)});
+  }else if(change==='context'){
+   reply(p,'jilian:context',{asset_id:asset,state:'missing'});
+  }else if(change==='demo'){
+   reply(p,'jilian:view',{view:'demo',reason:'user',asset_id:asset});
+  }else{
+   p.elements.retry.onclick();assert.equal(p.elements.standalone.href,undefined);
+   reply(p,'jilian:research-active',{asset_id:asset,dataset_id:null,research_id:researchId});
+   if(change==='failed-connection'){p.tick();p.tick();assert.equal(state(p),'failed');}
+   else {ready(p);matched(p);}
+  }
+  reply(p,'jilian:research-active',{asset_id:asset,dataset_id:null,research_id:researchId},oldURL);
+  assert.equal(p.elements.standalone.href ? new URL(p.elements.standalone.href).searchParams.has('research') : false,false,change);
+  assert.equal(new URL(p.elements.assistant.src||'http://127.0.0.1:8890').searchParams.has('research'),false,change);
+ }
+});
+
+test('active research matches the selected imported dataset exactly',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ const datasetId='a'.repeat(64),researchId='4d'.repeat(16);
+ reply(p,'jilian:context',{asset_id:asset,machine_id:asset,state:'matched',source:'imported_user_supplied',
+  dataset_id:datasetId,selection_id:'dataset:'+datasetId});
+ reply(p,'jilian:research-active',{asset_id:asset,dataset_id:datasetId,research_id:researchId});
+ assert.equal(new URL(p.elements.standalone.href).searchParams.get('research'),researchId);
+ assert.equal(new URL(p.elements.standalone.href).searchParams.get('dataset'),datasetId);
+ assert.equal(new URL(p.elements.assistant.src).searchParams.has('dataset'),false);
+ reply(p,'jilian:research-active',{asset_id:asset,dataset_id:null,research_id:null});
+ assert.equal(new URL(p.elements.standalone.href).searchParams.get('research'),researchId);
+ reply(p,'jilian:research-active',{asset_id:asset,dataset_id:datasetId,research_id:null});
+ assert.equal(new URL(p.elements.standalone.href).searchParams.has('research'),false);
+ assert.equal(new URL(p.elements.standalone.href).searchParams.has('dataset'),false);
 });

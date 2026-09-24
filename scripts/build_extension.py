@@ -6,7 +6,7 @@ import re
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
-FILES=('manifest.json','background.js','context.js','xgss-catalog.js','panel.js','panel.html','panel.css','README.md',
+FILES=('manifest.json','background.js','context.js','trackunit-fault-page.js','trackunit-sensor-page.js','sensor-series-bridge.js','xgss-catalog.js','xgss-research.js','xgss-research-runner.js','research-bridge.js','panel.js','panel.html','panel.css','README.md',
        'assets/xcmg-logo.png','assets/icon16.png','assets/icon32.png','assets/icon48.png','assets/icon128.png',
        'assets/SOURCES.md')
 

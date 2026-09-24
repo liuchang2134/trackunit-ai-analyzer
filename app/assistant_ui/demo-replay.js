@@ -83,7 +83,7 @@
       item.dataset.origin = stage.origin;
       const head = document.createElement('div');
       head.className = 'replay-stage-head';
-      const tag = node('span', {program: '程序', ai: 'AI', mixed: '账目'}[stage.origin] || stage.origin, 'replay-origin');
+      const tag = node('span', {program: '数据', ai: 'AI', mixed: '记录'}[stage.origin] || stage.origin, 'replay-origin');
       head.append(tag, node('strong', stage.title));
       item.append(head);
       const list = document.createElement('ul');

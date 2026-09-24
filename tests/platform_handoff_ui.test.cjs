@@ -28,14 +28,14 @@ class Element {
   focus(){}
   scrollIntoView(){}
 }
-function harness({machines=[a1],hash=assetA,selection=a1.selection_id}={}){
+function harness({machines=[a1],hash=assetA,selection=a1.selection_id,search=''}={}){
   const elements=new Map(),selectionEvents=[],notifications=[],requests=[];
   const get=id=>{if(!elements.has(id))elements.set(id,new Element(id==='machine'?'select':'div'));return elements.get(id);};
   get('machine').replaceChildren(...machines.map(m=>Object.assign(new Element('option'),{value:m.selection_id})));
   get('machine').value=selection;
   get('task').value='comprehensive';get('language').value='zh';
-  const context={machines,defaultSource:'trackunit_cache',location:{hash:'#trackunit-asset='+hash},
-    document:{createElement:tag=>new Element(tag),querySelector:()=>new Element()},$:get,
+  const context={machines,defaultSource:'trackunit_cache',location:{hash:'#trackunit-asset='+hash,search},window:{},URLSearchParams,
+    document:{createElement:tag=>new Element(tag),querySelector:()=>new Element(),getElementById:get},$:get,
     appliedPlatformHash:null,activeView:'work',platformIndexState:'ready',deviceIndexRequest:0,deviceIndexWarnings:[],pendingPlatformContext:false,report:{summary:'old report'},priorRecordId:null,
     investigationDrafts:new InvestigationDrafts(),PlatformContext,
     api:route=>route==='/assistant/catalog'?Promise.resolve({total:3,demo:1}):new Promise((resolve,reject)=>requests.push({resolve,reject})),
@@ -164,3 +164,61 @@ test('same-asset passive refresh preserves an intentional demo but new platform 
   h.context.location.hash='#trackunit-asset='+assetB;h.context.applyPlatformContext();
   assert.equal(h.context.activeView,'work');assert.equal(h.get('machine').value,b1.selection_id);
 });
+
+test('research link initially selects its original older dataset instead of the latest telemetry version',async()=>{
+  const older={...a1,latest_telemetry_at:'2026-01-01T10:00:00Z'},newer={...a2,latest_telemetry_at:'2026-09-21T10:00:00Z'};
+  const h=harness({machines:[],selection:'',search:'?research='+'e'.repeat(32)+'&dataset='+older.dataset_id});
+  const loading=h.context.refresh();complete(h.requests[0],[newer,older,b1]);await loading;
+  assert.equal(h.get('machine').value,older.selection_id);
+  assert.deepEqual(h.selectionEvents,[older.selection_id]);
+  assert.match(h.fact('版本选择'),/当前排查使用的数据版本/);
+  assert.equal(h.notifications.at(-1).dataset_id,older.dataset_id);
+});
+
+test('research link dataset selection is consumed once and never overrides later manual selection or device changes',()=>{
+  const older={...a1,latest_telemetry_at:'2026-01-01T10:00:00Z'},newer={...a2,latest_telemetry_at:'2026-09-21T10:00:00Z'};
+  const h=harness({machines:[older,newer,b1],selection:newer.selection_id,search:'?research='+'e'.repeat(32)+'&dataset='+older.dataset_id});
+  h.context.applyPlatformContext();assert.equal(h.get('machine').value,older.selection_id);
+  h.get('machine').value=newer.selection_id;h.context.selectMachine();h.get('question').value='new version question';
+  h.context.applyPlatformContext();assert.equal(h.get('machine').value,newer.selection_id);
+  assert.equal(h.get('question').value,'new version question');
+  h.context.location.hash='#trackunit-asset='+assetB;h.context.applyPlatformContext();
+  assert.equal(h.get('machine').value,b1.selection_id);
+  h.context.location.hash='#trackunit-asset='+assetA;h.context.applyPlatformContext();
+  assert.equal(h.get('machine').value,newer.selection_id,'returning to the asset uses the current default, not the stale URL dataset');
+});
+
+test('research link dataset override requires both valid IDs and cannot select a different asset',()=>{
+  for(const search of ['?dataset='+a1.dataset_id,'?research=invalid&dataset='+a1.dataset_id,'?research='+'e'.repeat(32)+'&dataset=invalid']){
+    const h=harness({machines:[a1,a2],selection:a2.selection_id,search});h.context.applyPlatformContext();
+    assert.equal(h.get('machine').value,a2.selection_id);
+  }
+  const h=harness({machines:[a1,b1],search:'?research='+'e'.repeat(32)+'&dataset='+b1.dataset_id});
+  h.context.applyPlatformContext();assert.equal(h.get('machine').value,'');
+  assert.notEqual(h.notifications.at(-1).state,'matched');
+});
+
+
+for(const [label,target] of [['asset',b1],['dataset',a2]]){
+  test('risk selection publishes the new '+label+' before the sensor readiness probe',()=>{
+    const h=harness({machines:[a1,a2,b1]});const c=h.context,queue=[];
+    c.window.parent={postMessage:data=>queue.push(data)};
+    c.location.ancestorOrigins=['chrome-extension://'+'a'.repeat(32)];c.location.search='?panel=connection';
+    const notify=source.slice(source.indexOf('function notifyPlatformContext(){'),source.indexOf('function getPlatformEquipmentHint('));
+    vm.runInNewContext(notify,c);
+    c.window.renderRiskDemo=()=>{
+      const current=c.selected();
+      c.window.parent.postMessage({type:'jilian:sensor-series-probe',asset_id:current.machine_id,dataset_id:current.dataset_id});
+    };
+    c.activeView='risk';c.location.hash='#trackunit-asset='+target.machine_id;
+    h.get('machine').value=target.selection_id;c.selectMachine();
+    let panel={machine_id:a1.machine_id,dataset_id:a1.dataset_id},ready=false;
+    for(const message of queue){
+      if(message.type==='jilian:context'&&message.state==='matched')panel={machine_id:message.machine_id,dataset_id:message.dataset_id};
+      if(message.type==='jilian:sensor-series-probe')ready=panel.machine_id===message.asset_id&&panel.dataset_id===message.dataset_id;
+    }
+    assert.equal(ready,true,'the bridge must acknowledge the newly selected scope');
+    assert.deepEqual(queue.map(message=>message.type),['jilian:context','jilian:sensor-series-probe']);
+    assert.equal(panel.dataset_id,target.dataset_id);assert.equal(panel.machine_id,target.machine_id);
+  });
+}

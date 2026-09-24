@@ -24,6 +24,25 @@ class CoolingReference(BaseModel):
     model_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
 
 
+class SensorObservation(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    key: Literal['coolant_c', 'engine_rpm', 'oil_pressure_kpa', 'engine_load_percent',
+                 'battery_v', 'fuel_rate_lph', 'engine_running', 'red_stop_lamp', 'amber_warning_lamp']
+    value: float | bool
+    recorded_at: str
+
+    @model_validator(mode='after')
+    def valid_value(self):
+        lamp = self.key in {'engine_running', 'red_stop_lamp', 'amber_warning_lamp'}
+        if lamp and type(self.value) is not bool:
+            raise ValueError('Lamp observations must be boolean')
+        if not lamp and (not number(self.value) or self.value < 0):
+            raise ValueError('Sensor values must be finite and nonnegative')
+        if timestamp(self.recorded_at) is None:
+            raise ValueError('Sensor observations require a timestamp')
+        return self
+
+
 class LocalDataset(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=120)
@@ -31,6 +50,7 @@ class LocalDataset(BaseModel):
     provenance: Literal["synthetic", "user_supplied"]
     machine: Machine
     telemetry: list[TelemetrySnapshot] = Field(min_length=1, max_length=10000)
+    sensors: list[SensorObservation] = Field(default_factory=list, max_length=30)
     faults: list[FaultCode] = Field(default_factory=list, max_length=1000)
     replay_at: datetime | None = None
     cooling_reference: CoolingReference | None = None
@@ -52,6 +72,9 @@ class LocalDataset(BaseModel):
                 raise ValueError("Records after replay_at are not permitted")
             if row.raw_payload is not None:
                 raise ValueError("Import normalized records only; raw_payload is not supported")
+        for row in self.sensors:
+            if self.replay_at is not None and timestamp(row.recorded_at) > self.replay_at:
+                raise ValueError('Sensor observations after replay_at are not permitted')
         for row in self.telemetry:
             for value in (row.operating_hours, row.idle_hours):
                 if value is not None and (not number(value) or value < 0):

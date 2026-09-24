@@ -50,22 +50,29 @@ const InvestigationRunner = (() => {
 
     let controller = null;
     let activeKey = null;
-    let stopped = false;
-
-    function release() {
+    function release(mine) {
+      if (controller !== mine) return false;
       controller = null;
       activeKey = null;
+      return true;
+    }
+
+    function complete(mine, event) {
+      if (release(mine)) onTerminal(event);
     }
 
     /** Abort the running request. Safe to call when nothing is running. */
     function stop(reason = 'user') {
       if (!controller) return Promise.resolve({stopped: false});
-      stopped = true;
       const active = controller;
-      release();
+      release(active);
       active.abort();
+      const message = reason === 'device_changed' ? '设备已切换，本次分析已停止。' : '已停止本次分析；不会再发起新的模型请求。';
       onProgress({type: 'stopped', stage: 'stopped', reason,
-        message: reason === 'device_changed' ? '设备已切换，本次分析已停止。' : '已停止本次分析；不会再发起新的模型请求。'});
+        message});
+      // The page awaits a terminal event to unlock its form. An aborted fetch
+      // alone cannot settle that promise, including before headers arrive.
+      onTerminal({type: 'cancelled', reason, message});
       return Promise.resolve({stopped: true});
     }
 
@@ -76,9 +83,9 @@ const InvestigationRunner = (() => {
     }
 
     async function start(request, key = machineKey()) {
-      await detach();
-      release();
-      stopped = false;
+      // Retire synchronously: two starts in the same tick must not both pass
+      // an awaited detach before either installs its controller.
+      detach();
       activeKey = key;
       controller = new AbortController();
       const mine = controller;
@@ -88,16 +95,17 @@ const InvestigationRunner = (() => {
         response = await doFetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(request), signal: mine.signal});
       } catch (error) {
-        release();
-        if (stopped || error.name === 'AbortError') return null;
-        onTerminal({type: 'error', message: `分析请求未能提交：${error.message}`, kind: 'network'});
+        complete(mine, {type: 'error', message: `分析请求未能提交：${error.message}`, kind: 'network'});
+        return null;
+      }
+      if (controller !== mine) {
+        await response.body?.cancel().catch(() => {});
         return null;
       }
       if (!response.ok) {
-        release();
         const detail = await response.json().catch(() => ({}));
         const message = typeof detail.detail === 'string' ? detail.detail : `分析请求失败 (${response.status})。`;
-        onTerminal({type: 'error', message, kind: detail.provider_error?.kind || 'analysis_incomplete'});
+        complete(mine, {type: 'error', message, kind: detail.provider_error?.kind || 'analysis_incomplete'});
         return null;
       }
       readBody(response, mine);
@@ -112,12 +120,11 @@ const InvestigationRunner = (() => {
           if (controller === mine) onProgress(event);
           return;
         }
-        if (event.type === 'end') return;
+        if (!['result', 'error', 'cancelled'].includes(event.type)) return;
         // result / error / cancelled all end the run. A retired run publishes nothing.
         if (controller !== mine) return;
         finished = true;
-        release();
-        onTerminal(event);
+        complete(mine, event);
       };
       const decoder = createDecoder(handle);
       try {
@@ -129,16 +136,14 @@ const InvestigationRunner = (() => {
           decoder(text.decode(value, {stream: true}));
         }
       } catch (error) {
-        if (finished || controller !== mine || stopped || error.name === 'AbortError') return;
-        release();
-        onTerminal({type: 'error', kind: 'stream_interrupted',
+        if (finished || controller !== mine) return;
+        complete(mine, {type: 'error', kind: 'stream_interrupted',
           message: '分析与服务的连接中断，未收到完整结果。请重试。'});
         return;
       }
-      if (finished || controller !== mine || stopped) return;
+      if (finished || controller !== mine) return;
       // The server closed without a terminal event: never treat that as success.
-      release();
-      onTerminal({type: 'error', kind: 'stream_interrupted',
+      complete(mine, {type: 'error', kind: 'stream_interrupted',
         message: '分析与服务的连接提前结束，未收到完整结果。请重试。'});
     }
 

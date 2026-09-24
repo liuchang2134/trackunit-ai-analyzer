@@ -10,6 +10,7 @@ function resetFaultContext(restoreFocus=false) {
   faultContextOpener=null;
 }
 function focusFaultInvestigation(code) {
+  if(typeof window.focusXGSSResearch==='function'){window.focusXGSSResearch(code);return;}
   if($('run').disabled)return;
   $('task').value='parts';updateTask();$('question-details').open=true;
   $('question').value=`请重点排查故障码 ${code}，结合该设备已有记录说明判断依据、建议检查和适配备件候选。`;
@@ -82,6 +83,6 @@ function renderFaultContext(data) {
     checks.append(list);article.append(checks);body.append(article);
   }
   if(data.search_diagnostics.truncated)body.append(faultText('p','最多显示 20 项候选，请使用更完整的机型和配置资料进一步核对。','muted'));
-  body.append(createXGSSControls(data,data.fault_code));
+  if(!document.documentElement?.classList?.contains?.('competition-focus'))body.append(createXGSSControls(data,data.fault_code));
 }
 $('fault-context-close').onclick=()=>resetFaultContext(true);

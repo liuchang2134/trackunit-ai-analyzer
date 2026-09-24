@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from app.request_data_mode import set_mode, reset_mode
 
 from app.api import routes_ai, routes_analytics, routes_health, routes_machines, routes_reports, routes_sync
 from app.database import init_database
@@ -9,7 +11,8 @@ from app.nl_query import answer_question
 from app.scheduler import start_auto_sync, stop_auto_sync
 from app.trackunit_sync import sync_fleet_snapshot
 from app.api import routes_assistant, routes_drafts, routes_cases, routes_xgss, routes_fault_reference, routes_demo, routes_xgss_context
-from app.api import routes_platform_asset
+from app.api import routes_platform_asset, routes_can_replay, routes_xgss_research, routes_research_email
+from app.api import routes_fault_events, routes_sensor_series
 
 
 app = FastAPI(
@@ -26,6 +29,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware('http')
+async def request_data_mode(request, call_next):
+    mode = request.headers.get('x-jilian-data-mode')
+    if mode not in (None, 'demo', 'live'):
+        return JSONResponse({'detail':'Unknown data mode'}, status_code=400)
+    token = set_mode(mode)
+    try:
+        return await call_next(request)
+    finally:
+        reset_mode(token)
+
 app.mount("/assistant-ui", StaticFiles(directory=Path(__file__).parent / "assistant_ui", html=True), name="assistant-ui")
 
 # Serve the side panel over the same origin as the workbench so a local check can drive
@@ -38,6 +53,10 @@ _PANEL_FILES = {
     'panel.css': 'text/css; charset=utf-8',
     'context.js': 'application/javascript; charset=utf-8',
     'xgss-catalog.js': 'application/javascript; charset=utf-8',
+    'xgss-research-runner.js': 'application/javascript; charset=utf-8',
+    'research-bridge.js': 'application/javascript; charset=utf-8',
+    'trackunit-sensor-page.js': 'application/javascript; charset=utf-8',
+    'sensor-series-bridge.js': 'application/javascript; charset=utf-8',
     'assets/xcmg-logo.png': 'image/png',
 }
 _EXTENSION_DIR = Path(__file__).resolve().parents[1] / "extension"
@@ -56,6 +75,11 @@ def panel_preview(relative_path: str):
                     headers={'Cache-Control': 'no-store'})
 
 for router in (
+    routes_sensor_series.router,
+    routes_fault_events.router,
+    routes_research_email.router,
+    routes_xgss_research.router,
+    routes_can_replay.router,
     routes_demo.router,
     routes_fault_reference.router,
     routes_xgss.router,

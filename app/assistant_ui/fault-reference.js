@@ -174,7 +174,7 @@
     const ready = binding.stageRestore(manual, currentMachine(), currentSource());
     clearCandidate(true); setBusy(locked);
     if (!ready) {
-      byId('fault-reference-count').textContent = manual ? '此故障码资料不适用于当前设备，未恢复关联。' : '当前草稿未关联故障码。';
+      byId('fault-reference-count').textContent = manual ? '此故障码资料不适用于当前设备，未恢复关联。' : '当前未关联故障码。';
       return;
     }
     byId('fault-reference-panel').open = true;
@@ -198,6 +198,7 @@
     try {
       binding.attach(currentMachine(), currentSource(), byId('fault-reference-confirm').checked);
       renderLink(); notifyDraft(); byId('fault-reference-panel').open = false;
+      if(typeof global.focusXGSSResearch==='function'){global.focusXGSSResearch(binding.payload(currentMachine(),currentSource())?.code||'');return;}
       byId('manual-fault-linked').scrollIntoView({ block: 'nearest' });
       byId('observations').closest('details').open = true; byId('observations').focus();
     } catch (error) { byId('fault-reference-count').textContent = error.message; }
@@ -217,7 +218,7 @@
     if (!byId('fault-reference-panel').open || statusLoaded) return;
     try {
       const data = await api('/assistant/fault-reference/status');
-      byId('fault-reference-status').textContent = data.available ? `本机已载入 ${data.fault_count} 个故障码 · 查询不调用 AI。` : data.message;
+      byId('fault-reference-status').textContent = data.available ? `本机已载入 ${data.fault_count} 个故障码。` : data.message;
       statusLoaded = data.available;
     } catch (_) { byId('fault-reference-status').textContent = '无法读取本机参考资料状态，请稍后重试。'; }
   });

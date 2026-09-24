@@ -1,0 +1,64 @@
+[
+  {
+    "model": "XE55U",
+    "file": "xe55u.jpg",
+    "source_url": "https://xcmg-usa.com/wp-content/uploads/2022/05/XE55U-1-768x534.jpg",
+    "product_page": "https://xcmg-usa.com/products/excavators/xe55u/",
+    "retrieved_at": "2026-09-22",
+    "size_bytes": 17873,
+    "dimensions": [
+      768,
+      534
+    ],
+    "mode": "RGB",
+    "sha256": "dfd859d76bafaf5dafe27e5ed77498292d0ea86a8f805d771222ac29d3596021",
+    "display_file": "xe55u-cutout.png",
+    "display_treatment": "AI background removal from the official model photo; original file retained for attribution and comparison."
+  },
+  {
+    "model": "XC948U",
+    "file": "xc948u.jpg",
+    "source_url": "https://xcmg-usa.com/wp-content/uploads/2022/05/XC948U.jpg",
+    "product_page": "https://xcmg-usa.com/products/wheel-loaders/xc948u/",
+    "retrieved_at": "2026-09-22",
+    "size_bytes": 30518,
+    "dimensions": [
+      700,
+      487
+    ],
+    "mode": "RGB",
+    "sha256": "0671952d5281400919b7b0db07538b11cc7ac74a6e54c17f97f604aadbf30279",
+    "display_file": "xc948u-cutout.png",
+    "display_treatment": "AI background removal from the official model photo; original file retained for attribution and comparison."
+  },
+  {
+    "model": "XE80U",
+    "file": "xe80u.jpg",
+    "source_url": "https://xcmg-usa.com/wp-content/uploads/2022/05/XE80U-1-768x534.jpg",
+    "product_page": "https://xcmg-usa.com/products/excavators/xe80u/",
+    "retrieved_at": "2026-09-22",
+    "size_bytes": 19290,
+    "dimensions": [
+      768,
+      534
+    ],
+    "mode": "RGB",
+    "sha256": "f912e25501db67dc2e258d96d30c2af8d18fea6c44bca639735b4a44efe4c550",
+    "display_file": "xe80u-cutout.png",
+    "display_treatment": "AI background removal from the official model photo; original file retained for attribution and comparison."
+  },
+  {
+    "model": "XE135U",
+    "file": "xe135u.png",
+    "source_url": "https://xcmg-usa.com/wp-content/uploads/2026/07/XE135U%E6%8A%A0%E5%9B%BE-771x1024.png",
+    "product_page": "https://xcmg-usa.com/products/excavators/xe135u-2/",
+    "retrieved_at": "2026-09-22",
+    "size_bytes": 218801,
+    "dimensions": [
+      771,
+      1024
+    ],
+    "mode": "P",
+    "sha256": "d18656aea34ad12edb33c821e17991e904703ec9de7b55ba832bedd54aeb26ef"
+  }
+]

@@ -1,4 +1,14 @@
-let overview = null, overviewTicket = 0, deviceChart = null, chartRows = [];
+let overview = null, overviewTicket = 0, deviceChart = null, chartRows = [], visibleTrackunitEvents = null;
+window.syncVisibleTrackunitEvents = capture => {
+  const machine=selected();
+  visibleTrackunitEvents=capture?.asset_id===machine?.machine_id?capture:null;
+  if(overview?.machine_id===machine?.machine_id){
+    const metric=$('overview-metrics')?.children?.[2];
+    if(metric){metric.querySelector('dt').textContent=visibleTrackunitEvents?'页面可见故障':'已载入故障';
+      metric.querySelector('dd').textContent=(visibleTrackunitEvents?.faults?.length??overview.faults.valid_loaded_records)+' 条';}
+    renderOverviewFaults();
+  }
+};
 const chartFields = {
   operating_hours:{name:'累计工时',unit:'h',color:'#2463bc'},
   idle_hours:{name:'累计怠速',unit:'h',color:'#946522'},
@@ -9,6 +19,7 @@ function overviewNumber(value,unit='') {
 }
 async function refreshDeviceOverview() {
   const ticket=++overviewTicket, machine=selected(); overview=null;
+  if(visibleTrackunitEvents?.asset_id!==machine?.machine_id)visibleTrackunitEvents=null;
   if(typeof updateDeviceFinder==='function')updateDeviceFinder();
   $('overview-export').hidden=true;
   $('overview-export').removeAttribute('href');
@@ -24,12 +35,15 @@ async function refreshDeviceOverview() {
     if(ticket!==overviewTicket)return;
     overview=data;
     const isDemo=['mock','imported_synthetic'].includes(data.source);
-    $('overview-status').textContent=`${isDemo?'模拟数据':machineSourceLabel(machine)} · ${data.valid_timestamp_samples} 条采样记录`;
+    const counts=data.trend.valid_counter_sample_counts||{};
+    const sparseCounts=Number.isInteger(counts.operating)&&Number.isInteger(counts.idle)&&
+      (counts.operating<2||counts.idle<2)?` · 累计工时 ${counts.operating} 条，累计怠速 ${counts.idle} 条`:'';
+    $('overview-status').textContent=`${isDemo?'模拟数据':machineSourceLabel(machine)} · ${data.valid_timestamp_samples} 条采样记录${sparseCounts}`;
     $('overview-metrics').replaceChildren();
     for(const [label,value] of [
       ['区间工时',overviewNumber(data.trend.operating_hours_delta,' h')],
       ['怠速占比',data.trend.idle_share==null?'数据不足':overviewNumber(data.trend.idle_share*100,'%')],
-      ['故障记录',String(data.faults.valid_loaded_records)+' 条']
+      [visibleTrackunitEvents?'页面可见故障':'已载入故障',String(visibleTrackunitEvents?.faults?.length??data.faults.valid_loaded_records)+' 条']
     ]) {
       const cell=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');
       dt.textContent=label;dd.textContent=value;cell.append(dt,dd);$('overview-metrics').append(cell);
@@ -57,7 +71,26 @@ function renderOverviewFindings() {
 }
 function renderOverviewFaults() {
   const root=$('overview-faults');root.replaceChildren();
-  if(!overview.faults.events.length){root.textContent='暂无已载入的故障记录，设备健康状态待确认。';return;}
+  if(visibleTrackunitEvents){
+    $('overview-fault-title').textContent='Trackunit 页面事件';
+    const info=document.createElement('p');info.className='muted';
+    info.textContent=`当前设备 Events 页快照：${visibleTrackunitEvents.faults.length} 条故障、${visibleTrackunitEvents.services?.length||0} 条保养提醒。页面可见记录尚未经官方故障接口核验。`;
+    root.append(info);
+    for(const [index,fault] of visibleTrackunitEvents.faults.entries()){
+      const item=document.createElement('div');item.className='visible-event-row';
+      const label=document.createElement('strong');label.textContent=`${fault.code||'未显示故障码'} · ${fault.displayed_at||'时间待核实'}`;
+      const note=document.createElement('p');note.textContent=fault.description;
+      const action=document.createElement('button');action.type='button';action.className='quiet';action.textContent='AI 分析并查 XGSS';
+      action.onclick=()=>window.selectVisibleTrackunitFault?.(index);item.append(label,note,action);root.append(item);
+    }
+    for(const service of visibleTrackunitEvents.services||[]){
+      const item=document.createElement('p');item.className='visible-service-row';
+      item.textContent=`${service.kind==='overdue'?'逾期保养':'即将保养'} · ${service.plan||'保养计划'} · ${service.displayed_at||'时间待核实'}（保养提醒，不是故障码）`;root.append(item);
+    }
+    return;
+  }
+  $('overview-fault-title').textContent='故障记录';
+  if(!overview.faults.events.length){root.textContent='当前数据版本未载入故障记录。Trackunit 页面事件和官方故障接口是独立来源；请在设备 Events 页读取可见事件。';return;}
   const table=document.createElement('table'),head=table.createTHead().insertRow();
   for(const label of ['时间 / 故障码','记录内容','下一步']){const th=document.createElement('th');th.scope='col';th.textContent=label;head.append(th);}
   const body=table.createTBody(),statuses={open:'未解决',resolved:'已解决（历史记录）',acknowledged:'已确认记录'};
@@ -86,10 +119,18 @@ function renderDeviceChart() {
   $('overview-export').href='/assistant/device-overview.csv?'+exportParams;
   $('overview-export').hidden=!chartRows.length;
   $('overview-export').textContent='导出当前数据';
-  $('chart-note').textContent=`${chartRows.length} 条采样${overview.sampled_for_display?' · 抽样显示':''} · 拖动滑块查看时段`;
-  $('device-chart').hidden=!chartRows.some(row=>row[field]!=null);
-  if($('device-chart').hidden)$('chart-note').textContent='此时段暂无该指标，切换指标或时间范围查看。';
-  if(window.echarts && !$('device-chart').hidden){
+  const measured=chartRows.filter(row=>row[field]!=null);
+  const chartReady=measured.length>=2,note=$('chart-note');
+  $('device-chart').hidden=!chartReady;
+  note.classList.toggle('chart-note-sparse',!chartReady);
+  if(!chartReady){
+    deviceChart?.clear();
+    if(measured.length){
+      const point=measured[0];
+      note.textContent=`已载入 ${chartRows.length} 条记录，但${meta.name}只有 1 条有效测量：${overviewNumber(point[field],' '+meta.unit)}（${displayDate(point.recorded_at)}）。至少需要两个不同时间点才能显示趋势；可在“数据详情”查看每条记录。`;
+    }else note.textContent=chartRows.length?`已载入 ${chartRows.length} 条记录，但都没有${meta.name}测量值；可切换指标查看。`:'所选时段没有记录，请调整图表时段。';
+  }else note.textContent=`${chartRows.length} 条采样${overview.sampled_for_display?' · 抽样显示':''} · 拖动滑块查看时段`;
+  if(window.echarts && chartReady){
     deviceChart ||= echarts.init($('device-chart'));
     const events=overview.faults.events.filter(f=>Date.parse(f.occurred_at)>=start && Date.parse(f.occurred_at)<=end);
     deviceChart.setOption({animation:false,aria:{enabled:true,label:{description:
@@ -112,7 +153,7 @@ function renderDeviceChart() {
           data:events.map(f=>({name:f.fault_code,xAxis:f.occurred_at}))}}]
     },true);
     deviceChart.resize();
-  } else if(!window.echarts){$('chart-note').textContent='图表暂不可用，可展开数据详情查看。';}
+  } else if(!window.echarts && chartReady){note.textContent='图表暂不可用，可展开数据详情查看。';}
   const table=document.createElement('table'),head=table.createTHead().insertRow();
   for(const label of ['采样时间（本机时区）',meta.name+'（'+meta.unit+'）']){const th=document.createElement('th');th.scope='col';th.textContent=label;head.append(th);}
   const body=table.createTBody();
@@ -127,6 +168,6 @@ function renderDeviceChart() {
 function resizeDeviceOverview(){deviceChart?.resize();}
 $('overview-field').onchange=renderDeviceChart;
 $('overview-window').onchange=renderDeviceChart;
-$('overview-analyze').onclick=()=>{$('task').focus({preventScroll:true});document.querySelector('.query').scrollIntoView({block:'start'});};
+$('overview-analyze').onclick=()=>{if(typeof window.focusXGSSResearch==='function'){window.focusXGSSResearch();return;}$('task').focus({preventScroll:true});document.querySelector('.query').scrollIntoView({block:'start'});};
 new ResizeObserver(resizeDeviceOverview).observe($('device-chart'));
 if(selected())refreshDeviceOverview();

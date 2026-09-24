@@ -125,12 +125,11 @@ def _stages(report: dict, request: dict, summary: dict) -> list[dict]:
         f"证据来源 {program['evidence_sources']} 处，整理成 {program['data_facts']} 条数据事实。",
     ]
     if ai['model_selected_actions']:
-        read_lines.append(f"模型自己选择追加读取：{'、'.join(ai['model_selected_actions'])}"
-                          f"（其余 {program['reads_by_task']} 项由任务规定，不计入模型的选择）。")
+        read_lines.append(f"AI 追加读取：{'、'.join(ai['model_selected_actions'])}。"
+                          f"任务预设读取 {program['reads_by_task']} 项。")
     else:
         read_lines.append('本次模型没有追加读取；全部读取由任务规定。')
-    stages.append(_stage('read', '读取设备证据', read_lines, 'program',
-                         '设备数据由程序计算，模型不直接看原始长数组。'))
+    stages.append(_stage('read', '读取设备证据', read_lines, 'program'))
 
     # 2. The model's component inference, with the manual page behind each one.
     hypothesis_lines = []
@@ -139,7 +138,7 @@ def _stages(report: dict, request: dict, summary: dict) -> list[dict]:
         checks = f"{row['check_count']} 条检查方向" if row['check_count'] else '未给检查方向'
         hypothesis_lines.append(f"{row['component']} —— {grounding}；{checks}。{row['rationale']}")
     if not hypothesis_lines:
-        hypothesis_lines = ['本次模型未给出部件假设（该任务不要求部件推断）。']
+        hypothesis_lines = ['本次未给出部件假设。']
     stages.append(_stage('diagnose', '模型推断可疑部件', hypothesis_lines, 'ai',
                          '这些是待核查方向，不是已确认故障；配置未核实时仅作机型级参考。'))
 
@@ -155,9 +154,8 @@ def _stages(report: dict, request: dict, summary: dict) -> list[dict]:
                          '需由现场人员按适用手册与整机配置核实后执行。'))
 
     # 4. The model's own wording, kept verbatim so the reader judges it directly.
-    stages.append(_stage('summary', '模型给出的结论摘要（原文）',
-                         [report.get('summary') or ''], 'ai',
-                         '原文未改写；其中若有与实际不符之处，以此说明为准。'))
+    stages.append(_stage('summary', 'AI 结论摘要（原文）',
+                         [report.get('summary') or ''], 'ai'))
 
     # 5. The accounting, so the run cannot be read as more than it is.
     accounting = [
@@ -171,8 +169,7 @@ def _stages(report: dict, request: dict, summary: dict) -> list[dict]:
                           f"{'不代表 Trackunit 上报' if fault.get('source') == 'test' else '由人工提供'}。")
     if not report.get('parts_candidates'):
         accounting.append('本次没有可展示的备件候选：该机尚无已读取的对应 VIN 图册条目。')
-    stages.append(_stage('accounting', '本次运行的账目', accounting, 'mixed',
-                         '把 AI 的贡献与程序的贡献分开计数，避免把程序读到的东西算成模型的功劳。'))
+    stages.append(_stage('accounting', '分析记录', accounting, 'mixed'))
     return stages
 
 

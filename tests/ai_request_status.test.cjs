@@ -4,15 +4,15 @@ const base={configured:true,record_state:'available',last_attempt:{finished_at:'
   outcome:'failed',failure:{kind:'daily_quota',detail:'private response'},source:'application',configuration_match:true}};
 test('daily status is historical and never promises quota recovery',()=>{
   const result=view(base);assert.match(result.title,/每日额度/);assert.match(result.detail,/不代表当前可用性/);
-  assert.match(result.detail,/不表示额度已恢复/);assert.doesNotMatch(JSON.stringify(result),/private/);
+  assert.match(result.detail,/查看可用额度/);assert.doesNotMatch(JSON.stringify(result),/private/);
 });
 test('prior verification is not attributed to current configuration',()=>{
   const result=view({...base,last_attempt:{...base.last_attempt,source:'prior_verification',configuration_match:false,older_than_24h:true}});
-  assert.match(result.title,/此前联调/);assert.match(result.detail,/当前配置尚未核验/);assert.match(result.detail,/超过 24 小时/);
+  assert.match(result.title,/此前配置的记录/);assert.match(result.detail,/当前配置尚未核验/);assert.match(result.detail,/超过 24 小时/);
 });
 test('configured key, unknown or changed record never claims live availability',()=>{
   assert.match(view({configured:true,record_state:'other_configuration'}).title,/配置已变化/);
-  assert.match(view({configured:true,record_state:'missing'}).detail,/不代表请求一定成功/);
+  assert.match(view({configured:true,record_state:'missing'}).detail,/尚未完成分析验证/);
   assert.match(view({configured:false}).title,/密钥未配置/);
   assert.match(view(null).title,/无法读取/);
 });
@@ -44,7 +44,7 @@ test('provider status separates balance, rate limits and missing credentials',()
   assert.equal(view({provider:'deepseek',configured:false}).title,'DeepSeek 密钥未配置');
   assert.equal(view({provider:'gemini',configured:false}).title,'Gemini 密钥未配置');
   const balance=view({...base,provider:'deepseek',last_attempt:{...base.last_attempt,failure:{kind:'insufficient_balance',detail:'private'}}});
-  assert.match(balance.title,/余额不足/);assert.match(balance.detail,/不会补充余额/);
+  assert.match(balance.title,/余额不足/);assert.match(balance.detail,/核查 API 账户余额/);
   assert.doesNotMatch(JSON.stringify(balance),/Gemini|每日额度|private/);
   const rate=view({...base,provider:'deepseek',last_attempt:{...base.last_attempt,failure:{kind:'rate_limit'}}});
   assert.match(rate.title,/调用频率受限/);assert.match(rate.detail,/降低请求频率/);

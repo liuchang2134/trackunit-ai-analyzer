@@ -58,6 +58,38 @@ def test_the_scenario_has_telemetry_and_a_fault_event():
     assert fault['fault_code'] == DEMO_CODE and fault['status'] == 'open'
 
 
+def test_demo_operating_and_idle_metrics_pass_counter_validation():
+    from datetime import datetime, timezone
+    from app.models import Machine, TelemetrySnapshot, FaultCode
+    from app.telemetry_evidence import assess_history
+
+    machine = Machine(**demo_machine())
+    telemetry = [TelemetrySnapshot(**row) for row in demo_telemetry()]
+    faults = [FaultCode(**row) for row in rows('fault_codes.json')]
+    trend = assess_history(machine, telemetry, faults, now=datetime.now(timezone.utc))
+    assert trend['sample_count'] == 12
+    assert trend['valid_intervals'] == 11
+    assert trend['excluded_intervals'] == 0
+    assert trend['operating_hours_delta'] == 4.95
+    assert trend['idle_share'] is not None
+    assert 0 < trend['idle_share'] < 1
+
+
+def test_demo_source_replays_recently_and_preserves_event_order(monkeypatch):
+    from datetime import datetime, timezone
+    from app import data_store
+    monkeypatch.setattr(data_store, 'get_data_source', lambda: 'demo')
+    machine = data_store.load_machines()[0]
+    samples = data_store.load_telemetry()
+    fault = data_store.load_faults()[0]
+    latest = datetime.fromisoformat(samples[-1].recorded_at.replace('Z', '+00:00'))
+    event = datetime.fromisoformat(fault.occurred_at.replace('Z', '+00:00'))
+    assert 0 <= (datetime.now(timezone.utc) - latest).total_seconds() < 2 * 3600
+    assert samples[0].recorded_at < fault.occurred_at < samples[-1].recorded_at
+    assert machine.last_seen_at > samples[-1].recorded_at
+    assert (latest - event).total_seconds() == 35 * 60
+
+
 def test_the_machine_says_it_is_synthetic():
     machine = demo_machine()
     assert machine['machine_id'].startswith('DEMO-'), 'the id must read as a demo machine'
