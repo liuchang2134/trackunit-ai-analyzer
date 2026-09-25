@@ -60,9 +60,11 @@ async function api(path, options) {
   return data;
 }
 function setView(view,{reason='initial'}={}) {
-  // Presentation only: deferred views remain available when competition-focus is removed.
-  if(document.documentElement?.classList?.contains?.('competition-focus') && !['work','risk'].includes(view))view='work';
+  // The focused homepage retains real sensor analysis as a secondary workspace.
+  if(document.documentElement?.classList?.contains?.('fault-parts-focus') && !['work','risk'].includes(view))view='work';
+  else if(document.documentElement?.classList?.contains?.('competition-focus') && !['work','risk'].includes(view))view='work';
   activeView=view;
+  const secondaryMenu=document.getElementById('secondary-nav');if(secondaryMenu)secondaryMenu.open=false;
   $('page-title').textContent={can:'CAN 工况',demo:'历史分析回放',queue:'待处理',work:'AI 设备服务',risk:'风险预警',data:'资料管理',history:'诊断记录',states:'工况识别',cooling:'冷却预警'}[view];
   updateDemoDisclosure();
   $('demo-view').hidden = view !== 'demo';
@@ -333,7 +335,7 @@ function applyPlatformContext(focusSelection=false,refreshSelection=false) {
   $('status').textContent=!valid?'设备链接无效，请重新读取当前设备。':selectedVersion?'当前设备已关联，可开始分析。':'正在关联当前设备。';
   if(!selectedVersion)$('source').textContent='等待设备数据';
   if(valid)$('demo-entry').hidden=true;
-  if(focusSelection||platformChanged)setView(activeView==='can'?'can':'work',{reason:'platform'});
+  if(focusSelection||platformChanged)setView(['can','risk'].includes(activeView)?activeView:'work',{reason:'platform'});
   if(focusSelection&&activeView!=='can'){$('machine').focus({preventScroll:true});document.querySelector('.device').scrollIntoView({block:'start'});}
   if(typeof platformLoaderChanged==='function')platformLoaderChanged();
 }
@@ -737,7 +739,7 @@ function currentAISearchGuidance(){
   // "you have to re-run the analysis first" is not an acceptable answer when the report
   // is already on screen. The opened report is kept separately so the live-run state
   // (flow track, export, feedback) is not silently switched to a historical snapshot.
-  const source=report||openedReport;
+  const source=window.currentXGSSResearchSearchSource?.()||report||openedReport;
   const hypotheses=Array.isArray(source?.component_hypotheses)?source.component_hypotheses:[];
   const terms=[],components=[];
   for(const row of hypotheses){
@@ -754,7 +756,7 @@ function currentAISearchGuidance(){
   return {terms:terms.slice(0,12),components:components.slice(0,6),
     // Both flags describe the report the terms came from, so an opened report is not
     // announced as "no AI suggestion" while its terms are being sent.
-    fault_code:source?.engineering_fault?.code||null,has_report:Boolean(source),
+    fault_code:source?.engineering_fault?.code||null,has_report:source?.has_report??Boolean(source),
     has_search_terms:terms.length>0,
     machine_model:selected()?.model||null};
 }
@@ -927,7 +929,7 @@ function renderInvestigationReport(report, started, onStatus, historyNote=''){
   const trend=Object.values(report.evidence).find(e=>e.method==='time_window_rules_v1');
   $('metrics').hidden=!trend;
   if(trend) renderMetrics(trend);
-  
+
   $('checks').replaceChildren(...report.next_checks.map((s,index)=>{
     const li=document.createElement('li');li.textContent=s;
     const evidence=report.check_recommendations?.[index];

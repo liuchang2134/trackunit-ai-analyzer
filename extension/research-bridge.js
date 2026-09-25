@@ -60,7 +60,7 @@
         expandRoot:vin=>call(vin=>XGSSResearch.expandRoot(vin),[vin]),
         scrollTree:vin=>call(vin=>XGSSResearch.scrollTree(vin),[vin]),
         progress:message=>reply(job,'jilian:research-progress',{message}),
-        save:async capture=>{
+        save:async(capture,expected={})=>{
           reply(job,'jilian:research-progress',{message:'正在核对本页文字与图示…'});
           let illustrated;
           for(let attempt=0;attempt<3;attempt++){
@@ -70,11 +70,18 @@
             await new Promise(resolve=>setTimeout(resolve,350));
             if(cancelled(job))throw new Error('资料收集已停止。');
           }
+          const changed=message=>Object.assign(new Error(message),{code:'capture_changed'});
+          if(illustrated?.status==='loading'&&illustrated.vin===data.vin)
+            throw changed('本页资料仍在更新，正在重新读取当前分类。');
           if(illustrated?.status!=='ready' || illustrated.vin!==data.vin || !illustrated.capture)
             throw new Error('资料已变化，请重新查找并提取当前分类。');
+          if(expected.category_confirmed===true&&
+            (illustrated.category_confirmed!==true||
+             String(illustrated.category_label).trim().toLocaleLowerCase()!==String(expected.category_label).trim().toLocaleLowerCase()))
+            throw new Error('图册分类已切换，请重新读取当前分类。');
           const {illustrations,...textCapture}=illustrated.capture;
-          if(JSON.stringify(textCapture)!==JSON.stringify(capture))
-            throw new Error('图示与本次文字资料不一致，请重新读取当前分类。');
+          if(XGSSResearchRunner.captureSignature(textCapture)!==XGSSResearchRunner.captureSignature(capture))
+            throw changed('图示与本次文字资料不一致，请重新读取当前分类。');
           if(cancelled(job))throw new Error('资料收集已停止。');
           if(illustrated.illustration_issue)reply(job,'jilian:research-progress',{message:illustrated.illustration_issue});
           return new Promise((resolve,reject)=>{

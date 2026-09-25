@@ -1,0 +1,40 @@
+/* Fault/parts homepage: retained secondary features are not primary navigation. */
+html.fault-parts-focus body > nav,
+html.fault-parts-focus .page-heading,
+html.fault-parts-focus .device-record-summary,
+html.fault-parts-focus .device-evidence-disclosure { display: none !important; }
+html.fault-parts-focus main { max-width: 1120px; margin: 0 auto; padding: 18px; }
+html.fault-parts-focus.panel-embedded main { padding: 10px; }
+html.fault-parts-focus .device { margin-bottom: 12px; padding: 12px 16px; }
+html.fault-parts-focus .device-picker > .row { margin: 0; }
+html.fault-parts-focus .device-identity[data-photo=true] { grid-template-columns: 100px minmax(0,1fr); gap: 16px; margin-top: 6px; }
+html.fault-parts-focus .device-identity[data-photo=true] .machine-photo img { height: 70px; padding: 2px; }
+html.fault-parts-focus .device-identity[data-photo=true] .device-vitals > div:first-child dd { font-size: 19px; }
+html.fault-parts-focus .device-identity .machine-photo figcaption { display: none; }
+html.fault-parts-focus .device-details { margin-top: 6px !important; }
+html.fault-parts-focus .device-details:not([open]) { border: 0 !important; padding-top: 0; }
+html.fault-parts-focus .device-details > summary { color: var(--muted); font-size: 12px; }
+html.fault-parts-focus .device-vitals dd { overflow-wrap: anywhere; }
+html.fault-parts-focus .workspace, html.fault-parts-focus .output { min-width: 0; }
+@media (max-width: 560px) {
+  html.fault-parts-focus main { padding: 10px; }
+  html.fault-parts-focus .device { padding: 10px 12px; }
+  html.fault-parts-focus .device-identity[data-photo=true] { grid-template-columns: 78px minmax(0,1fr); gap: 12px; }
+  html.fault-parts-focus .device-identity[data-photo=true] .machine-photo img { height: 57px; }
+}
+
+/* Avoid duplicating the machine identity and nested panel frames. */
+html.fault-parts-focus #xgss-research > p:first-of-type { display: none; }
+html.fault-parts-focus #fault-parts-picker { padding: 0; border: 0; background: transparent; box-shadow: none; }
+html.fault-parts-focus #fault-parts-estimates { padding: 0; border: 0; margin: 10px 0 14px; background: transparent; box-shadow: none; }
+html.fault-parts-focus #fault-parts-estimates > .part-estimates { margin: 0; padding: 12px; }
+
+/* Secondary sensor workspace stays available without expanding the homepage. */
+html.fault-parts-focus #secondary-nav { flex: none; }
+html.fault-parts-focus #secondary-nav > summary { min-height: 34px; padding: 8px 10px; font-size: 12px; border: 1px solid var(--line); border-radius: 5px; }
+html.fault-parts-focus #secondary-nav-list { width: 204px; }
+html.fault-parts-focus #secondary-nav-list button { width: 100%; margin: 0; }
+.risk-secondary-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.risk-secondary-heading h2 { margin: 0; }
+.risk-secondary-heading button { flex: none; font-size: 12px; }
+@media (max-width: 420px) { .risk-secondary-heading { align-items: flex-start; flex-direction: column; } }

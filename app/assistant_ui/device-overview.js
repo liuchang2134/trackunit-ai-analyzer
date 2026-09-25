@@ -2,7 +2,7 @@ let overview = null, overviewTicket = 0, deviceChart = null, chartRows = [], vis
 window.syncVisibleTrackunitEvents = capture => {
   const machine=selected();
   visibleTrackunitEvents=capture?.asset_id===machine?.machine_id?capture:null;
-  if(overview?.machine_id===machine?.machine_id){
+  if(overview && machine && overview.machine_id===machine.machine_id){
     const metric=$('overview-metrics')?.children?.[2];
     if(metric){metric.querySelector('dt').textContent=visibleTrackunitEvents?'页面可见故障':'已载入故障';
       metric.querySelector('dd').textContent=(visibleTrackunitEvents?.faults?.length??overview.faults.valid_loaded_records)+' 条';}
@@ -78,9 +78,9 @@ function renderOverviewFaults() {
     root.append(info);
     for(const [index,fault] of visibleTrackunitEvents.faults.entries()){
       const item=document.createElement('div');item.className='visible-event-row';
-      const label=document.createElement('strong');label.textContent=`${fault.code||'未显示故障码'} · ${fault.displayed_at||'时间待核实'}`;
+      const label=document.createElement('strong');label.textContent=`${fault.status==='CLOSED'?'历史 · 已解除 · ':''}${fault.code||'未显示故障码'} · ${fault.displayed_at||'时间待核实'}`;
       const note=document.createElement('p');note.textContent=fault.description;
-      const action=document.createElement('button');action.type='button';action.className='quiet';action.textContent='AI 分析并查 XGSS';
+      const action=document.createElement('button');action.type='button';action.className='quiet';action.textContent=fault.status==='CLOSED'?'历史故障备件参考':'AI 分析并查 XGSS';
       action.onclick=()=>window.selectVisibleTrackunitFault?.(index);item.append(label,note,action);root.append(item);
     }
     for(const service of visibleTrackunitEvents.services||[]){

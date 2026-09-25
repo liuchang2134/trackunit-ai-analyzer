@@ -13,7 +13,7 @@ function harness(){
     scripting:{executeScript:async args=>{scripts.push(args);return args.files?[]:[{frameId:0,result:{status:'ready',vin:'XUGTEST000000001',targets:[{label:'冷却系统'}],capture}}];}}};
   const sandbox={...state,chrome,URL,window:{addEventListener:(n,f)=>listeners[n]=f},
     XGSSCatalog:{isXGSS:url=>url.startsWith('https://xgss.xcmg.com/')},
-    XGSSResearchRunner:{run:async(args,io)=>{await io.save({vin:args.vin,title:'test'});return {status:'completed',pages:1};}},
+    XGSSResearchRunner:{...require('../extension/xgss-research-runner.js'),run:async(args,io)=>{await io.save({vin:args.vin,title:'test'});return {status:'completed',pages:1};}},
     setTimeout:f=>{timers.push(f);return timers.length;},clearTimeout:()=>{}};
   vm.runInNewContext(fs.readFileSync(require.resolve('../extension/research-bridge.js'),'utf8'),sandbox);
   const send=(data,extra={})=>listeners.message({source:frame.contentWindow,origin:state.localOrigin,
@@ -227,4 +227,30 @@ test('an image failure can still save the unchanged text but navigation away can
   moved.start();await tick();
   assert.equal(moved.messages.some(message=>message.type==='jilian:research-page'),false);
   assert.equal(moved.scripts.some(args=>args.func?.toString().includes('captureWithIllustration')),false);
+});
+
+test('bridge compares text semantically across injected result key ordering',async()=>{
+  const h=harness(),execute=h.sandbox.chrome.scripting.executeScript;
+  h.capture.items=[{name:'变速箱总成',part_number:'800365540'}];
+  h.sandbox.XGSSResearchRunner.run=async(args,io)=>{await io.save(h.capture);return {status:'completed',pages:1};};
+  h.sandbox.chrome.scripting.executeScript=async args=>args.func?.toString().includes('captureWithIllustration')?
+    [{result:{status:'ready',vin:h.capture.vin,capture:{title:'test',items:[{part_number:'800365540',name:'变速箱总成'}],vin:h.capture.vin,illustrations:[]}}}]:execute(args);
+  h.start();await tick();const page=h.messages.find(message=>message.type==='jilian:research-page');assert.ok(page);
+  h.send({type:'jilian:research-ack',request_id:page.request_id,page_id:page.page_id,success:true});await tick();
+  assert.ok(h.messages.some(message=>message.type==='jilian:research-done'));
+});
+
+test('bridge flags changed same-category text for complete recovery but treats category switching as fatal',async()=>{
+  for(const category of ['双变系统','电气系统']){
+    const h=harness(),execute=h.sandbox.chrome.scripting.executeScript;let failure;
+    h.sandbox.XGSSResearchRunner.run=async(args,io)=>{
+      try{await io.save(h.capture,{category_label:'双变系统',category_confirmed:true});}catch(error){failure=error;throw error;}
+    };
+    h.sandbox.chrome.scripting.executeScript=async args=>args.func?.toString().includes('captureWithIllustration')?
+      [{result:{status:'ready',vin:h.capture.vin,category_label:category,category_confirmed:true,
+        capture:{...h.capture,title:'updated table',illustrations:[]}}}]:execute(args);
+    h.start();await tick();assert.ok(failure);
+    assert.equal(failure.code,category==='双变系统'?'capture_changed':undefined);
+    assert.equal(h.messages.some(message=>message.type==='jilian:research-page'),false);
+  }
 });

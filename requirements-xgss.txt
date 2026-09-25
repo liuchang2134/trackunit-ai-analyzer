@@ -1,2 +1,5 @@
-# Optional local XGSS encryption adapter. No API credentials or public keys included.
+# Optional XGSS authentication and direct catalog/image reader. No credentials included.
 cryptography==50.0.1
+defusedxml==0.7.1
+resvg-py==0.5.0
+Pillow==12.3.0

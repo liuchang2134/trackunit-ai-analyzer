@@ -644,6 +644,13 @@ async function guidanceRound(p,payload){
    new Error('guidance request was never answered for '+(request.data.request_id||'(no id)'))),3000))]);
 }
 
+async function markRound(p,payload){
+ const pending=p.elements['catalog-open'].onclick(),request=p.outgoing.at(-1);
+ assert.equal(request.data.type,'jilian:ai-guidance-request');
+ reply(p,'jilian:ai-guidance',{request_id:request.data.request_id,...payload});
+ await pending;
+}
+
 test('the panel asks the workbench for AI guidance and shows the terms it returns',async()=>{
  const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
  p.outgoing.length=0;
@@ -675,7 +682,7 @@ test('marking on the XGSS page passes exactly the AI terms and reports what was 
  p.scriptCalls.length=0;
  // First injection loads the helper file (no result), second runs the mark call.
  p.scriptResults.push([], [{result:{schema_version:1,marked_rows:2,terms:['液压泵','先导阀'],unmatched:['hydraulic pump'],page_terms:3}}]);
- await p.elements['catalog-open'].onclick();
+ await markRound(p,guidance);
  const markCall=p.scriptCalls.find(call=>call.func);
  assert.deepEqual(markCall.args[0],['液压泵','先导阀','hydraulic pump'],
    'the page is asked to mark exactly the terms the AI returned');
@@ -689,10 +696,12 @@ test('marking tells the engineer where to open the catalog when the tab is not X
  await p.elements.identify.onclick();matched(p);
  await guidanceRound(p,guidance);
  p.scriptCalls.length=0;
- await p.elements['catalog-open'].onclick();
+ await markRound(p,guidance);
  assert.equal(p.scriptCalls.length,0,'nothing may be injected into a non-XGSS page');
  assert.match(p.elements['catalog-status'].textContent,/XGSS 图册/);
  assert.match(p.elements['catalog-status'].textContent,/标出 AI 检索条目/);
+ assert.match(p.elements['catalog-status'].textContent,/设置 → 图册维护/);
+ assert.doesNotMatch(p.elements['catalog-status'].textContent,/当前设备区域/);
 });
 
 test('late AI guidance cannot survive device, dataset, connection or scope round trips',async()=>{
@@ -716,7 +725,7 @@ test('late AI guidance cannot survive device, dataset, connection or scope round
   assert.deepEqual(p.elements['ai-guidance-terms'].children.map(node=>node.textContent),['current-device-part'],change);
   p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog',id:11,windowId:1,status:'complete'}];
   p.scriptResults.push([], [{result:{marked_rows:1,terms:['current-device-part'],unmatched:[]}}]);
-  await p.elements['catalog-open'].onclick();
+  await markRound(p,{terms:['current-device-part'],components:[],has_report:true});
   assert.deepEqual(p.scriptCalls.find(call=>call.func).args[0],['current-device-part'],change);
  }
 });
@@ -730,6 +739,26 @@ test('AI guidance waits for a confirmed device instead of reading the previous i
  await p.elements['catalog-open'].onclick();assert.equal(p.scriptCalls.length,0);
  matched(p);await guidanceRound(p,guidance);
  assert.deepEqual(p.elements['ai-guidance-terms'].children.map(node=>node.textContent),guidance.terms);
+});
+
+test('marking refreshes a changed plan on the same device instead of using cached guidance',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ await guidanceRound(p,guidance);
+ p.box.chrome.tabs.query=async()=>[{url:'https://xgss.xcmg.com/catalog',id:11,windowId:1,status:'complete'}];
+ p.scriptCalls.length=0;p.scriptResults.push([], [{result:{marked_rows:1,terms:['新方向'],unmatched:[]}}]);
+ await markRound(p,{terms:['新方向'],components:[],has_report:true});
+ assert.deepEqual(p.scriptCalls.find(call=>call.func).args[0],['新方向']);
+});
+
+test('marking clears cached guidance when the current direction no longer has a matching plan',async()=>{
+ const p=setup(assetURL(asset));ready(p);await p.elements.identify.onclick();matched(p);
+ await guidanceRound(p,guidance);
+ p.scriptCalls.length=0;
+ await markRound(p,{terms:[],components:[],has_report:false});
+ assert.equal(p.scriptCalls.length,0);
+ assert.match(p.elements['catalog-status'].textContent,/当前方向尚无 AI 检索词/);
+ assert.equal(p.elements['ai-guidance-terms'].hidden,true);
+ assert.equal(p.elements['catalog-open'].disabled,false);
 });
 
 test('only the newest concurrent AI guidance response may update the same device',async()=>{

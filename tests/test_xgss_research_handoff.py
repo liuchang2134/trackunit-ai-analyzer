@@ -145,6 +145,7 @@ def test_context_is_frozen_across_model_passes_and_inherited_parts_are_not_candi
         if 'parts' not in data:
             return json.dumps({'summary':'模拟故障仍须现场检查。','directions':[{'component':'连接器','reason':'沿用原报告检查方向。','search_terms':['连接器']}],'missing_evidence':[]})
         return json.dumps({'summary':'模拟故障下的条件性候选。','parts':[{'source_id':data['parts'][0]['source_id'],
+            'fault_relation':'direct','support':'catalog_only',
             'reason':'本次图册实际条目。','replacement_condition':'现场确认损坏并核对配置后。'}],
             'repair_steps':[{'instruction':'检查连接器。','basis':'manual_excerpt','source_id':REFERENCE['reference_id'],'source_quote':TEXT}],
             'missing_evidence':[]})
@@ -163,7 +164,8 @@ def test_context_is_frozen_across_model_passes_and_inherited_parts_are_not_candi
     analyzed=final_record(client.post(f'/assistant/xgss/research/{rid}/analyze'))
     assert sent[0]['handoff_context']==sent[1]['handoff_context']
     assert sent[0]['fault_context']==sent[1]['fault_context']
-    assert analyzed['advice']['parts'][0]['part_number']=='NEW-001'
+    assert analyzed['advice']['parts']==[]
+    assert analyzed['advice']['inspection_targets'][0]['part_number']=='NEW-001'
     assert analyzed['advice']['repair_steps'][0]['instruction']==TEXT
     assert len(analyzed['pages'])==1 and len(analyzed['evidence']['manuals'])==1
     assert analyzed['evidence']['manuals'][0]['source_id']==REFERENCE['reference_id']
@@ -236,7 +238,7 @@ def test_inherited_long_manual_keeps_complete_conditions_when_advice_is_restored
     record.update(model='XE55U',symptom='模拟 E4030 排查',symptom_source='simulation',fault_context={'manuals':[manual]},
         advice={'summary':'模拟方向待核实','parts':[],
             'repair_steps':[{'basis':'manual_excerpt','source_id':manual['source_id'],'source_quote':TEXT,'instruction':'待校验'}],
-            'missing_evidence':[]},analysis_revision=record['revision'])
+            'missing_evidence':[]},analysis_revision=record['revision'],advice_quality_version=ai.grounding.VERSION)
     restored=ai.normalize_cached_advice(record)
     assert len(restored['advice']['repair_steps'][0]['source_quote'])>10000
     assert ai.normalize_cached_advice(restored)['advice']['repair_steps'][0]['source_quote']==manual['text']

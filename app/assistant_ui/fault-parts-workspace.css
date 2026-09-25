@@ -1,0 +1,57 @@
+/* Fault selection -> source-backed parts -> a reference estimate. */
+html.fault-parts-focus #xgss-research{padding:18px 20px;border-top:0;margin:0;box-shadow:none;background:#fff;min-width:0}
+html.fault-parts-focus #xgss-research[hidden],html.fault-parts-focus #xgss-research [hidden]{display:none!important}
+html.fault-parts-focus #xgss-research>p:first-of-type{margin:0 0 12px;color:#66788c;font-size:12px;overflow-wrap:anywhere}
+html.fault-parts-focus #fault-parts-picker{margin:0 0 8px}
+html.fault-parts-focus .fault-parts-tabs{display:flex;gap:4px;padding:4px;border:1px solid #dae5f1;border-radius:8px;background:#f3f7fb;margin-bottom:10px}
+html.fault-parts-focus .fault-parts-tabs button{flex:1;min-height:40px;padding:9px 12px;border:0;background:transparent;border-radius:5px;box-shadow:none;color:#5b6d82;font-size:14px;font-weight:600;cursor:pointer}
+html.fault-parts-focus .fault-parts-tabs button[aria-selected=true]{background:#fff;color:#0455b2;box-shadow:0 1px 5px #233e5f12}
+html.fault-parts-focus .fault-parts-faults{display:grid;gap:8px}
+html.fault-parts-focus .fault-parts-faults>p{font-size:13px;margin:5px 0 8px;color:#69798a}
+html.fault-parts-focus #xgss-research .fault-parts-fault{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;min-width:0;padding:11px 12px;text-align:left;border:1px solid #dde6ee;border-radius:7px;background:#fff;box-shadow:none;line-height:1.45;white-space:normal;color:#22364a;cursor:pointer}
+html.fault-parts-focus #xgss-research .fault-parts-fault[aria-pressed=true]{border-color:#176bc2;background:#f3f8ff;box-shadow:inset 3px 0 #176bc2}
+html.fault-parts-focus .fault-parts-fault strong{font-size:13px;overflow-wrap:anywhere}
+html.fault-parts-focus .fault-parts-fault span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;font-weight:400;color:#65778b}
+html.fault-parts-focus .fault-parts-fault small{font-size:11px;font-weight:400;color:#738397;overflow-wrap:anywhere}
+html.fault-parts-focus .fault-parts-unknown{margin:10px 0;padding:0;border:0;background:transparent}
+html.fault-parts-focus .fault-parts-unknown>summary{padding:6px 0;color:#65778b;font-size:12px;font-weight:500}
+html.fault-parts-focus .fault-parts-unknown .fault-parts-fault{margin:6px 0}
+html.fault-parts-focus .fault-parts-refresh{display:flex;align-items:flex-start;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin:4px 0 12px}
+html.fault-parts-focus #xgss-research .fault-parts-refresh-button{padding:3px 0;min-height:28px;border:0;border-radius:0;background:transparent;color:#467093;font-size:12px;font-weight:400;box-shadow:none}
+html.fault-parts-focus .fault-parts-refresh>details{margin:0;padding:0;border:0;background:transparent;max-width:100%;font-size:12px}
+html.fault-parts-focus .fault-parts-refresh>details>summary{padding:4px 0;font-size:12px;font-weight:400;color:#467093}
+html.fault-parts-focus .fault-parts-refresh>details>p{font-size:12px;line-height:1.6;color:#738397}
+html.fault-parts-focus #research-input-panel{margin:8px 0 12px;padding:0;border:0;background:transparent;box-shadow:none}
+html.fault-parts-focus #research-input-panel>summary{padding:5px 0;font-size:12px;color:#677c91;font-weight:400}
+html.fault-parts-focus #research-input-panel textarea{min-height:70px;height:78px;margin-top:5px;font-size:13px;border-radius:6px;background:#fff}
+html.fault-parts-focus #research-input-panel label{font-size:12px}
+html.fault-parts-focus #xgss-research .research-main-actions{margin:8px 0 10px;gap:8px;display:flex}
+html.fault-parts-focus #research-run{width:auto;flex:1;min-height:42px;margin:0;padding:11px 18px;font-size:14px;font-weight:600;border:0;border-radius:6px;background:#0860bd;color:white;box-shadow:none}
+html.fault-parts-focus #research-run:disabled{background:#dce6f0;color:#7c8da0;cursor:default}
+html.fault-parts-focus #xgss-research>[role=status]{font-size:12px;line-height:1.5;color:#5b7187;margin:6px 0 14px}
+html.fault-parts-focus #xgss-research>.muted{font-size:12px;color:#5d748b;line-height:1.5;margin:7px 0}
+html.fault-parts-focus #research-result-hero{margin:17px 0 10px;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
+html.fault-parts-focus .fault-parts-result-title h3{font-size:17px;line-height:1.45;margin:0 0 4px;color:#163550}
+html.fault-parts-focus .fault-parts-result-title>strong{display:block;font-size:12px;line-height:1.5;color:#305a7f;margin:5px 0;overflow-wrap:anywhere}
+html.fault-parts-focus .fault-parts-result-title p{font-size:12px;color:#6d8093;line-height:1.6;margin:0}
+html.fault-parts-focus .fault-parts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:12px;min-width:0}
+html.fault-parts-focus .fault-parts-card{margin:0;padding:0;min-width:0;overflow:hidden;border:1px solid #dbe5ef;border-radius:8px;background:#fff;box-shadow:none}
+html.fault-parts-focus .fault-parts-card .research-diagram{margin:0;padding:0;border:0;border-bottom:1px solid #ecf0f5;border-radius:0;background:#fff}
+html.fault-parts-focus .fault-parts-card .research-diagram-open{display:block;position:relative;width:100%;margin:0;padding:8px;border:0;border-radius:0;background:#fff;box-shadow:none}
+html.fault-parts-focus .fault-parts-card .research-diagram-open img{display:block;width:100%;height:160px;max-height:160px;object-fit:contain;background:#fff}
+html.fault-parts-focus .fault-parts-card .research-diagram-open span{position:absolute;right:8px;bottom:8px;background:#edf5ff;color:#2063ab;border-radius:3px;padding:3px 6px;font-size:10px;font-weight:500}
+html.fault-parts-focus .fault-parts-card .research-diagram figcaption{margin:0;padding:0 12px 7px;font-size:11px;color:#7b8c9c}
+html.fault-parts-focus .fault-parts-image-empty{display:flex;align-items:center;justify-content:center;height:160px;background:#f6f8fb;color:#8495a6;font-size:12px;border-bottom:1px solid #ecf0f5}
+html.fault-parts-focus .fault-parts-card-body{padding:13px}
+html.fault-parts-focus .fault-parts-card h4{font-size:15px;margin:0 0 5px;color:#153653;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
+html.fault-parts-focus .fault-parts-card .research-part-number{font-size:15px;margin:0 0 7px;font-weight:650;letter-spacing:.015em;color:#0464bb;overflow-wrap:anywhere}
+html.fault-parts-focus .fault-parts-kind{display:inline-block;padding:3px 6px;border-radius:3px;background:#f1f5fa;color:#5e748c;font-size:10px;line-height:1.3}
+html.fault-parts-focus .fault-parts-reason{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.65;color:#60758a;margin:9px 0}
+html.fault-parts-focus .fault-parts-basis{border:0;border-top:1px solid #e7edf4;padding:8px 0 0;margin:10px 0 0;background:transparent}
+html.fault-parts-focus .fault-parts-basis summary{font-size:12px;font-weight:500;color:#1d66ad;cursor:pointer;padding:0}
+html.fault-parts-focus .fault-parts-basis p,html.fault-parts-focus .fault-parts-basis strong{font-size:12px;line-height:1.65;color:#526c84;margin:8px 0;overflow-wrap:anywhere}
+html.fault-parts-focus #research-preliminary{padding:12px 14px;margin:10px 0;border:1px solid #d7e5f3;border-radius:6px;background:#f5f9fd}
+html.fault-parts-focus #research-preliminary p{margin:0;color:#59738e;font-size:12px;line-height:1.6}
+html.fault-parts-focus #fault-parts-estimates{margin:10px 0 14px;border-top:1px solid #e2eaf2;padding-top:10px}
+html.fault-parts-focus #xgss-research button:focus-visible,html.fault-parts-focus #xgss-research summary:focus-visible{outline:2px solid #2879cf;outline-offset:3px}
+@media(max-width:560px){html.fault-parts-focus #xgss-research{padding:13px}html.fault-parts-focus .fault-parts-grid{grid-template-columns:1fr}html.fault-parts-focus .fault-parts-card .research-diagram-open img{height:145px;max-height:145px}html.fault-parts-focus .fault-parts-refresh{justify-content:flex-start}}

@@ -8,6 +8,7 @@ INSTRUCTIONS = (
     '节点供电和接地是检查步骤，缺少独立供电异常证据时，不推荐蓄电池、电源继电器、保险盒、控制器或整机线束。'
     '电压偏低同样不能区分蓄电池、接触压降、接地或充电异常，单个故障码不能证明某个部件损坏。'
     '爆炸图只证明零件身份和图示位置，不能证明其属于某个 SPN/ECU 引脚或电气回路。不要声称图册未提供的回路连接。'
+    '整机或整车目录条目不是故障备件，不选择；同料号且同名称的重复来源只保留一项，不合并不同配置或版本名称。'
     'parts 最多三项，宁缺毋滥，不按图册顺序填满。每项 fault_relation 必须为 direct（直接相关待核查）、'
     'shared_cause（共同原因需独立证据）或 unmapped（未建立联系，应不选）。'
     'support=catalog_only 表示只有同机图册名称/系统关联，将作为优先核查对象而不是备件准备；'
@@ -16,12 +17,18 @@ INSTRUCTIONS = (
     '待检查、如果损坏、询问、旧 AI 建议、故障码描述和同页相邻零件都不算已确认部件异常。'
     '没有上述依据，support 必须为 catalog_only，reason 只解释可能关联和仍需核对的回路，不能说已经适配故障点或应更换。'
     'replacement_condition 写实际检查怎样区分原因，不能只写检查确认后更换。不要仅凭关键字给全车电气部件列表。'
+    '选中已解除的历史故障时，单独生成复发备件参考：检索该故障所属系统的实际部件，'
+    '写清复发后检查顺序、备库条件和仍需核对的接线关系；不能把历史事件写成当前故障。'
+    '通讯历史优先线缆、插接件；只有图册明确属于对应变速箱/传动系统的控制器才可作为后序参考，'
+    '其条件必须包含先排除供电、接地、线缆及配置问题再确认控制器异常。不能据此直接换控制器或电源件。'
 )
-PLAN_INSTRUCTIONS = INSTRUCTIONS.split('parts 最多三项', 1)[0]
+PLAN_INSTRUCTIONS = INSTRUCTIONS.split('parts 最多三项', 1)[0] + (
+    '已解除历史事件也要单独检索复发备件方向。变速箱通讯故障优先寻找双变系统、变速箱总成、'
+    '工作机线缆及该系统控制器，不能只在全车电气分类找电源件；未提供的SPN/FMI保持未知。')
 
 _COMM = re.compile(r'总线.{0,8}(?:故障|异常|通信|通讯)|(?:通信|通讯).{0,8}(?:故障|异常|丢失|中断|超时)|'
-                   r'\b(?:communication (?:fault|failure|error|lost)|lost communication|abnormal update rate|bus off)\b|\bFMI\s*[:=/]?\s*9\b', re.I)
-_POWER_PART = re.compile(r'蓄电池|电瓶|电源|总开关|保险|熔断|继电器|发电机|控制器|\b(?:battery|power supply|relay|fuse|alternator|ECU|controller)\b', re.I)
+                   r'\b(?:communication[\s_-]*(?:fault|failure|error|lost)|lost[\s_-]*communication|abnormal[\s_-]*update[\s_-]*rate|bus[\s_-]*off)\b|\bFMI\s*[:=/]?\s*9\b', re.I)
+_POWER_PART = re.compile(r'蓄电池|电瓶|电源|总开关|保险|熔断|继电器|发电机|控制器|控制单元|\b(?:battery|power supply|relay|fuse|alternator|ECU|TCU|controller|control unit)\b', re.I)
 _POWER_OBSERVATION = re.compile(r'(?:实测|测得|已检查|已确认).{0,40}(?:供电|电压|蓄电池|电瓶|保险|熔断|接地).{0,20}(?:异常|不足|偏低|断路|熔断|损坏)|'
                                 r'(?:供电|电压|蓄电池|电瓶|保险|接地).{0,20}(?:实测|测得|已确认).{0,20}(?:异常|偏低|不足|熔断|损坏)')
 _COMPLETED = re.compile(r'已检查|检查确认|检测确认|实测|测得|已确认|发现.{0,8}(?:破损|烧蚀|断裂|泄漏|腐蚀|松脱)|\b(?:measured|confirmed|inspection found)\b', re.I)
@@ -37,14 +44,44 @@ UNSUPPORTED_ACTION_ERROR = '尚无部件故障依据，不能直接建议更换�
 _REPLACEMENT_ACTION = re.compile(r'(?:建议|立即|直接|应当|应该|应|请|必须)\s*(?:更换|替换|采购|订购|购买)')
 _NEGATED_ACTION = re.compile(r'(?:不|不要|不能|不可|不应|无需|避免|禁止|不得|暂不|尚不)(?:建议|应当|应该|应)?\s*$')
 _CONDITIONAL_ACTION = re.compile(r'如果|仅当|只有|若|确认.{0,40}(?:后|时)|检查.{0,40}(?:损坏|异常).{0,8}(?:后|时)')
+_WHOLE_MACHINE_NAME = re.compile(
+    r'(?:(?:[A-Z]{1,8}\d[A-Z0-9._-]*)\s*)?'
+    r'(?:(?:轮胎式|履带式|轮式|滑移|液压|电动|混合动力)?(?:装载机|挖掘机|压路机|推土机)|'
+    r'(?:全地面|越野轮胎|汽车|履带)?起重机|'
+    r'(?:wheel|wheeled|crawler|skid[- ]steer)\s+loader|loader|'
+    r'(?:(?:hydraulic|crawler|wheeled)\s+)?excavator|'
+    r'(?:(?:road|vibratory)\s+)?roller|bulldozer|'
+    r'(?:(?:truck|crawler|rough[- ]terrain|all[- ]terrain)\s+)?crane)'
+    r'(?:\s*(?:整机|整车|总成))?', re.I)
+
+
+def _catalog_name(value):
+    return re.sub(r'\s+', ' ', str(value or '')).strip().casefold()
+
+
+def is_whole_machine_entry(part):
+    """Exclude equipment directory rows by their own name, never ancestors.
+
+    A genuine gearbox or harness also lives under the loader root. Matching its
+    assembly_path would incorrectly discard those components. Keep suffixes and
+    qualifiers, so equipment-specific component names are not treated as roots.
+    """
+    name = _catalog_name(part.get('name'))
+    return name in {'整机', '整车', '主机', '整机总成', '整车总成',
+                    'whole machine', 'complete machine', 'complete vehicle'} or bool(_WHOLE_MACHINE_NAME.fullmatch(name))
 
 
 def _compact(value):
     return re.sub(r'\s+', '', str(value)).casefold()
 
 
+def selected_event(record):
+    context = record.get('fault_context') or {}
+    return context.get('trackunit_event') or context.get('trackunit_page') or {}
+
+
 def _selected_fault_text(record):
-    event = (record.get('fault_context') or {}).get('trackunit_event') or {}
+    event = selected_event(record)
     fields = [record.get('symptom', ''), str(event.get('code') or ''), str(event.get('description') or '')]
     if event.get('spn') is not None and event.get('fmi') is not None:
         fields.append(f"SPN {event['spn']} / FMI {event['fmi']}")
@@ -77,15 +114,28 @@ def _names_part(part, text):
 
 
 def _selected_event_resolved(record):
-    event = (record.get('fault_context') or {}).get('trackunit_event') or {}
+    event = selected_event(record)
     return (str(event.get('status') or '').upper() in {'RESOLVED', 'CLEARED', 'INACTIVE', 'CLOSED'}
             or bool(event.get('cleared_at')))
+
+
+def _historical_node_reference(part, selected):
+    """Only a catalog-bound node in the selected transmission system qualifies.
+
+    This permits a later-stage spare reference, never a replacement diagnosis.
+    assembly_path comes from checked catalog evidence, not model output.
+    """
+    return (bool(re.search(r'变速箱|传动|transmission', selected, re.I))
+            and bool(re.search(r'控制器|控制单元|\b(?:TCU|controller|control unit)\b', part['name'], re.I))
+            and bool(re.search(r'变速箱|transmission', ' '.join(part.get('assembly_path') or []), re.I)))
 
 
 def _reject_unsupported_actions(advice):
     # Only reject explicit, unqualified AI replacement instructions. Preserve
     # negative/conditional wording and do not rewrite official manual excerpts.
     prose = [advice.get('summary', '')]
+    for part in advice.get('parts', []):
+        prose.extend((part.get('reason', ''), part.get('replacement_condition', '')))
     prose.extend(step.get('instruction', '') for step in advice.get('repair_steps', [])
                  if step.get('basis') == 'ai_inspection_suggestion')
     for text in prose:
@@ -138,20 +188,28 @@ def qualify(advice, record, manuals):
                                   and not _HYPOTHETICAL.search(record.get('symptom', ''))
                                   and not _HISTORICAL.search(record.get('symptom', '')) and not resolved)
     manual_by_id = {p['source_id']: p for p in manuals}
-    candidates, inspections = [], []
+    candidates, inspections, historical = [], [], []
     for part in advice['parts']:
-        supported = _support(part, record, manual_by_id) and not resolved
+        if is_whole_machine_entry(part):
+            continue
+        mapped = _support(part, record, manual_by_id)
+        supported = mapped and not resolved
         relation = part.get('fault_relation', 'unmapped')
         if relation == 'unmapped':
             continue
         # A supply check can be useful for CAN faults. A supply replacement
         # candidate needs evidence beyond the communication code itself.
-        if communication and _POWER_PART.search(part['name']) and not (supported or separate_power_observation):
+        historical_node = resolved and _historical_node_reference(part, selected)
+        if communication and _POWER_PART.search(part['name']) and not (mapped or separate_power_observation or historical_node):
             continue
-        if supported:
+        if resolved:
+            historical.append({**part, 'evidence_level': 'historical_reference', 'status': 'historical_reference',
+                               'preparation_condition': part['replacement_condition']})
+        elif supported:
             candidates.append({**part, 'evidence_level': 'conditional_candidate', 'status': 'candidate_requires_inspection'})
         else:
             inspections.append({**part, 'evidence_level': 'inspection_only', 'status': 'inspection_only'})
     if not candidates:
         _reject_unsupported_actions(advice)
-    return {**advice, 'parts': candidates[:3], 'inspection_targets': inspections[:max(0, 3-len(candidates))]}
+    return {**advice, 'parts': candidates[:3], 'inspection_targets': inspections[:max(0, 3-len(candidates))],
+            'analysis_scope': 'historical' if resolved else 'current', 'historical_candidates': historical[:3]}

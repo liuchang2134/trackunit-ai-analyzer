@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-function harness({fetchIdentity=async()=>({ok:false,status:503}),ready=true,fetchDiagrams=async()=>({ok:false,status:404}),fetchActive=async()=>({ok:false,status:404}),fetchFaults=async()=>({ok:false,status:404}),fetchLinked=async()=>({ok:false,status:404}),flowTrack=false,focused=false,search='?panel=connection',hash='#trackunit-asset=asset'}={}){
+function harness({fetchIdentity=async()=>({ok:false,status:503}),ready=true,fetchDiagrams=async()=>({ok:false,status:404}),fetchActive=async()=>({ok:false,status:404}),fetchFaults=async()=>({ok:false,status:404}),fetchLinked=async()=>({ok:false,status:404}),fetchDirect=async()=>streamedFailure('direct_unavailable'),flowTrack=false,focused=false,partsFocus=false,estimates=null,search='?panel=connection',hash='#trackunit-asset=asset'}={}){
   const nodes=[],messages=[],requests=[],listeners={},fetchCalls=[],timers=[],documentListeners={};
   function node(tag){const n={tag,children:[],textContent:'',value:'',style:{},attributes:{},events:{},append(...xs){this.children.push(...xs);},replaceChildren(...xs){this.children=[...xs];},setAttribute(k,v){this.attributes[k]=v;},addEventListener(k,v){this.events[k]=v;},showModal(){this.open=true;},close(){this.open=false;this.events.close?.();},remove(){this.removed=true;},focus(){this.focused=true;}};nodes.push(n);return n;}
   const host=node('main'),parent={postMessage:d=>messages.push(d)};
@@ -13,13 +13,13 @@ function harness({fetchIdentity=async()=>({ok:false,status:503}),ready=true,fetc
   const extras=Object.fromEntries(['engineering-fault-panel','fault-reference-panel','manual-fault-linked','risk-device'].map(id=>[id,node('div')]));
   const getNode=id=>id==='flow-track'?flow:id==='machine'?machineSelect:extras[id]||host;
   const state={machine:{machine_id:'asset',dataset_id:'a'.repeat(64),serial_number:'XUGTEST000000001',model:'XC948U',provenance:'user_supplied'}};
-  const window={parent,addEventListener:(n,fn)=>listeners[n]=fn};
+  const window={parent,...(estimates?{JilianPartEstimates:estimates}:{}),addEventListener:(n,fn)=>listeners[n]=fn};
   const location={ancestorOrigins:['chrome-extension://'+'a'.repeat(32)],search,hash};
-  const sandbox={window,location,document:{visibilityState:'visible',addEventListener:(name,fn)=>documentListeners[name]=fn,documentElement:{classList:{contains:()=>focused}},getElementById:getNode,createElement:node,body:node('body')},selected:()=>state.machine,$:getNode,
+  const sandbox={window,location,document:{visibilityState:'visible',addEventListener:(name,fn)=>documentListeners[name]=fn,documentElement:{classList:{contains:name=>name==='fault-parts-focus'?partsFocus:focused}},getElementById:getNode,createElement:node,body:node('body')},selected:()=>state.machine,$:getNode,
     PlatformContext:{asset:hash=>hash.split('=')[1]},defaultSource:'demo',report:null,openedReport:null,
-    currentAISearchGuidance:()=>({terms:['散热器']}),URLSearchParams,setTimeout:(callback,delay)=>{const timer={id:timers.length+1,callback,delay,cleared:false};timers.push(timer);return timer.id;},clearTimeout:id=>{const timer=timers.find(t=>t.id===id);if(timer)timer.cleared=true;},
+    currentAISearchGuidance:()=>({terms:['散热器']}),URL,URLSearchParams,setTimeout:(callback,delay)=>{const timer={id:timers.length+1,callback,delay,cleared:false};timers.push(timer);return timer.id;},clearTimeout:id=>{const timer=timers.find(t=>t.id===id);if(timer)timer.cleared=true;},
     fetch:(url,options)=>{fetchCalls.push({url,options});return url==='/assistant/xgss/identity'?fetchIdentity(url,options):url==='/assistant/xgss/research/active'?fetchActive(url,options):
-      url==='/assistant/xgss/research/latest'?fetchDiagrams(url,options):url.startsWith('/assistant/fault-events')?fetchFaults(url,options):/\/research\/[a-f0-9]{32}$/.test(url)?fetchLinked(url,options):Promise.reject(new Error('Unexpected fetch: '+url));},AbortController,TextDecoder,DOMException,
+      url==='/assistant/xgss/research/latest'?fetchDiagrams(url,options):url.endsWith('/collect-direct')?fetchDirect(url,options):url.startsWith('/assistant/fault-events')?fetchFaults(url,options):/\/research\/[a-f0-9]{32}$/.test(url)?fetchLinked(url,options):Promise.reject(new Error('Unexpected fetch: '+url));},AbortController,TextDecoder,DOMException,
     api:(url,options)=>new Promise((resolve,reject)=>requests.push({url,options,resolve,reject}))};
   if(flowTrack){
     const app=fs.readFileSync(require.resolve('../app/assistant_ui/app.js'),'utf8');
@@ -127,15 +127,15 @@ test('result cards translate AI vocabulary but preserve part identifiers and off
   assert.ok(data.advice.summary.includes('也不能补造温度'));
 });
 
-test('restoring a report cannot conceal an unavailable collection bridge',async()=>{
+test('restoring a report keeps direct collection available without a plugin and labels the optional backup',async()=>{
   const h=harness({ready:false}),resume=h.nodes.find(n=>n.textContent==='恢复上次资料排查');
   const action=resume.onclick();h.requests[0].resolve({research_id:'b'.repeat(32),symptom:'模拟温升现象',symptom_source:'simulation',
     plan:{summary:'模拟计划',directions:[]},pages:[],evidence:{parts:[],manuals:[]}});await action;
-  assert.equal(h.start.disabled,true);
-  assert.match(h.nodes.find(n=>n.id==='research-capture-state').textContent,/尚未连接/);
+  assert.equal(h.start.disabled,false);
+  assert.match(h.nodes.find(n=>n.id==='research-capture-state').textContent,/无需连接 Chrome 插件/);
   h.send({type:'jilian:research-ready'});
   assert.equal(h.start.disabled,false);
-  assert.equal(h.nodes.find(n=>n.id==='research-capture-state').textContent,'资料采集已就绪。');
+  assert.match(h.nodes.find(n=>n.id==='research-capture-state').textContent,/插件可作为备用读取/);
 });
 
 test('report handoff preserves edited user input and rejects an unsaved or mismatched report',async()=>{
@@ -296,11 +296,30 @@ function streamedRecord(record){
     releaseLock(){}
   })}};
 }
+function streamedFailure(kind,message=kind){
+  let sent=false;
+  return {ok:true,body:{getReader:()=>({read:async()=>sent?{done:true}:(sent=true,{done:false,value:new TextEncoder().encode('data: '+JSON.stringify({type:'error',kind,message})+'\n\n')}),releaseLock(){}})}};
+}
 function controlledModels(h){
   const calls=[];
   h.sandbox.fetch=(url,options)=>{
     if(['/assistant/xgss/research/latest','/assistant/xgss/research/active'].includes(url)||url.startsWith('/assistant/fault-events'))return Promise.resolve({ok:false,status:404});
+    if(url.endsWith('/collect-direct'))return Promise.resolve(streamedFailure('direct_unavailable'));
     return new Promise(resolve=>calls.push({url,options,resolve:record=>resolve(streamedRecord(record))}));
+  };
+  return calls;
+}
+function controlledModelErrors(h){
+  const calls=[];
+  h.sandbox.fetch=(url,options)=>{
+    if(['/assistant/xgss/research/latest','/assistant/xgss/research/active'].includes(url)||url.startsWith('/assistant/fault-events'))return Promise.resolve({ok:false,status:404});
+    if(url.endsWith('/collect-direct'))return Promise.resolve(streamedFailure('direct_unavailable'));
+    return new Promise(resolve=>calls.push({url,options,
+      result:record=>resolve(streamedRecord(record)),
+      fail:(kind='schema_validation',message='schema_validation: directions[0] value_error')=>{
+        let sent=false;
+        resolve({ok:true,body:{getReader:()=>({read:async()=>sent?{done:true}:(sent=true,{done:false,value:new TextEncoder().encode('data: '+JSON.stringify({type:'error',kind,message})+'\n\n')}),releaseLock(){}})}});
+      }}));
   };
   return calls;
 }
@@ -440,6 +459,153 @@ function activeRecord(overrides={}){
 }
 function visibleText(n){return n.hidden?'':n.textContent+' '+n.children.map(visibleText).join(' ');}
 
+function focusedPartRecord(overrides={}){
+  return activeRecord({symptom_source:'trackunit_page',symptom:'Trackunit 页面可见故障：SPN 444 / FMI 1，SA 163；描述：Battery Potential。',...overrides});
+}
+function treeNodes(node){return [node,...node.children.flatMap(treeNodes)];}
+
+test('focused parts: restores saved page fault cards and exact images without AI or long legacy sections',async()=>{
+  const saved=focusedPartRecord();const base=saved.advice.parts[0];
+  saved.advice={...saved.advice,parts:[],inspection_targets:[0,1,2].map(index=>({...base,part_number:'REAL-'+index,name:'核查部件'+index,evidence_level:'inspection_only'})),
+    repair_steps:[{instruction:'不得出现在主页的维修长文',basis:'ai_inspection_suggestion'}],missing_evidence:['不得出现在主页的缺证清单']};
+  const mounts=[];const h=harness({focused:true,partsFocus:true,estimates:{mount:(root,options)=>{mounts.push(options);return {destroy(){}};}},fetchActive:async()=>faultReply(saved)});await tick();
+  const cards=h.nodes.filter(node=>node.className==='fault-parts-card');assert.equal(cards.length,3);
+  for(const card of cards){assert.equal(card.children.filter(node=>node.tag==='figure').length,1);assert.ok(treeNodes(card).some(node=>node.textContent==='查看依据'&&node.tag==='summary'));}
+  const screen=visibleText(h.nodes.find(node=>node.id==='xgss-research'));
+  assert.doesNotMatch(screen,/不得出现在主页|维修与检查顺序|备件准备邮件|当前设备图册|查看已提取/);
+  assert.match(screen,/SPN 444/);assert.match(screen,/故障相关配件 · 3 项/);
+  assert.equal(h.nodes.find(node=>node.id==='research-input-panel').open,false);
+  assert.equal(mounts.length,1);assert.equal(mounts[0].parts.length,3);assert.equal(mounts[0].scope,'current');
+  assert.equal(h.requests.length,0);assert.equal(h.fetchCalls.some(call=>/\/plan|\/analyze/.test(call.url)),false);
+});
+
+test('focused parts: unknown page status is separate from current and resolved history remains selectable',async()=>{
+  const h=harness({focused:true,partsFocus:true});await tick();
+  const faults=[{code:'SPN 444 / FMI 1',spn:444,fmi:1,sa:163,description:'Battery input',status:'OPEN',displayed_at:'Sep 24, 2026'},
+    {code:null,spn:null,fmi:null,sa:null,description:'Transmission / Abnormal Update Rate',status:'CLOSED',displayed_at:'Jun 29, 2026'},
+    {code:'E100',spn:null,fmi:null,sa:null,description:'Unverified observation',status:'UNKNOWN',displayed_at:'Sep 23, 2026'}];
+  h.send({type:'jilian:trackunit-page-faults',asset_id:'asset',dataset_id:'a'.repeat(64),capture:{schema_version:1,source:'trackunit_visible_events_page',asset_id:'asset',
+    capture_status:'visible_fault_cards',coverage:'rendered_events_only',observed_at:new Date().toISOString(),faults}});
+  const picker=h.nodes.find(node=>node.id==='fault-parts-picker');
+  assert.ok(treeNodes(picker).some(node=>node.textContent==='当前故障 1'));
+  assert.ok(treeNodes(picker).some(node=>node.textContent==='历史故障 1'));
+  assert.ok(treeNodes(picker).some(node=>node.textContent==='状态待核实 · 1 条'));
+  const main=h.nodes.find(node=>node.id==='research-run');assert.equal(main.disabled,true,'no event is automatically selected or analyzed');
+  treeNodes(picker).find(node=>node.textContent==='历史故障 1').onclick();
+  const history=treeNodes(picker).find(node=>node.className==='fault-parts-fault'&&treeNodes(node).some(child=>child.textContent==='变速箱通信异常'));
+  history.onclick();assert.equal(main.disabled,false);assert.equal(main.textContent,'生成配件推荐');
+  assert.equal(h.nodes.find(node=>node.id==='research-fault-event').value,'page:1');assert.equal(h.requests.length,0);
+});
+
+test('focused parts: filters a sensor result but preserves the server active ID for the next activation',async()=>{
+  const prior=activeRecord({research_id:'e'.repeat(32),symptom_source:'user_question',symptom:'连续传感器趋势分析：6项核查方向'});
+  const h=harness({focused:true,partsFocus:true,ready:false,fetchActive:async()=>faultReply(prior)});await tick();
+  assert.equal(h.nodes.find(node=>node.id==='research-result-hero').hidden,true);
+  assert.equal(h.nodes.filter(node=>node.className==='fault-parts-card').length,0);
+  const symptom=h.nodes.find(node=>node.id==='research-symptom');symptom.value='SPN 639 / FMI 9 通信异常';symptom.oninput();
+  const models=controlledModels(h),action=h.nodes.find(node=>node.id==='research-run').onclick();
+  const next=focusedPartRecord({research_id:'f'.repeat(32),symptom_source:'operator_report',symptom:symptom.value,advice:undefined,pages:[],analysis_revision:undefined});
+  models[0].resolve(next);await tick();
+  assert.equal(JSON.parse(h.requests[0].options.body).expected_research_id,prior.research_id);
+  h.requests[0].resolve(next);await action;
+});
+
+test('focused parts: manual fault references remain supported even with user_question provenance',async()=>{
+  const saved=focusedPartRecord({symptom_source:'user_question',symptom:'查询E4030',manual_fault:{code:'E4030',model:'XC948U',version:'test',applicability_confirmed:true}});
+  const h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+  assert.equal(h.nodes.find(node=>node.id==='research-result-hero').hidden,false);
+  assert.equal(h.nodes.filter(node=>node.className==='fault-parts-card').length,1);
+});
+
+test('focused parts: resume rejects maintenance and free sensor questions without replacing the current fault result',async()=>{
+  const saved=focusedPartRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+  for(const invalid of [maintenanceRecord(),activeRecord({symptom_source:'user_question',symptom:'传感器检查建议'})]){
+    const action=h.nodes.find(node=>node.textContent==='恢复上次资料排查').onclick();h.requests.at(-1).resolve(invalid);await action;
+    assert.equal(h.nodes.find(node=>node.id==='research-result-hero').hidden,false);
+    assert.match(visibleText(h.nodes.find(node=>node.id==='fault-parts-picker')),/SPN 444/);
+  }
+});
+
+test('focused parts: pending source collection keeps a single usable XGSS action',async()=>{
+  const saved=focusedPartRecord({advice:undefined,pages:[],evidence:{parts:[],manuals:[]},analysis_revision:undefined,
+    plan:{summary:'核对通信回路',directions:[{component:'线束',reason:'通信故障',search_terms:['线束']}]}});
+  const h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+  const action=h.nodes.find(node=>node.id==='research-run');
+  assert.equal(action.hidden,false);assert.equal(action.disabled,false);assert.equal(action.textContent,'继续读取 XGSS 并推荐配件');
+  assert.equal(h.requests.length,0,'source collection waits for the one explicit main action');
+  const pending=action.onclick();await tick();assert.equal(h.requests[0].url,'/assistant/xgss/open');
+  h.requests[0].resolve({url:'https://xgss.xcmg.com/'});await pending;
+  assert.ok(h.messages.some(message=>message.type==='jilian:research-start'));
+  h.stop.onclick();
+});
+
+test('focused parts: changing a fault or dataset destroys its estimate and hides the old cards',async()=>{
+  let destroyed=0;const saved=focusedPartRecord();
+  const h=harness({focused:true,partsFocus:true,estimates:{mount:()=>({destroy(){destroyed++;}})},fetchActive:async()=>faultReply(saved)});await tick();
+  assert.equal(h.nodes.find(node=>node.id==='fault-parts-estimates').hidden,false);
+  const symptom=h.nodes.find(node=>node.id==='research-symptom');symptom.value='SPN 2664 / FMI 3';symptom.oninput();
+  assert.equal(destroyed,1);assert.equal(h.nodes.find(node=>node.id==='fault-parts-estimates').hidden,true);
+  assert.equal(h.nodes.find(node=>node.id==='research-result-hero').hidden,true);
+  h.state.machine={...h.state.machine,dataset_id:'c'.repeat(64)};h.window.syncXGSSResearch();
+  assert.equal(h.nodes.find(node=>node.id==='fault-parts-estimates').hidden,true);
+});
+
+test('focused parts: group switches hide the other group result and estimate without losing its saved selection',async()=>{
+  let mounts=0,destroyed=0;const saved=focusedPartRecord();
+  const h=harness({focused:true,partsFocus:true,estimates:{mount:()=>{mounts++;return {destroy(){destroyed++;}};}},fetchActive:async()=>faultReply(saved)});await tick();
+  const picker=h.nodes.find(node=>node.id==='fault-parts-picker'),hero=h.nodes.find(node=>node.id==='research-result-hero'),estimate=h.nodes.find(node=>node.id==='fault-parts-estimates');
+  const card=h.nodes.find(node=>node.id==='xgss-research');assert.ok(card.children.indexOf(estimate)>card.children.indexOf(hero));
+  assert.equal(hero.hidden,false);assert.match(visibleText(hero),/SPN 444/);
+  treeNodes(picker).find(node=>/^历史故障 /.test(node.textContent)).onclick();
+  assert.equal(hero.hidden,true);assert.equal(estimate.hidden,true);assert.equal(h.nodes.find(node=>node.id==='research-run').disabled,true);
+  treeNodes(picker).find(node=>/^当前故障 /.test(node.textContent)).onclick();
+  assert.equal(hero.hidden,false);assert.equal(estimate.hidden,false);assert.equal(mounts,1);assert.equal(destroyed,0);
+  assert.match(visibleText(hero),/SPN 444/);assert.equal(h.requests.length,0);
+});
+
+test('focused parts: excluding a sensor research link removes only the stale research query and dataset binding',async()=>{
+  const prior=activeRecord({research_id:'e'.repeat(32),symptom_source:'user_question',symptom:'连续传感器趋势分析'});
+  const h=harness({focused:true,partsFocus:true,search:'?panel=connection&research='+'e'.repeat(32)+'&dataset='+'a'.repeat(64),fetchLinked:async()=>faultReply(prior)});
+  const links=[];h.window.history={replaceState:(_data,_title,url)=>links.push(url)};await tick();
+  assert.ok(links.length);assert.doesNotMatch(links.at(-1),/research=|dataset=/);
+  assert.match(links.at(-1),/panel=connection/);assert.match(links.at(-1),/#trackunit-asset=asset/);
+  assert.equal(h.nodes.find(node=>node.id==='research-result-hero').hidden,true);
+});
+
+test('focused parts: filtered links resolve the actual active record and never use the linked ID for activation',async()=>{
+  const linked=activeRecord({research_id:'e'.repeat(32),symptom_source:'user_question',symptom:'连续传感器趋势分析'});
+  for(const active of [focusedPartRecord({research_id:'c'.repeat(32)}),activeRecord({research_id:'d'.repeat(32),symptom_source:'user_question',symptom:'另一项传感器研究'})]){
+    const h=harness({focused:true,partsFocus:true,ready:false,search:'?panel=connection&research='+linked.research_id+'&dataset='+'a'.repeat(64),
+      fetchLinked:async()=>faultReply(linked),fetchActive:async()=>faultReply(active)});
+    await tick();
+    assert.equal(h.fetchCalls.filter(call=>call.url==='/assistant/xgss/research/active').length,1);
+    assert.equal(h.nodes.find(node=>node.id==='research-result-hero').hidden,active.symptom_source==='user_question');
+    if(active.symptom_source==='trackunit_page')assert.match(visibleText(h.nodes.find(node=>node.id==='research-result-hero')),/SPN 444/);
+    assert.equal(h.requests.length,0,'restoration reads saved results without requesting AI');
+    const symptom=h.nodes.find(node=>node.id==='research-symptom');
+    h.nodes.find(node=>node.id==='research-symptom-source').value='operator_report';symptom.value='SPN 639 / FMI 9 通信异常';symptom.oninput();
+    const models=controlledModels(h),action=h.nodes.find(node=>node.id==='research-run').onclick();
+    const next=focusedPartRecord({research_id:'f'.repeat(32),symptom_source:'operator_report',symptom:symptom.value,advice:undefined,pages:[],analysis_revision:undefined});
+    models[0].resolve(next);await tick();
+    assert.equal(JSON.parse(h.requests[0].options.body).expected_research_id,active.research_id);
+    h.requests[0].resolve(next);await action;
+  }
+});
+
+test('focused parts: foreground reload of the same research preserves the chosen history tab and hides current estimates',async()=>{
+  let mounts=0;const saved=focusedPartRecord();
+  const h=harness({focused:true,partsFocus:true,estimates:{mount:()=>{mounts++;return {destroy(){}};}},fetchActive:async()=>faultReply(saved)});await tick();
+  const picker=h.nodes.find(node=>node.id==='fault-parts-picker'),hero=h.nodes.find(node=>node.id==='research-result-hero'),estimate=h.nodes.find(node=>node.id==='fault-parts-estimates');
+  treeNodes(picker).find(node=>/^历史故障 /.test(node.textContent)).onclick();
+  await h.listeners.focus();await tick();
+  assert.equal(treeNodes(picker).find(node=>/^历史故障 /.test(node.textContent)).attributes['aria-selected'],'true');
+  assert.equal(hero.hidden,true);assert.equal(estimate.hidden,true);
+  assert.equal(h.nodes.find(node=>node.id==='research-run').disabled,true);
+  treeNodes(picker).find(node=>/^当前故障 /.test(node.textContent)).onclick();
+  assert.equal(hero.hidden,false);assert.equal(estimate.hidden,false);assert.match(visibleText(hero),/SPN 444/);
+  assert.equal(mounts,1);assert.equal(h.requests.length,0);
+});
+
 test('fault attribution keeps saved SPN FMI SA when another communication fault is visible',async()=>{
   const saved=activeRecord({symptom_source:'trackunit_page',symptom:'Trackunit 当前 Events 页可见故障：SPN 444 / FMI 1，SA 163；描述：Battery Potential / Power Input 2；页面显示时间：Jul 20, 2026, 11:20 AM。'});
   const h=harness({focused:true,fetchActive:async()=>({ok:true,json:async()=>saved})});await tick();
@@ -504,6 +670,79 @@ test('inspection-only legacy entries cannot masquerade as prepared parts',async(
   const h=harness({focused:true,fetchActive:async()=>({ok:true,json:async()=>saved})});await tick();
   assert.match(visibleText(h.nodes.find(n=>n.id==='research-result-hero')),/1 项优先核查 · 0 项条件性备件/);
   assert.equal(h.nodes.find(n=>n.id==='research-email-preview').hidden,true);
+});
+
+test('historical candidates show diagrams, provenance and preparation conditions without mail or current repair claims',async()=>{
+  const observation={asset_id:'asset',source_url:'https://new.manager.trackunit.com/assets/asset/events',observed_at:'2026-09-24T12:00:00Z',
+    description:'Transmission / Manufacturer assignable SPN / Abnormal Update Rate',code:'',spn:null,fmi:null,sa:null,status:'CLOSED',
+    occurred_at:'June 29, 2026, 9:06 AM',cleared_at:'',page_event_id:null};
+  const saved=activeRecord({symptom_source:'trackunit_page',symptom:'历史已解除变速箱通信异常',fault_context:{trackunit_page:observation}});
+  const base=saved.advice.parts[0];
+  saved.advice={...saved.advice,analysis_scope:'historical',parts:[],inspection_targets:[],historical_candidates:[{...base,
+    name:'历史线束候选',part_number:'HISTORY-HARNESS',evidence_level:'historical_reference',reason:'历史通信异常：核对总线段与端子',
+    replacement_condition:'复发并确认对应回路异常，核对VIN适配后决定备库。'}]};
+  const h=harness({focused:true,fetchActive:async()=>faultReply(saved)});await tick();
+  const hero=visibleText(h.nodes.find(n=>n.id==='research-result-hero'));
+  assert.match(hero,/历史故障备件参考/);assert.match(hero,/1 项历史备件候选/);assert.match(hero,/已解除/);
+  const card=h.nodes.find(n=>n.className==='engineering-hypothesis');
+  assert.match(visibleText(card),/HISTORY-HARNESS/);assert.match(visibleText(card),/复发并确认对应回路异常/);
+  assert.ok(card.children.some(n=>n.tag==='figure'));assert.ok(card.children.some(n=>n.textContent==='查看图册依据'));
+  assert.equal(h.nodes.find(n=>n.id==='research-email-preview').hidden,true);
+  assert.equal(h.nodes.find(n=>n.id==='research-fault-event').value,'page:saved');
+  assert.equal(h.requests.some(r=>/email/.test(r.url)),false);
+});
+
+test('choosing a resolved visible history row binds original status and identity and does not invent an SPN',async()=>{
+  const h=harness({focused:true});const asset='00000000-0000-0000-0000-000004760361';
+  h.state.machine={...h.state.machine,machine_id:asset};h.location.hash='#trackunit-asset='+asset;h.window.syncXGSSResearch();
+  const capture={schema_version:1,source:'trackunit_visible_events_page',source_url:`https://new.manager.trackunit.com/assets/${asset}/events`,asset_id:asset,
+    capture_status:'visible_fault_cards',coverage:'rendered_events_only',observed_at:new Date().toISOString(),faults:[{
+      code:null,spn:null,fmi:null,sa:null,description:'Transmission / Manufacturer assignable SPN / Abnormal Update Rate',status:'CLOSED',
+      displayed_at:'June 29, 2026, 9:06 AM',cleared_at:'',page_event_id:'visible-history-row-1'}]};
+  h.send({type:'jilian:trackunit-page-faults',asset_id:asset,dataset_id:'a'.repeat(64),capture});
+  const select=h.nodes.find(n=>n.id==='research-fault-event');
+  assert.equal(select.value,'','a resolved event is never an automatic active-fault choice');
+  select.value='page:0';select.onchange();
+  assert.equal(h.nodes.find(n=>n.id==='research-run').textContent,'历史故障备件参考');
+  const models=controlledModels(h),action=h.nodes.find(n=>n.id==='research-run').onclick();
+  const body=JSON.parse(models[0].options.body);
+  assert.equal(body.page_fault.asset_id,asset);assert.equal(body.page_fault.status,'CLOSED');
+  assert.equal(body.page_fault.description,capture.faults[0].description);
+  assert.equal(body.page_fault.spn,null);assert.equal(body.page_fault.fmi,null);assert.equal(body.page_fault.code,'');
+  assert.equal(body.page_fault.page_event_id,'visible-history-row-1');assert.equal(body.fault_event_id,undefined);
+  assert.equal(body.page_fault.occurred_at,'June 29, 2026, 9:06 AM');assert.equal(body.symptom_source,'trackunit_page');
+  assert.equal(body.symptom,'','the authoritative page observation is separate from an optional operator supplement');
+  h.stop.onclick();models[0].resolve(activeRecord());await action;
+});
+
+test('restored page history replans with only allowed observation fields and the original operator supplement',async()=>{
+  const page={asset_id:'asset',source_url:'https://new.manager.trackunit.com/assets/asset/events',observed_at:'2026-09-24T12:00:00Z',
+    description:'Transmission / Abnormal Update Rate',code:'',spn:null,fmi:null,sa:null,status:'CLOSED',occurred_at:'Jun 29, 2026',cleared_at:null,page_event_id:null,
+    source:'trackunit_visible_events_page',coverage:'selected_visible_event_only'};
+  const saved=activeRecord({symptom_source:'trackunit_page',symptom:'SERVER GENERATED HISTORICAL FACTS',fault_context:{trackunit_page:page,operator_supplement:'在雨后出现过'}});
+  const h=harness({focused:true,fetchActive:async()=>faultReply(saved)});await tick();
+  assert.equal(h.nodes.find(n=>n.id==='research-symptom').value,'在雨后出现过');
+  const models=controlledModels(h),action=h.nodes.find(n=>n.id==='research-run').onclick({force:true});
+  const body=JSON.parse(models[0].options.body);
+  assert.equal(body.symptom,'在雨后出现过');assert.equal(body.page_fault.status,'CLOSED');
+  assert.equal(body.page_fault.source,undefined);assert.equal(body.page_fault.coverage,undefined);
+  assert.equal(body.page_fault.cleared_at,null);assert.equal(body.page_fault.spn,null);
+  h.stop.onclick();models[0].resolve(saved);await action;
+});
+
+test('a new active card hides historical candidates and a repeated capture does not rebind the saved observation',async()=>{
+  const observation={asset_id:'asset',source_url:'https://new.manager.trackunit.com/assets/asset/events',observed_at:'2026-09-24T12:00:00Z',
+    description:'Transmission communication history',code:'',spn:null,fmi:null,sa:null,status:'CLOSED',occurred_at:'Jun 29, 2026',cleared_at:'',page_event_id:null};
+  const saved=activeRecord({symptom_source:'trackunit_page',symptom:'历史通信异常',fault_context:{trackunit_page:observation}});
+  saved.advice={...saved.advice,analysis_scope:'historical',parts:[],historical_candidates:[saved.advice.parts[0]],inspection_targets:[]};
+  const h=harness({focused:true,fetchActive:async()=>faultReply(saved)});await tick();
+  const hero=h.nodes.find(n=>n.id==='research-result-hero');assert.equal(hero.hidden,false);
+  const capture={schema_version:1,source:'trackunit_visible_events_page',asset_id:'asset',capture_status:'visible_fault_cards',coverage:'rendered_events_only',
+    observed_at:new Date().toISOString(),faults:[{code:'SPN 444 / FMI 1',spn:444,fmi:1,sa:163,status:'OPEN',description:'Battery potential',displayed_at:'Sep 24, 2026'}]};
+  h.send({type:'jilian:trackunit-page-faults',asset_id:'asset',dataset_id:'a'.repeat(64),capture});
+  assert.equal(hero.hidden,false);assert.equal(h.nodes.find(n=>n.id==='research-fault-event').value,'page:saved');
+  const select=h.nodes.find(n=>n.id==='research-fault-event');select.value='page:0';select.onchange();
+  assert.equal(hero.hidden,true);assert.doesNotMatch(h.nodes.find(n=>n.id==='research-run').textContent,/历史/);
 });
 
 function freshFaultState(overrides={}){
@@ -874,7 +1113,7 @@ test('focused manual fault entry uses the same symptom input and hides process-o
   const h=harness({focused:true});h.sandbox.getManualFaultReference=()=>({code:'H10101',model:'TV12U',version:'260224',applicability_confirmed:true});
   h.window.focusXGSSResearch('H10101');
   assert.match(h.nodes.find(n=>n.id==='research-symptom').value,/H10101/);
-  assert.equal(h.nodes.find(n=>n.id==='research-run').textContent,'AI 分析故障');
+  assert.equal(h.nodes.find(n=>n.id==='research-run').textContent,'分析故障并推荐备件');
   assert.equal(h.nodes.find(n=>n.textContent==='更新备件与维修建议').attributes['data-deferred-feature'],'legacy-research-tools');
   assert.ok(h.nodes.some(n=>n.textContent===' 已关联故障码 H10101。'));
 });
@@ -1092,7 +1331,7 @@ test('confirmed catalog fault code is sent only when XGSS reports fault support'
   for(const ready of [true,false]){
     const data=activeRecord({catalog_fault_code:'E4030',plan:{summary:'检查通信',directions:[{component:'控制器',reason:'核对通信',search_terms:['控制器']}]}});
     const h=harness({fetchActive:async()=>({ok:true,json:async()=>data})});await tick();
-    const action=researchInputs(h).begin.onclick();
+    const action=researchInputs(h).begin.onclick();await tick();
     assert.equal(h.requests[0].url,'/assistant/xgss/status');
     h.requests[0].resolve({fault_ready:ready,catalog_ready:true});await tick();
     assert.equal(h.requests[1].url,'/assistant/xgss/open');
@@ -1106,7 +1345,7 @@ test('confirmed catalog fault code is sent only when XGSS reports fault support'
 test('failed fault-manual entry falls back once to the same VIN catalog and explains the source limitation',async()=>{
   const data=activeRecord({catalog_fault_code:'E4030',plan:{summary:'检查通信',directions:[{component:'控制器',reason:'核对通信',search_terms:['控制器']}]}});
   const h=harness({fetchActive:async()=>({ok:true,json:async()=>data})});await tick();
-  const action=researchInputs(h).begin.onclick();
+  const action=researchInputs(h).begin.onclick();await tick();
   h.requests[0].resolve({fault_ready:true,catalog_ready:true});await tick();
   assert.equal(JSON.parse(h.requests[1].options.body).fault_code,'E4030');
   h.requests[1].reject(new Error('故障手册入口不可用'));await tick();
@@ -1219,7 +1458,7 @@ test('maintenance explains its hours evidence and keeps the exact XGSS illustrat
   assert.ok(h.nodes.some(n=>n.textContent==='AI 工时依据：419.73 h'));
   assert.ok(h.nodes.some(n=>n.textContent.includes('2026-09-20T12:00:00Z · 历史采样')));
   assert.ok(h.nodes.some(n=>n.textContent.includes('不判定已到更换周期')));
-  assert.ok(h.nodes.some(n=>n.textContent==='AI 为什么推荐这些部件'));
+  assert.ok(h.nodes.some(n=>n.textContent==='AI 推荐依据'));
   const card=h.nodes.find(n=>n.className==='engineering-hypothesis');
   const reason=card.children.findIndex(n=>n.tag==='details'),picture=card.children.findIndex(n=>n.tag==='figure');
   assert.ok(reason>=0&&picture>reason,'diagram is below the recommendation and inspection conditions');
@@ -1257,7 +1496,7 @@ test('maintenance renders the backend context projection without faults and tole
     {as_of:projected.as_of,sample_count:3,source:'trackunit_cache'}]){
     const h=harness({focused:true}),data=maintenanceRecord({machine_context:context});await restoreResearch(h,data);
     assert.equal(Object.hasOwn(context,'faults'),false,'fixture matches the maintenance backend projection');
-    assert.ok(h.nodes.some(n=>n.textContent==='AI 为什么推荐这些部件'),'showPlan completed and advice rendered');
+    assert.ok(h.nodes.some(n=>n.textContent==='AI 推荐依据'),'showPlan completed and advice rendered');
     assert.ok(h.nodes.some(n=>n.textContent==='本次 AI 使用的设备证据'));
     assert.ok(h.nodes.some(n=>n.textContent==='燃油余量：未载入有效值'));
     assert.equal(h.nodes.some(n=>n.textContent==='未载入有效故障记录，不能据此判断无故障。'),false,'maintenance evidence does not invent a fault conclusion');
@@ -1271,7 +1510,7 @@ test('maintenance hides only the exact server default question while retaining r
     const h=harness({focused:true}),data=maintenanceRecord({symptom:question,plan:{summary:'按工时查找滤芯',directions:[{component:'空气滤清器',reason:'核对工时与保养记录',search_terms:['发动机系统','进排气组件','空气滤清器']}]}});await restoreResearch(h,data);
     assert.equal(h.nodes.find(n=>n.id==='research-symptom').value,question===defaultQuestion?'':question);
     assert.equal(h.window.currentXGSSResearchProgress().diagnosed,true,'display-only default removal must retain plan matching');
-    const models=controlledModels(h),run=h.nodes.find(n=>n.id==='research-run').onclick();
+    const models=controlledModels(h),run=h.nodes.find(n=>n.id==='research-run').onclick();await tick();
     assert.equal(models.length,0,'an unchanged restored plan is reused without a new AI request');
     const opening=h.requests.at(-1);assert.equal(opening.url,'/assistant/xgss/open');
     opening.resolve({url:'https://xgss.xcmg.com/'});await run;
@@ -1393,8 +1632,8 @@ test('unfinished standalone analysis identifies missing XGSS evidence without pr
   assert.equal(pending.hidden,false);
   assert.ok(card.children.indexOf(pending)<card.children.indexOf(mode));
   assert.match(visibleText(pending),/尚未读取该设备适用的零件或手册/);
-  assert.match(visibleText(pending),/Chrome 助手侧栏/);
-  assert.equal(run.hidden,true);
+  assert.match(visibleText(pending),/继续读取 XGSS 并生成备件建议/);
+  assert.equal(run.hidden,false);
   assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,true);
 });
 
@@ -1619,7 +1858,8 @@ test('manual Events-page read exposes recovery when the page is wrong and then a
       capture_status:'visible_fault_cards',coverage:'rendered_active_fault_cards_only',
       observed_at:'2026-09-23T06:00:00Z',faults:[{code:'SPN 2664 / FMI 3',spn:2664,fmi:3,sa:160,
         description:'Joystick 1 Theta-Axis Position',severity:'Low',displayed_at:'Sep 12, 2026'}]}});
-  assert.equal(button.hidden,true);
+  assert.equal(button.hidden,false);
+  assert.equal(button.textContent,'刷新当前页故障与历史记录');
   assert.equal(h.nodes.find(n=>n.id==='research-fault-event').hidden,false);
   assert.doesNotMatch(note.textContent,/读取失败|打开当前设备/);
 });
@@ -1631,17 +1871,17 @@ test('synthetic demo equipment shows a usable route instead of disabled XGSS act
   h.window.syncXGSSResearch();
   const gate=h.nodes.find(n=>n.id==='research-demo-gate');
   assert.equal(gate.hidden,false);
-  assert.ok(gate.children.some(n=>n.textContent.includes('没有可核对的同 VIN XGSS 图册')));
+  assert.ok(gate.children.some(n=>n.textContent.includes('读取当前设备后，按故障码匹配该设备适用的 XGSS 图册和配件。')));
   assert.equal(h.nodes.find(n=>n.className==='row research-main-actions').hidden,true);
-  gate.children.find(n=>n.textContent==='切换正式模式').onclick();
+  gate.children.find(n=>n.textContent==='关联当前设备').onclick();
   assert.equal(switched,'live');
 });
 
-test('completed AI results in a standalone web page do not offer an unavailable XGSS refresh button',async()=>{
+test('completed AI results in a standalone web page keep the direct-capable action available',async()=>{
   const saved=activeRecord(),h=harness({focused:true,ready:false,fetchActive:async()=>({ok:true,json:async()=>saved})});
   await tick();
   assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,false);
-  assert.equal(h.nodes.find(n=>n.id==='research-run').hidden,true);
+  assert.equal(h.nodes.find(n=>n.id==='research-run').hidden,false);
   h.send({type:'jilian:research-ready'});
   assert.equal(h.nodes.find(n=>n.id==='research-run').hidden,false);
 });
@@ -1673,7 +1913,7 @@ test('root-only collection retries category capture instead of repeatedly analyz
       plan:{summary:'查找部件',directions:[{component:'滤清器',reason:'核对保养件',search_terms:['空滤器']}]},
       evidence:{parts:[{name:'越野轮胎起重机',part_number:'127401674',assembly_path:[]}],manuals:[]}});
     const h=harness({focused:true});await restoreResearch(h,root);const models=controlledModels(h);
-    let run=h.nodes.find(n=>n.id==='research-run').onclick();
+    let run=h.nodes.find(n=>n.id==='research-run').onclick();await tick();
     assert.equal(models.length,0);assert.equal(h.requests.at(-1).url,'/assistant/xgss/open');
     h.requests.at(-1).resolve({url:'https://xgss.xcmg.com/'});await run;
     await h.send({type:'jilian:research-done',request_id:root.research_id,asset_id:'asset',dataset_id:'a'.repeat(64),result:{status:'partial',unmatched_terms:['空滤器'],unresolved:['整机分类未完成展开']}});
@@ -1681,7 +1921,7 @@ test('root-only collection retries category capture instead of repeatedly analyz
     assert.ok(h.nodes.some(n=>n.textContent.includes('未完成读取：整机分类未完成展开')));
     assert.ok(h.nodes.some(n=>n.textContent.includes('尚未读到部件或手册内容')));
     assert.equal(h.nodes.find(n=>n.id==='research-preliminary').hidden,false,'AI directions remain available while category sources are missing');
-    const count=h.requests.length;run=h.nodes.find(n=>n.id==='research-run').onclick();
+    const count=h.requests.length;run=h.nodes.find(n=>n.id==='research-run').onclick();await tick();
     assert.equal(h.requests.length,count+1);assert.equal(h.requests.at(-1).url,'/assistant/xgss/open');
     h.requests.at(-1).resolve({url:'https://xgss.xcmg.com/'});await run;h.stop.onclick();
   }
@@ -1690,7 +1930,7 @@ test('root-only collection retries category capture instead of repeatedly analyz
 test('partial collection with real components continues to AI and preserves unread categories',async()=>{
   const data=activeRecord({advice:undefined,analysis_revision:undefined,plan:{summary:'查找风扇',directions:[{component:'风扇',reason:'核对风量',search_terms:['风扇']}]}});
   const h=harness({focused:true});await restoreResearch(h,data);const models=controlledModels(h);
-  const collecting=h.start.onclick();h.requests.at(-1).resolve({url:'https://xgss.xcmg.com/'});await collecting;
+  const collecting=h.start.onclick();await tick();h.requests.at(-1).resolve({url:'https://xgss.xcmg.com/'});await collecting;
   const done=h.send({type:'jilian:research-done',request_id:data.research_id,asset_id:'asset',dataset_id:'a'.repeat(64),result:{status:'partial',unmatched_terms:['水泵'],unresolved:['水泵']}});
   assert.equal(models.length,1);assert.match(models[0].url,/\/analyze$/);models[0].resolve({...data,advice:illustratedRecord().advice,analysis_revision:1});await done;
   assert.ok(h.nodes.some(n=>n.textContent.includes('未完成读取：水泵')));
@@ -1839,4 +2079,295 @@ test('sensor parts handoff manual draft edits restore validation even before a c
   await h.nodes.find(n=>n.id==='research-run').onclick({force:true});
   assert.equal(calls.length,1);
   assert.equal(h.nodes.some(n=>n.textContent.includes('故障码尚未确认适用范围')),true);
+});
+
+
+test('catalog images: duplicate captures show one card and one estimate with every condition retained',async()=>{
+  const saved=focusedPartRecord(),part=saved.advice.parts[0];
+  const first={...part,capture_id:'e'.repeat(64),source_id:'xpart:'+'e'.repeat(64)+':0',figure_ref:'9',reason:'第一分类关联',replacement_condition:'必须检查端子损坏'};
+  const second={...part,reason:'第二分类关联',replacement_condition:'必须排除接地问题'};
+  saved.advice={...saved.advice,parts:[first,second]};
+  saved.evidence.parts=[first,second];
+  saved.pages.push({capture_id:first.capture_id,content:{assembly_path:['第一分类']},illustrations:[]});
+  const mounts=[],h=harness({focused:true,partsFocus:true,estimates:{mount:(root,options)=>{mounts.push(options);return {destroy(){}};}},fetchActive:async()=>faultReply(saved)});
+  await tick();
+  const cards=h.nodes.filter(node=>node.className==='fault-parts-card');assert.equal(cards.length,1);
+  assert.equal(mounts[0].parts.length,1);
+  assert.match(visibleText(cards[0]),/必须检查端子损坏/);assert.match(visibleText(cards[0]),/必须排除接地问题/);
+  assert.equal(mounts[0].parts[0].capture_id,part.capture_id);
+  const image=treeNodes(cards[0]).find(node=>node.tag==='img');
+  assert.equal(image.src,`/assistant/xgss/research/${saved.research_id}/images/${'d'.repeat(64)}`);
+  assert.ok(treeNodes(cards[0]).some(node=>node.textContent==='图中序号 4'));
+  assert.ok(!treeNodes(cards[0]).some(node=>node.className==='fault-parts-image-empty'));
+  assert.equal(saved.advice.parts.length,2,'rendering must not mutate saved evidence');
+});
+
+test('catalog images: same number with distinct part configuration is not merged or given another part image',async()=>{
+  const saved=focusedPartRecord(),part=saved.advice.parts[0];
+  saved.advice.parts.push({...part,name:part.name+'（配置B）',capture_id:'e'.repeat(64),source_id:'other'});
+  const mounts=[],h=harness({focused:true,partsFocus:true,estimates:{mount:(root,options)=>{mounts.push(options);return {destroy(){}};}},fetchActive:async()=>faultReply(saved)});
+  await tick();
+  const cards=h.nodes.filter(node=>node.className==='fault-parts-card');assert.equal(cards.length,2);
+  assert.equal(mounts[0].parts.length,2);
+  assert.equal(treeNodes(cards[0]).filter(node=>node.tag==='img').length,1);
+  assert.equal(treeNodes(cards[1]).filter(node=>node.tag==='img').length,0);
+  assert.match(visibleText(cards[1]),/该分类尚未采集图示/);
+});
+
+test('catalog images: historical duplicate references do not inflate preparation estimates',async()=>{
+  const saved=focusedPartRecord(),part=saved.advice.parts[0];
+  saved.fault_context={trackunit_page:{status:'RESOLVED',description:'Transmission / Abnormal Update Rate'}};
+  saved.advice={...saved.advice,parts:[],analysis_scope:'historical',historical_candidates:[
+    {...part,preparation_condition:'先排除总线线缆问题'},
+    {...part,capture_id:'e'.repeat(64),source_id:'other',preparation_condition:'再次复发时才考虑备库'}]};
+  const mounts=[],h=harness({focused:true,partsFocus:true,estimates:{mount:(root,options)=>{mounts.push(options);return {destroy(){}};}},fetchActive:async()=>faultReply(saved)});
+  await tick();
+  const cards=h.nodes.filter(node=>node.className==='fault-parts-card');assert.equal(cards.length,1);
+  assert.equal(mounts[0].parts.length,1);assert.equal(mounts[0].scope,'historical');
+  assert.match(visibleText(cards[0]),/先排除总线线缆问题/);assert.match(visibleText(cards[0]),/再次复发时才考虑备库/);
+});
+
+function historicalDEFRecord(overrides={}){
+  const saved=focusedPartRecord();
+  return {...saved,symptom:'已解除的 DEF 温度历史故障',fault_context:{trackunit_page:{
+    asset_id:'asset',source_url:'https://new.manager.trackunit.com/assets/asset/events',observed_at:'2026-09-25T12:00:00Z',
+    description:'Aftertreatment 1 Diesel Exhaust Fluid Tank Temperature / Voltage Above Normal',
+    code:'',spn:null,fmi:null,sa:null,status:'CLOSED',occurred_at:'Sep 21, 2026',cleared_at:'Sep 22, 2026',page_event_id:'history-def'}},
+    advice:{...saved.advice,analysis_scope:'historical',parts:[],historical_candidates:saved.advice.parts},...overrides};
+}
+
+test('model schema recovery: a failed historical plan keeps the exact observation and retries planning once',async()=>{
+  const saved=historicalDEFRecord({pages:[],evidence:{parts:[],manuals:[]},advice:undefined,analysis_revision:undefined});
+  const h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+  const calls=controlledModelErrors(h),button=h.nodes.find(n=>n.id==='research-run'),card=h.nodes.find(n=>n.id==='xgss-research');
+  let run=button.onclick({force:true});assert.equal(calls[0].url,'/assistant/xgss/research/plan');
+  const firstBody=JSON.parse(calls[0].options.body);calls[0].fail();await run;
+  assert.equal(button.disabled,false);assert.equal(button.textContent,'重试配件推荐');
+  assert.match(visibleText(card),/检索方向暂未生成。已选故障与补充信息仍保留/);
+  assert.doesNotMatch(visibleText(card),/schema_validation|directions\[0\]|value_error/);
+  assert.equal(firstBody.page_fault.status,'CLOSED');assert.equal(firstBody.page_fault.code,'');assert.equal(firstBody.page_fault.spn,null);
+  assert.equal(calls.length,1,'no automatic model retry');
+  run=button.onclick();assert.equal(calls.length,2);assert.equal(calls[1].url,calls[0].url);
+  assert.deepEqual(JSON.parse(calls[1].options.body),firstBody,'retry never changes historical status or manufactures a fault code');
+  calls[1].fail();await run;
+});
+
+test('model schema recovery: advice failure preserves matching cards images and estimate then retries the same research',async()=>{
+  const saved=historicalDEFRecord(),mounts=[],h=harness({focused:true,partsFocus:true,
+    estimates:{mount:(_root,options)=>{mounts.push(options);return {destroy(){}};}},fetchActive:async()=>faultReply(saved)});await tick();
+  const button=h.nodes.find(n=>n.id==='research-run'),card=h.nodes.find(n=>n.id==='xgss-research');
+  const originalCard=treeNodes(card).find(n=>n.className==='fault-parts-card');
+  const image=treeNodes(originalCard).find(n=>n.tag==='img'),estimate=h.nodes.find(n=>n.id==='fault-parts-estimates');
+  const calls=controlledModelErrors(h);let run=button.onclick();assert.match(calls[0].url,/\/analyze$/);calls[0].fail();await run;
+  assert.equal(button.textContent,'重试配件分析');assert.equal(button.disabled,false);
+  assert.match(visibleText(card),/本次配件分析暂未完成。已选故障和已读取的 XGSS 资料仍保留。下方仍为上次建议，尚未更新/);
+  assert.ok(treeNodes(card).includes(originalCard));assert.ok(treeNodes(card).includes(image));
+  assert.equal(estimate.hidden,false);assert.equal(mounts.length,1,'failure does not destroy or remount saved price input');
+  assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,false);
+  run=button.onclick();assert.equal(calls[1].url,calls[0].url);assert.equal(calls.length,2);
+  calls[1].result(saved);await run;assert.equal(button.textContent,'更新配件推荐');
+  assert.match(visibleText(card),/已生成备件与维修建议/);assert.doesNotMatch(visibleText(card),/尚未更新|schema_validation/);
+});
+
+test('model schema recovery: forced plan failure retains same-fault result and retry remains a plan request',async()=>{
+  const saved=historicalDEFRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+  const card=h.nodes.find(n=>n.id==='xgss-research'),original=treeNodes(card).find(n=>n.className==='fault-parts-card');
+  const calls=controlledModelErrors(h),button=h.nodes.find(n=>n.id==='research-run');
+  let run=button.onclick({force:true});calls[0].fail();await run;
+  assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,false);assert.ok(treeNodes(card).includes(original));
+  assert.match(visibleText(card),/下方仍为上次建议，尚未更新/);
+  run=button.onclick();assert.match(calls[1].url,/\/plan$/);calls[1].fail();await run;
+});
+
+test('model schema recovery: new fault failure never reveals previous fault cards or retries after an input change',async()=>{
+  const saved=historicalDEFRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+  const symptom=h.nodes.find(n=>n.id==='research-symptom'),card=h.nodes.find(n=>n.id==='xgss-research'),button=h.nodes.find(n=>n.id==='research-run');
+  const original=treeNodes(card).find(n=>n.className==='fault-parts-card');
+  symptom.value='改变本次检查工况';symptom.oninput();
+  const calls=controlledModelErrors(h);const run=button.onclick();calls[0].fail();await run;
+  assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,true);
+  assert.equal(h.nodes.find(n=>n.id==='fault-parts-estimates').hidden,true);assert.equal(treeNodes(card).includes(original),false);
+  assert.doesNotMatch(visibleText(card),/下方仍为上次建议/);
+  symptom.value='另一条补充信息';symptom.oninput();assert.equal(button.textContent,'生成配件推荐');
+});
+
+test('model schema recovery: other backend failures keep their distinct message',async()=>{
+  const saved=historicalDEFRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+  const calls=controlledModelErrors(h),button=h.nodes.find(n=>n.id==='research-run'),card=h.nodes.find(n=>n.id==='xgss-research');
+  const run=button.onclick();calls[0].fail('rate_limit','请求过于频繁，请稍后重试。');await run;
+  assert.match(visibleText(card),/请求过于频繁，请稍后重试/);assert.doesNotMatch(visibleText(card),/检索方向暂未生成|本次配件分析暂未完成/);
+  assert.equal(button.disabled,false);assert.equal(button.textContent,'更新配件推荐');
+});
+
+test('model schema recovery: late old-device failure does not replace the new device status',async()=>{
+  const saved=historicalDEFRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+  const calls=controlledModelErrors(h),button=h.nodes.find(n=>n.id==='research-run'),card=h.nodes.find(n=>n.id==='xgss-research');
+  const run=button.onclick();h.state.machine={...h.state.machine,machine_id:'other'};h.location.hash='#trackunit-asset=other';h.window.syncXGSSResearch();
+  calls[0].fail();await run;
+  assert.doesNotMatch(visibleText(card),/本次配件分析暂未完成|schema_validation/);
+  assert.equal(button.disabled,true);assert.equal(button.textContent,'生成配件推荐');
+});
+
+function directReadyRecord(){
+  return historicalDEFRecord({plan:{summary:'核对本机部件',directions:[{component:'风扇',reason:'核对适配与条件',search_terms:['风扇']}]}});
+}
+function controlledDirectRequests(h){
+  const original=h.sandbox.fetch,calls=[];
+  h.sandbox.fetch=(url,options)=>/\/(?:collect-direct|analyze|plan)$/.test(url)?new Promise(resolve=>calls.push({url,options,
+    result:record=>resolve(streamedRecord(record)),fail:(kind,message)=>resolve(streamedFailure(kind,message)),
+    httpFail:(kind,message)=>resolve({ok:false,json:async()=>({detail:{kind,message}})})})):original(url,options);
+  return calls;
+}
+function directCollectedRecord(saved,overrides={}){
+  return {...saved,advice:undefined,analysis_revision:undefined,
+    direct_collection:{status:'completed',terms:['风扇'],capture_ids:saved.pages.map(p=>p.capture_id),unmatched_terms:[],unresolved:[],cached:false,revision:saved.revision,...overrides}};
+}
+
+test('direct collection: standalone saved plan reads XGSS and analyzes after one explicit click without a plugin',async()=>{
+  const complete=directReadyRecord(),planned={...complete,revision:0,pages:[],evidence:{parts:[],manuals:[]},advice:undefined,analysis_revision:undefined};
+  const h=harness({ready:false,focused:true,partsFocus:true,search:'',fetchActive:async()=>faultReply(planned)});await tick();
+  const button=h.nodes.find(n=>n.id==='research-run'),calls=controlledDirectRequests(h);
+  assert.equal(button.hidden,false);assert.equal(button.disabled,false);assert.equal(calls.length,0,'restoring a plan never starts cloud analysis');
+  const action=button.onclick();await tick();assert.equal(calls.length,1);
+  assert.match(calls[0].url,/\/collect-direct$/);assert.deepEqual(JSON.parse(calls[0].options.body),{expected_revision:0,terms:['风扇']});
+  calls[0].result(directCollectedRecord(complete));await tick();
+  assert.equal(calls.length,2);assert.match(calls[1].url,/\/analyze$/);assert.equal(h.requests.some(r=>r.url==='/assistant/xgss/open'),false);
+  calls[1].result(complete);await action;
+  assert.equal(button.disabled,false);assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,false);
+  assert.ok(h.nodes.some(n=>n.tag==='img'));assert.equal(h.messages.some(m=>m.type==='jilian:research-start'),false);
+});
+
+test('direct collection: partial and cached results retain coverage and use their committed revision for AI',async()=>{
+  for(const state of [{status:'partial',cached:false,unmatched_terms:['另一分类'],unresolved:['未完成分类']},{status:'completed',cached:true}]){
+    const saved=directReadyRecord(),h=harness({focused:true,partsFocus:true,ready:false,search:'',fetchActive:async()=>faultReply(saved)});await tick();
+    const calls=controlledDirectRequests(h),run=h.start.onclick();await tick();calls[0].result(directCollectedRecord(saved,state));await tick();
+    assert.equal(calls[1].url,'/assistant/xgss/research/'+saved.research_id+'/analyze');
+    calls[1].result(saved);await run;
+    if(state.status==='partial')assert.ok(h.nodes.some(n=>n.textContent.includes('未完成分类')));
+    assert.equal(h.requests.some(r=>r.url==='/assistant/xgss/open'),false);
+  }
+});
+
+test('direct collection: only explicit unavailable auth schema or no-match errors fall back to the same plugin research',async()=>{
+  for(const kind of ['direct_unavailable','direct_auth','direct_schema','direct_no_match']){
+    const saved=directReadyRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+    const calls=controlledDirectRequests(h),run=h.start.onclick();await tick();calls[0].fail(kind);await tick();
+    const open=h.requests.at(-1);assert.equal(open.url,'/assistant/xgss/open',kind);assert.equal(JSON.parse(open.options.body).vin,saved.vin);
+    open.resolve({url:'https://xgss.xcmg.com/'});await run;
+    const start=h.messages.find(m=>m.type==='jilian:research-start');assert.equal(start.request_id,saved.research_id);
+    assert.ok(h.nodes.some(n=>n.textContent.includes('通过插件读取同 VIN 图册')));assert.equal(calls.length,1);h.stop.onclick();
+  }
+});
+
+test('direct collection: fallback-unavailable standalone keeps original cards images and estimate without false success',async()=>{
+  const saved=directReadyRecord(),mounts=[],h=harness({focused:true,partsFocus:true,ready:false,search:'',
+    estimates:{mount:(_root,options)=>{mounts.push(options);return {destroy(){}};}},fetchActive:async()=>faultReply(saved)});await tick();
+  const card=h.nodes.find(n=>n.id==='xgss-research'),old=treeNodes(card).find(n=>n.className==='fault-parts-card');
+  const calls=controlledDirectRequests(h),run=h.start.onclick();await tick();calls[0].fail('direct_auth');await run;
+  assert.ok(treeNodes(card).includes(old));assert.equal(h.nodes.find(n=>n.id==='fault-parts-estimates').hidden,false);assert.equal(mounts.length,1);
+  assert.match(visibleText(card),/XGSS 暂未完成读取。已保存资料仍保留/);assert.equal(h.start.disabled,false);
+  assert.equal(calls.length,1);assert.equal(h.requests.some(r=>r.url==='/assistant/xgss/open'),false);
+});
+
+test('direct collection: conflict identity busy evidence limit cancellation and unknown errors never fall back',async()=>{
+  for(const kind of ['revision_changed','active_changed','direct_identity','busy','evidence_limit','cancel','network_error']){
+    const saved=directReadyRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+    const calls=controlledDirectRequests(h),run=h.start.onclick();await tick();calls[0].fail(kind,'读取未完成：'+kind);await run;
+    assert.equal(h.requests.some(r=>r.url==='/assistant/xgss/open'),false,kind);assert.equal(calls.length,1);
+    assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,false);assert.equal(h.start.disabled,false);
+    assert.ok(h.nodes.some(n=>n.textContent==='读取未完成：'+kind));
+  }
+});
+
+test('direct collection: stop or device change aborts the request and cannot trigger fallback or AI from its late result',async()=>{
+  for(const change of ['stop','device']){
+    const saved=directReadyRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+    const calls=controlledDirectRequests(h),run=h.start.onclick();await tick();
+    if(change==='stop')h.stop.onclick();else{h.state.machine={...h.state.machine,machine_id:'other'};h.location.hash='#trackunit-asset=other';h.window.syncXGSSResearch();}
+    assert.equal(calls[0].options.signal.aborted,true);calls[0].result(directCollectedRecord(saved));await run;
+    assert.equal(calls.length,1);assert.equal(h.requests.some(r=>r.url==='/assistant/xgss/open'),false);
+    if(change==='device')assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,true);
+  }
+});
+
+test('direct collection: a mismatched record identity is rejected without replacing saved parts or falling back',async()=>{
+  for(const changed of [{research_id:'d'.repeat(32)},{machine_id:'other'},{dataset_id:'d'.repeat(64)},{vin:'OTHER'},{revision:-1}]){
+    const saved=directReadyRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+    const card=h.nodes.find(n=>n.id==='xgss-research'),old=treeNodes(card).find(n=>n.className==='fault-parts-card');
+    const calls=controlledDirectRequests(h),run=h.start.onclick();await tick();calls[0].result({...directCollectedRecord(saved),...changed});await run;
+    assert.ok(treeNodes(card).includes(old));assert.match(visibleText(card),/返回资料与当前排查不一致/);
+    assert.equal(calls.length,1);assert.equal(h.requests.some(r=>r.url==='/assistant/xgss/open'),false);
+  }
+});
+
+test('direct collection: structured HTTP error kind follows the same explicit fallback rule',async()=>{
+  for(const kind of ['direct_auth','revision_changed']){
+    const saved=directReadyRecord(),h=harness({focused:true,partsFocus:true,fetchActive:async()=>faultReply(saved)});await tick();
+    const calls=controlledDirectRequests(h),run=h.start.onclick();await tick();calls[0].httpFail(kind,'读取失败');await tick();
+    if(kind==='direct_auth'){assert.equal(h.requests.at(-1).url,'/assistant/xgss/open');h.requests.at(-1).resolve({url:'https://xgss.xcmg.com/'});}
+    else assert.equal(h.requests.some(r=>r.url==='/assistant/xgss/open'),false);
+    await run;h.stop.onclick();
+  }
+});
+
+test('direct collection: background source resumption does not introduce an automatic model request',async()=>{
+  const full=directReadyRecord(),plan={...full,pages:[],revision:0,evidence:{parts:[],manuals:[]},advice:undefined,analysis_revision:undefined};
+  const h=harness({focused:true,fetchActive:async()=>faultReply(plan),fetchDirect:async()=>streamedRecord(directCollectedRecord(full))});await tick();
+  assert.equal(h.fetchCalls.filter(call=>call.url.endsWith('/collect-direct')).length,1);
+  assert.equal(h.fetchCalls.some(call=>call.url.endsWith('/analyze')||call.url.endsWith('/plan')),false);
+  assert.ok(h.nodes.some(n=>n.textContent==='XGSS 资料已读取，可生成配件建议。'));
+});
+
+test('direct collection: directory-only evidence does not imply ready parts or start AI',async()=>{
+  const full=directReadyRecord(),plan={...full,pages:[],revision:0,evidence:{parts:[],manuals:[]},advice:undefined,analysis_revision:undefined};
+  const root={...directCollectedRecord(full),evidence:{parts:[{source_id:'root',name:'整机',part_number:'TEST-ROOT',assembly_path:['整机']}],manuals:[]}};
+  const h=harness({focused:true,partsFocus:true,ready:false,search:'',fetchActive:async()=>faultReply(plan)});await tick();
+  const calls=controlledDirectRequests(h),button=h.nodes.find(n=>n.id==='research-run'),action=button.onclick();await tick();calls[0].result(root);await action;
+  assert.equal(calls.length,1);assert.equal(button.textContent,'继续读取 XGSS 并推荐配件');
+  assert.equal(h.nodes.find(n=>n.id==='research-result-hero').hidden,true);
+  assert.ok(h.nodes.some(n=>n.textContent.includes('尚未取得可核对的部件')));
+});
+
+function appSearchGuidance(h){
+  const app=fs.readFileSync(require.resolve('../app/assistant_ui/app.js'),'utf8');
+  const begin=app.indexOf('function currentAISearchGuidance(){'),end=app.indexOf('function handleAIGuidanceRequest',begin);
+  assert.ok(begin>=0&&end>begin);
+  vm.runInNewContext(app.slice(begin,end),h.sandbox);
+  return JSON.parse(JSON.stringify(h.sandbox.currentAISearchGuidance()));
+}
+test('extension guidance uses the current research plan instead of an older report',async()=>{
+  const h=harness(),data=activeRecord({catalog_fault_code:'E4030',plan:{summary:'检查通信',directions:[
+    {component:'控制器',reason:'核对通信连接',search_terms:['控制器','controller','控制器']}]}});
+  await restoreResearch(h,data);
+  h.sandbox.report={component_hypotheses:[{component:'旧部件',search_terms:['旧检索词']}]};
+  const result=appSearchGuidance(h);
+  assert.deepEqual(result.terms,['控制器','controller']);
+  assert.deepEqual(result.components,[{name:'控制器',reason:'核对通信连接',reference_ids:[]}]);
+  assert.equal(result.fault_code,'E4030');assert.equal(result.has_report,true);
+  assert.equal(result.has_search_terms,true);assert.equal(result.machine_model,'XC948U');
+  assert.equal('machine_id' in result,false);assert.equal('vin' in result,false);
+  assert.deepEqual(data.plan.directions[0].search_terms,['控制器','controller','控制器']);
+});
+test('extension guidance drops a changed symptom or source without reviving older report terms',async()=>{
+  for(const change of ['symptom','source']){
+    const h=harness();await restoreResearch(h,activeRecord());
+    h.sandbox.report={component_hypotheses:[{component:'旧部件',search_terms:['旧检索词']}]};
+    if(change==='symptom'){const input=h.nodes.find(n=>n.id==='research-symptom');input.value='另一个问题';input.oninput();}
+    else {const source=h.nodes.find(n=>n.id==='research-symptom-source');source.value='operator_report';source.onchange();}
+    const result=appSearchGuidance(h);
+    assert.deepEqual(result.terms,[],change);assert.equal(result.has_report,false,change);
+  }
+});
+test('extension guidance cannot carry a plan across device, dataset or VIN changes before sync',async()=>{
+  for(const change of ['machine_id','dataset_id','serial_number']){
+    const h=harness();await restoreResearch(h,activeRecord());
+    h.sandbox.report={component_hypotheses:[{component:'旧部件',search_terms:['旧检索词']}]};
+    h.state.machine={...h.state.machine,[change]:'other'};
+    const result=appSearchGuidance(h);
+    assert.deepEqual(result.terms,[],change);assert.equal(result.has_report,false,change);
+  }
+});
+test('extension guidance preserves legacy opened report search when no research is selected',()=>{
+  const h=harness();h.sandbox.openedReport={component_hypotheses:[{component:'风扇',rationale:'检查风量',search_terms:['风扇']}]};
+  const result=appSearchGuidance(h);assert.deepEqual(result.terms,['风扇']);assert.equal(result.has_report,true);
 });

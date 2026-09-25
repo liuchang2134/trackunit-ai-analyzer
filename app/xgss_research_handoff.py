@@ -8,6 +8,7 @@ from app.investigation_history import read_investigation
 from app.local_assistant import ManualFault, manual_fault_evidence
 from app.manual_knowledge import EngineeringFault, ManualRecord, retrieve_manuals, engineering_fault_evidence
 from app import trackunit_events
+from app import trackunit_page_context
 
 
 def _copy(value):
@@ -122,7 +123,9 @@ def load_handoff(source_report_id,machine_id,dataset_id,machine_model):
                   'source_report_id':source_report_id,'handoff_context':context,**faults})
 
 
-def plan_context(body,machine_model):
+def plan_context(body,machine_model,*,machine=None):
+    if getattr(body,'page_fault',None) is not None:
+        return trackunit_page_context.plan_context(body,machine)
     if getattr(body,'fault_event_id',None):
         if body.source_report_id or body.manual_fault or body.engineering_fault or body.symptom_source!='trackunit_event':
             raise ValueError('真实故障事件不能混入旧报告、测试故障或其他来源。')

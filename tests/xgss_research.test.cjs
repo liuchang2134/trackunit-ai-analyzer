@@ -47,8 +47,8 @@ test('tree signature follows visible child labels independently of unchanged sou
 
 test('production tree changes cannot label the previous table as the new source',()=>{
   const f=fixture();const query=f.doc.querySelector;
-  f.doc.querySelector=selector=>selector==='.ivu-tree-title-selected'?{innerText:'散热器安装组件'}:
-    selector.startsWith('#printDiv')?{previousElementSibling:{innerText:'冷却系统'}}:query(selector);
+  f.doc.querySelector=selector=>selector==='.ivu-tree-title-selected'?f.element('散热器安装组件'):
+    selector.startsWith('#printDiv')?{previousElementSibling:f.element('冷却系统')}:query(selector);
   assert.equal(f.api.inspect(['散热器']).status,'loading');
 });
 
@@ -213,7 +213,7 @@ const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAA
 function illustrationFixture({src='/api/doc/image2d/3944450.svg',width=3200,height=2000,dataURL=PNG}={}){
   const f=fixture(),query=f.doc.querySelector,queryAll=f.doc.querySelectorAll;
   f.catalog.items=[{name:'散热器',part_number:'TEST-001'}];f.catalog.assembly_path=['冷却系统'];
-  f.selected={innerText:'冷却系统'};f.heading={innerText:'冷却系统'};
+  f.selected=f.element('冷却系统');f.heading=f.element('冷却系统');
   f.embed={...f.element(''),getAttribute:name=>name==='src'?f.src:null,
     get src(){return new URL(f.src,f.doc.baseURI||f.view.location.href).href;}};
   f.src=src;f.embeds=[f.embed];
@@ -234,6 +234,69 @@ function illustrationFixture({src='/api/doc/image2d/3944450.svg',width=3200,heig
   f.doc.createElement=tag=>{assert.equal(tag,'canvas');return f.canvas;};
   return f;
 }
+
+test('rendered parts wait for a visible selected category and matching table heading, including a busy overlay',()=>{
+  for(const scenario of ['missing-heading','hidden-heading','missing-selection','hidden-selection','busy']){
+    const f=illustrationFixture();
+    if(scenario==='missing-heading')f.heading=null;
+    if(scenario==='hidden-heading')f.heading.getClientRects=()=>[];
+    if(scenario==='missing-selection')f.selected=null;
+    if(scenario==='hidden-selection')f.selected.getClientRects=()=>[];
+    if(scenario==='busy'){
+      const query=f.doc.querySelectorAll;
+      f.doc.querySelectorAll=selector=>selector.startsWith('.ivu-spin')?[f.element('加载中')]:query(selector);
+    }
+    const result=f.api.inspect();assert.equal(result.status,'loading',scenario);assert.equal(result.capture,undefined,scenario);
+  }
+});
+
+function selectIllustratedCategory(f,label='变速箱壳 1'){
+  f.nodes.push(f.element(label));assert.equal(f.api.select(label,'XUGTEST000000001').status,'selected');
+  f.selected.innerText=f.heading.innerText=label;f.catalog.assembly_path=[label];
+  f.catalog.items=[{name:'变速箱壳',part_number:'800000007',figure_ref:'2'}];
+}
+async function advanceImageWait(f){
+  const next=[...f.timers.entries()].find(([,value])=>value.ms===250);assert.ok(next,'bounded image synchronization wait');
+  f.timers.delete(next[0]);next[1].callback();await Promise.resolve();await Promise.resolve();
+}
+
+test('a newly selected category waits for its delayed drawing instead of reusing the previous category image',async()=>{
+  const f=illustrationFixture();selectIllustratedCategory(f);
+  const pending=f.api.captureWithIllustration();assert.equal(f.loads.length,0);
+  f.src='/api/doc/image2d/5555555.svg';await advanceImageWait(f);
+  assert.deepEqual(f.loads,['https://xgss.xcmg.com/api/doc/image2d/5555555.svg']);
+  f.images[0].onload();const result=await pending;
+  assert.equal(result.capture.illustrations[0].document_ref,'5555555.svg');
+  assert.equal(result.capture.items[0].part_number,'800000007');
+});
+
+test('unchanged old drawing is omitted after a bounded wait while a genuine no-image category retains its text',async()=>{
+  for(const scenario of ['old-drawing','no-image']){
+    const f=illustrationFixture();selectIllustratedCategory(f);
+    if(scenario==='no-image')f.embeds=[];
+    const pending=f.api.captureWithIllustration();
+    for(let wait=0;wait<6;wait++)await advanceImageWait(f);
+    const result=await pending;
+    assert.equal(result.status,'ready');assert.equal(result.capture.items[0].part_number,'800000007');
+    assert.equal(result.capture.illustrations,undefined);assert.equal(f.loads.length,0);assert.equal(f.timers.size,0);
+    if(scenario==='old-drawing')assert.match(result.illustration_issue,/尚未确认更新/);
+  }
+});
+
+test('a drawing that appears after the empty embed gap is captured only for the unchanged text and VIN',async()=>{
+  for(const scenario of ['ready','changed-rows','changed-vin']){
+    const f=illustrationFixture();selectIllustratedCategory(f);f.embeds=[];
+    const pending=f.api.captureWithIllustration();
+    if(scenario==='changed-rows')f.catalog.items[0].part_number='800000008';
+    if(scenario==='changed-vin')f.catalog.vin='XUGOTHER00000002';
+    f.src='/api/doc/image2d/5555555.svg';f.embeds=[f.embed];await advanceImageWait(f);
+    if(scenario==='ready'){
+      f.images[0].onload();assert.equal((await pending).capture.illustrations[0].document_ref,'5555555.svg');
+    }else{
+      const result=await pending;assert.equal(result.status,'loading');assert.equal(result.capture,undefined);assert.equal(f.loads.length,0);
+    }
+  }
+});
 
 test('a visible same-origin diagram becomes a bounded white-background PNG attached to its text source',async()=>{
   const f=illustrationFixture(),pending=f.api.captureWithIllustration(['冷却']);

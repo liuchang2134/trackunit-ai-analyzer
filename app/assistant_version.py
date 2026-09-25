@@ -1,1 +1,1 @@
-ASSISTANT_BUILD = '20260924.4-fault-causality'
+ASSISTANT_BUILD = '20260925.4-button-check'

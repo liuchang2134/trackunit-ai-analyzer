@@ -10,6 +10,8 @@ import statistics
 import tempfile
 import threading
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
+from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlsplit
@@ -24,8 +26,13 @@ STORE = Path(__file__).resolve().parents[1] / 'data/local/sensor-series'
 SOURCE = 'trackunit_advanced_sensors_export'
 MAX_BYTES = 3_000_000
 MAX_ROWS = 20000
-EVIDENCE_VERSION = 2
-ANALYSIS_VERSION = 2
+MAX_CHANNELS = 96
+MAX_EXPORTS = 32
+MAX_BATCH_BYTES = 24_000_000
+MAX_MERGED_ROWS = 50000
+MAX_CELLS = 2_000_000
+EVIDENCE_VERSION = 4
+ANALYSIS_VERSION = 4
 LOCK = threading.Lock()
 CHANNELS = {
     'coolant_c': ('冷却液温度', '°C', -60, 200),
@@ -96,64 +103,149 @@ def _parse_time(raw):
     raise ValueError('CSV 日期格式无法解析。')
 
 
-def parse_csv(csv_text):
+def _channel_kind(label):
+    if re.search(r'fault.*(?:code|message|information|count|identification)|multi[- ]?package.*fault|diagnostic|\b(?:D[MP][12]|DTC|SPN|FMI|OC)\b|make[ _/]*model[ _/]*serial|serial[ _]*number|故障码|故障报文|序列号', label, re.I):
+        return 'code'
+    if re.search(r'lamp|switch|status|state|\balarm\b|indicator(?:\s+light|\s*\((?:yellow|red)\))|(?:current|selected) gear|gear information|display\s*["\']?NN\b|^input\s*[1-6]$|^output\s*1$|灯|开关|状态|挡位', label, re.I):
+        return 'state'
+    if re.search(r'cumulative|total.*(?:hours|distance|fuel)|(?:hours|distance).*total|idle (?:fuel consumption|time)|累计|累积', label, re.I):
+        return 'counter'
+    return 'continuous'
+
+
+def _metadata(keys, labels, units=None, supplied=None):
+    if units is not None and (not isinstance(units, dict) or set(units)-set(keys)):
+        raise ValueError('单位字段必须对应本次导出通道。')
+    if supplied is not None and (not isinstance(supplied, dict) or set(supplied)-set(keys)):
+        raise ValueError('通道说明必须对应本次导出通道。')
+    result = {}
+    for key, label in zip(keys, labels):
+        item = (supplied or {}).get(key, {})
+        if not isinstance(item, dict) or set(item)-{'label','unit','kind'}:
+            raise ValueError('通道说明格式无效。')
+        title = item.get('label', label)
+        if not isinstance(title, str) or not 1 <= len(title.strip()) <= 180 or re.search(r'[<>\r\n]', title):
+            raise ValueError('传感器名称无效。')
+        unit = (units or {}).get(key, item.get('unit'))
+        if key in (units or {}) and item.get('unit') is not None and units[key] != item['unit']:
+            raise ValueError('同一通道的单位声明冲突。')
+        if unit is not None and (not isinstance(unit,str) or not 1 <= len(unit.strip()) <= 24 or re.search(r'[<>\r\n]',unit)):
+            raise ValueError('传感器单位无效。')
+        unit = unit.strip() if unit is not None else None
+        if key in CHANNELS and unit is not None and unit != CHANNELS[key][1]:
+            raise ValueError('基础通道单位必须与已确认的 °C、kPa、%、rpm 对应。')
+        kind = item.get('kind', _channel_kind(label))
+        if kind not in ('continuous','state','code','counter'):
+            raise ValueError('传感器类型无效。')
+        # Source names that identify a state or packed message cannot be
+        # reclassified as an analogue signal by a client declaration.
+        inferred = _channel_kind(label)
+        if inferred != 'continuous': kind = inferred
+        result[key] = {'key':key, 'label':CHANNELS[key][0] if key in CHANNELS else title.strip(),
+                       'source_label':label, 'unit':unit or '单位待核对', 'kind':kind,
+                       'unit_status':'confirmed' if unit is not None else 'requires_confirmation',
+                       'ai_eligible':unit is not None and kind != 'code'}
+    return result
+
+
+def _merge_observation(previous, current, kind):
+    if previous is None: return current
+    if current is None or previous == current: return previous
+    if kind != 'code': raise ValueError('同一时点同一通道存在冲突数据，请分别导出并核对。')
+    values = list(previous) if isinstance(previous,list) else [previous]
+    for value in current if isinstance(current,list) else [current]:
+        if value not in values: values.append(value)
+    if len(values)>64: raise ValueError('同一时点的故障报文超过 64 条，请缩小导出范围。')
+    return values
+
+
+def _parse_export(csv_text, units=None, channel_metadata=None):
     if not isinstance(csv_text, str) or not csv_text.strip() or len(csv_text.encode('utf-8')) > MAX_BYTES:
         raise ValueError('CSV 为空或超过 3 MB。')
     reader = csv.reader(io.StringIO(csv_text.lstrip('\ufeff')), strict=True)
     try:
         header = next(reader)
-        if not 2 <= len(header) <= 5 or header[0].strip().lower() != 'date and time':
-            raise ValueError('请导出 Date and time 列及水温、油压、负载或转速通道。')
-        keys = []
+        if not 2 <= len(header) <= MAX_CHANNELS+1 or header[0].strip().lower() != 'date and time':
+            raise ValueError('请导出 Date and time 列及最多 96 个 CAN 或 INPUT 通道。')
+        keys, labels = [], []
         for col in header[1:]:
-            can = re.search(r'\(CAN\s+(\d+)\)\s*$', col.strip(), re.I)
-            key = CAN_KEYS.get(can.group(1)) if can else None
-            if not key or key in keys:
-                raise ValueError('CSV 包含不支持或重复的通道；当前支持 CAN 50278/50281/50283/50286。')
-            keys.append(key)
-        rows, seen = [], {}
+            can = re.fullmatch(r'(.{1,180}?)\s*\(CAN\s+(\d{1,10})\)\s*', col.strip(), re.I)
+            discrete = re.fullmatch(r'(INPUT\s*([1-6])|OUTPUT\s*(1))\s*\(\1\)\s*', col.strip(), re.I)
+            if can:
+                number = str(int(can.group(2)))
+                key = CAN_KEYS.get(number, 'can_'+number)
+                label = can.group(1).strip()
+            elif discrete:
+                key = 'input_'+discrete.group(2) if discrete.group(2) else 'output_1'
+                label = 'INPUT'+discrete.group(2) if discrete.group(2) else 'OUTPUT1'
+            else:
+                raise ValueError('CSV 包含不支持的通道表头；需保留 CAN 编号、INPUT1 至 INPUT6 或 OUTPUT1 标识。')
+            if key in keys: raise ValueError('CSV 包含重复的 CAN 通道。')
+            keys.append(key); labels.append(label)
+        meta = _metadata(keys, labels, units, channel_metadata)
+        rows, seen, raw_values, unsafe = [], {}, {}, set()
         now = datetime.now(timezone.utc)
         for line, raw in enumerate(reader, 2):
-            if not raw or not any(cell.strip() for cell in raw):
-                continue
+            if not raw or not any(cell.strip() for cell in raw): continue
             if len(raw) != len(header) or line > MAX_ROWS + 1:
                 raise ValueError('CSV 列数不一致或超过 20000 行。')
             instant = _parse_time(raw[0])
             if instant > now + timedelta(minutes=5):
                 raise ValueError('CSV 存在未来时间，请核对时区。')
             row = {'timestamp': instant.isoformat()}
+            strings = {}
             for key, cell in zip(keys, raw[1:]):
                 cell = cell.strip()
                 if cell.lower() in ('', 'null', 'n/a', 'na', '-', '--'):
-                    row[key] = None
-                    continue
-                try:
-                    number = float(cell)
-                except ValueError:
+                    row[key] = None; continue
+                if len(cell)>100: raise ValueError(f'第 {line} 行传感器数值过长。')
+                strings[key] = cell
+                try: value = Decimal(cell)
+                except InvalidOperation:
+                    if meta[key]['kind'] in ('state','code') and not re.search(r'[<>\r\n]',cell):
+                        row[key] = cell; continue
                     raise ValueError(f'第 {line} 行传感器数值无效。') from None
-                if not math.isfinite(number) or not CHANNELS[key][2] <= number <= CHANNELS[key][3]:
+                if not value.is_finite(): raise ValueError(f'第 {line} 行超出可接受输入范围。')
+                if key in CHANNELS and not CHANNELS[key][2] <= value <= CHANNELS[key][3]:
                     raise ValueError(f'第 {line} 行超出可接受输入范围；该范围仅用于校验格式，不是故障阈值。')
-                row[key] = number
-            if all(row[key] is None for key in keys):
-                continue
+                if abs(value)>2**53-1:
+                    unsafe.add(key); row[key]=cell; continue
+                number = float(value)
+                row[key] = cell if meta[key]['kind']=='code' else number
+            if all(row[key] is None for key in keys): continue
             if instant in seen:
-                if seen[instant] != row:
-                    raise ValueError('同一时点存在冲突数据，请分别导出并核对。')
+                prior=seen[instant]
+                for key in keys:
+                    kind='code' if key in unsafe else meta[key]['kind']
+                    prior[key]=_merge_observation(prior[key],row[key],kind)
+                    raw_values[row['timestamp']][key]=_merge_observation(raw_values[row['timestamp']].get(key),strings.get(key),'code')
                 continue
-            seen[instant] = row
-            rows.append(row)
+            seen[instant] = row; raw_values[instant.isoformat()] = strings; rows.append(row)
         rows.sort(key=lambda item: item['timestamp'])
-        if len(rows) < 3:
-            raise ValueError('至少需要 3 个不同时间点才能分析连续数据。')
-        if (_parse_time(rows[-1]['timestamp']) - _parse_time(rows[0]['timestamp'])).days > 366:
+        if len(rows)<3: raise ValueError('至少需要 3 个不同时间点才能分析连续数据。')
+        if _parse_time(rows[-1]['timestamp'])-_parse_time(rows[0]['timestamp'])>timedelta(days=366):
             raise ValueError('一次导入的时间跨度不能超过 366 天。')
-        return keys, rows
+        for key in unsafe:
+            meta[key].update(kind='code', ai_eligible=False, exclusion_reason='大整数原样保存，不作连续量分析')
+            for row in rows:
+                if row[key] is not None: row[key] = raw_values[row['timestamp']][key]
+        return keys, rows, meta
     except (csv.Error, StopIteration):
         raise ValueError('CSV 格式不完整。') from None
 
 
+def parse_csv(csv_text):
+    keys, rows, _ = _parse_export(csv_text)
+    return keys, rows
+
+
+@lru_cache(maxsize=100000)
+def _time_seconds(value):
+    return _parse_time(value).timestamp()
+
+
 def _seconds(row):
-    return _parse_time(row['timestamp']).timestamp()
+    return _time_seconds(row['timestamp'])
 
 
 def _slope(rows, key):
@@ -184,7 +276,11 @@ def _slope(rows, key):
             'start_value': y[0], 'end_value': y[-1]}
 
 
-def _derive(keys, rows):
+def _derive(keys, rows, metadata=None):
+    metadata = metadata or {key:{'key':key,'label':CHANNELS[key][0],'unit':CHANNELS[key][1],'kind':'continuous','unit_status':'confirmed','ai_eligible':True} for key in keys}
+    source_rows = rows
+    numeric_keys = [key for key in keys if metadata[key]['kind']=='continuous' and metadata[key]['ai_eligible']]
+    rows = [{'timestamp':row['timestamp'], **{key:row.get(key) if key in numeric_keys and isinstance(row.get(key),(int,float)) else None for key in keys}} for row in rows]
     gaps = [_seconds(b) - _seconds(a) for a, b in zip(rows, rows[1:])]
     median = statistics.median(gaps)
     # Explicit 10 minute limit: display and fit never join longer missing periods.
@@ -198,7 +294,15 @@ def _derive(keys, rows):
                 running.append(run)
                 run = []
         groups[-1].append(row)
-        if row.get('engine_rpm') is not None and row['engine_rpm'] > 0:
+        rpm = row.get('engine_rpm')
+        if rpm is None:
+            # An asynchronous signal row is not an engine-stop measurement.
+            # It also cannot contribute other channels as synchronous RPM data.
+            continue
+        if run and _seconds(row) - _seconds(run[-1]) > gap_limit:
+            running.append(run)
+            run = []
+        if rpm > 0:
             run.append(row)
         elif run:
             running.append(run)
@@ -208,13 +312,16 @@ def _derive(keys, rows):
     segments = [{'start': group[0]['timestamp'], 'end': group[-1]['timestamp'], 'count': len(group)} for group in groups]
     channels = []
     for key in keys:
-        valid = [row for row in rows if row[key] is not None]
-        values = [row[key] for row in valid]
-        if values:
-            channels.append({'key': key, 'label': CHANNELS[key][0], 'unit': CHANNELS[key][1],
-                             'count': len(valid), 'min': min(values), 'max': max(values),
-                             'mean': round(statistics.mean(values), 3), 'latest': valid[-1][key],
-                             'latest_at': valid[-1]['timestamp']})
+        valid = [row for row in source_rows if row.get(key) is not None]
+        values = [row[key] for row in valid if isinstance(row[key],(int,float))]
+        description = metadata[key]
+        latest=valid[-1][key] if valid else None
+        channels.append({**description, 'count':len(valid),
+                         'min':min(values) if values else None, 'max':max(values) if values else None,
+                         'mean':round(statistics.mean(values),3) if values and description['kind']=='continuous' else None,
+                         'latest':'; '.join(str(value) for value in latest) if isinstance(latest,list) else latest,
+                         **({'latest_values':latest} if isinstance(latest,list) else {}),
+                         'latest_at':valid[-1]['timestamp'] if valid else None})
     evidence = []
     def add(eid, title, detail, channel_keys, start=None, end=None, **facts):
         evidence.append({'id': eid, 'title': title, 'detail': detail, 'channel_keys': channel_keys,
@@ -224,6 +331,7 @@ def _derive(keys, rows):
         sample_count=len(rows), gap_count=sum(g > gap_limit for g in gaps),
         max_gap_seconds=max(gaps), median_interval_seconds=median)
     for channel in channels:
+        if not channel['ai_eligible'] or channel['kind']!='continuous' or channel['min'] is None: continue
         add('range_' + channel['key'], channel['label'] + '观测范围',
             f"观测最小值 {channel['min']:g}、最大值 {channel['max']:g} {channel['unit']}；这是样本范围，不是厂家正常范围。",
             [channel['key']], minimum=channel['min'], maximum=channel['max'], mean=channel['mean'])
@@ -252,15 +360,35 @@ def _derive(keys, rows):
                 **fitted, engine_rpm_min=min(rpm), engine_rpm_max=max(rpm),
                 load_min=min(loads) if loads else None, load_max=max(loads) if loads else None)
             break
-    for key in (key for key in keys if key != 'coolant_c'):
+    for key in (key for key in numeric_keys if key != 'coolant_c'):
         for group in reversed(running):
             candidate = [row for row in group if _seconds(row) >= _seconds(group[-1]) - 1800]
             fit = _slope(candidate, key)
             if fit and fit['sample_count'] >= 5 and fit['duration_minutes'] >= 10:
-                add('running_' + key + '_trend', '最近运行分段的' + CHANNELS[key][0] + '趋势',
+                add('running_' + key + '_trend', '最近运行分段的' + metadata[key]['label'] + '趋势',
                     f"{fit['sample_count']} 点、{fit['duration_minutes']:g} 分钟，{fit['start_value']:g}→{fit['end_value']:g}，斜率 {fit['rate_per_minute']:g}/分钟，R²={fit['r_squared']:g}。油压变化必须结合同时段转速、负载和温度；斜率不是故障判定。",
                     [key], **fit)
                 break
+    # New channels retain their own observed sampling window even when RPM
+    # is absent. Never label these windows as confirmed engine-running data.
+    for key in numeric_keys:
+        if key in CHANNELS: continue
+        for group in reversed(groups):
+            candidate = [row for row in group if _seconds(row)>=_seconds(group[-1])-1800]
+            fit = _slope(candidate,key)
+            if fit and fit['sample_count']>=5 and fit['duration_minutes']>=10:
+                add('observed_'+key+'_trend',metadata[key]['label']+'连续观测趋势',
+                    f"{fit['sample_count']} 点、{fit['duration_minutes']:g} 分钟，{fit['start_value']:g}→{fit['end_value']:g} {metadata[key]['unit']}，斜率 {fit['rate_per_minute']:g}/分钟，R²={fit['r_squared']:g}；运行条件未单独确认，变化不等于故障。",
+                    [key], **fit)
+                break
+    for channel in channels:
+        if not channel['ai_eligible'] or channel['kind'] not in ('state','counter'): continue
+        valid=[row for row in source_rows if row.get(channel['key']) is not None]
+        transitions=sum(a[channel['key']]!=b[channel['key']] for a,b in zip(valid,valid[1:]))
+        add('context_'+channel['key'],channel['label']+'观测上下文',
+            f"{len(valid)} 个有效记录、相邻有效记录变化 {transitions} 次。状态编码未提供厂家定义，不把数值大小当作严重程度，也不作连续趋势外推。",
+            [channel['key']],sample_count=len(valid),transition_count=transitions,
+            latest=channel['latest'],kind=channel['kind'])
     indexed = {item['id']: item for item in evidence}
     load_fit, rpm_fit = indexed.get('running_engine_load_percent_trend'), indexed.get('running_engine_rpm_trend')
     if load_fit and rpm_fit and load_fit['start'] == rpm_fit['start'] and load_fit['end'] == rpm_fit['end']:
@@ -289,7 +417,7 @@ def _derive(keys, rows):
     prior = None
     for index in indexes:
         row = rows[index]
-        point = dict(row)
+        point = {'timestamp':row['timestamp'], **{key:source_rows[index].get(key) if metadata[key]['kind']!='code' and isinstance(source_rows[index].get(key),(int,float)) else None for key in keys}}
         point['break_before'] = prior is None or _seconds(row) - _seconds(rows[prior]) > gap_limit or any(g > gap_limit for g in gaps[prior:index])
         chart.append(point)
         prior = index
@@ -298,59 +426,95 @@ def _derive(keys, rows):
             'sample_count': len(rows), 'channels': channels, 'segments': segments,
             'quality': {'gap_count': sum(g > gap_limit for g in gaps), 'max_gap_seconds': max(gaps),
                         'median_interval_seconds': median, 'gap_break_seconds': gap_limit,
-                        'missing_values': {key: sum(row[key] is None for row in rows) for key in keys},
+                        'missing_values': {key: sum(row.get(key) is None for row in source_rows) for key in keys},
                         'aggregation': 'unspecified_export'},
             'evidence': evidence, 'chart_points': chart,
             'prediction': {'method': 'segmented_sensor_trend', 'calibration': 'unvalidated',
                            'failure_time': None, 'continuation': continuation}}
 
 
-def import_series(machine_id, dataset_id, csv_text, source, source_asset_id,
-                  origin='user_confirmed_export', captured_at=None, page_url=None, units=None):
-    machine, vin = _identity(machine_id, dataset_id)
-    if source != SOURCE or source_asset_id != machine_id:
-        raise ValueError('导出来源设备与当前设备不一致。')
-    if origin not in ('user_confirmed_export', 'browser_export_capture'):
-        raise ValueError('无效的导出绑定方式。')
+def _source_context(machine_id, source, source_asset_id, origin, captured_at, page_url):
+    if source!=SOURCE or source_asset_id!=machine_id: raise ValueError('导出来源设备与当前设备不一致。')
+    if origin not in ('user_confirmed_export','browser_export_capture'): raise ValueError('无效的导出绑定方式。')
     if page_url:
-        url = urlsplit(page_url)
-        if (url.scheme != 'https' or url.hostname not in ('manager.trackunit.com', 'new.manager.trackunit.com') or url.netloc != url.hostname
-                or not url.path.startswith('/assets/' + machine_id + '/')):
+        url=urlsplit(page_url)
+        if (url.scheme!='https' or url.hostname not in ('manager.trackunit.com','new.manager.trackunit.com')
+            or url.netloc!=url.hostname or not url.path.startswith('/assets/'+machine_id+'/')):
             raise ValueError('来源页面与当前 Trackunit 设备不一致。')
-        page_url = 'https://' + url.hostname + url.path
-    if origin == 'browser_export_capture' and not page_url:
-        raise ValueError('浏览器导出需要来源设备页面。')
-    now = datetime.now(timezone.utc)
-    captured = timestamp(captured_at) if captured_at else now
-    if captured is None or captured > now + timedelta(minutes=5):
-        raise ValueError('采集时间无效。')
-    keys, rows = parse_csv(csv_text)
-    if units is not None and (not isinstance(units, dict) or set(units) != set(keys)
-                              or any(units[key] != CHANNELS[key][1] for key in keys)):
-        raise ValueError('请确认导出页面使用 °C、kPa、%、rpm，并为各导出通道提供对应单位。')
-    unit_status = 'confirmed_metric' if units else 'requires_confirmation'
-    series_id = _digest({'machine_id': machine_id, 'vin': vin, 'channels': keys, 'rows': rows, 'units': units})
-    record = {'series_id': series_id, 'machine_id': machine_id, 'dataset_id': dataset_id,
-              'import_dataset_id': dataset_id, 'vin': vin, 'model': machine.model,
-              'source': SOURCE, 'source_asset_id': source_asset_id, 'origin': origin,
-              'captured_at': captured.isoformat(), 'page_url': page_url,
-              'unit_status': unit_status,
-              'binding': '用户确认属于当前设备' if origin == 'user_confirmed_export' else '插件当前资产页导出上下文',
-              'raw_rows': rows, 'channel_keys': keys, **_derive(keys, rows), 'ai_analysis': None}
-    if not units:
-        for channel in record['channels']:
-            channel['unit'] = '单位待核对'
-        for item in record['evidence']:
-            if item['id'].startswith('range_'):
-                item['detail'] = f"原始观测值 {item['minimum']:g} 至 {item['maximum']:g}；CSV 未标注单位，需核对页面后再分析。"
-        record['prediction']['continuation'] = None
+        page_url='https://'+url.hostname+url.path
+    if origin=='browser_export_capture' and not page_url: raise ValueError('浏览器导出需要来源设备页面。')
+    now=datetime.now(timezone.utc)
+    captured=timestamp(captured_at) if captured_at else now
+    if captured is None or captured>now+timedelta(minutes=5): raise ValueError('采集时间无效。')
+    return captured.isoformat(),page_url
+
+
+def import_batch(machine_id,dataset_id,exports,source,source_asset_id,
+                 origin='user_confirmed_export',captured_at=None,page_url=None):
+    machine,vin=_identity(machine_id,dataset_id)
+    captured,page_url=_source_context(machine_id,source,source_asset_id,origin,captured_at,page_url)
+    if not isinstance(exports,list) or not 1<=len(exports)<=MAX_EXPORTS:
+        raise ValueError('每批需 1 至 32 组导出。')
+    total_bytes=0; merged={}; meta={}; batches=[]; keys=[]
+    for export in exports:
+        if not isinstance(export,dict) or set(export)-{'csv_text','units','channel_metadata','page_url','captured_at'}:
+            raise ValueError('批量导出格式无效。')
+        csv_text=export.get('csv_text')
+        if not isinstance(csv_text,str): raise ValueError('CSV 格式无效。')
+        total_bytes+=len(csv_text.encode('utf-8'))
+        if total_bytes>MAX_BATCH_BYTES: raise ValueError('本批导出超过 24 MB。')
+        when,url=_source_context(machine_id,source,source_asset_id,origin,export.get('captured_at') or captured,export.get('page_url') or page_url)
+        export_keys,rows,descriptions=_parse_export(csv_text,export.get('units'),export.get('channel_metadata'))
+        for key in export_keys:
+            if key in meta and any(meta[key][field]!=descriptions[key][field] for field in ('source_label','unit','unit_status','kind')):
+                raise ValueError('同一 CAN 通道的名称、单位或类型冲突，请核对导出。')
+            if key not in meta: keys.append(key); meta[key]=descriptions[key]
+        if len(keys)>MAX_CHANNELS: raise ValueError('本批导出超过 96 个 CAN 通道。')
+        for row in rows:
+            target=merged.setdefault(row['timestamp'],{'timestamp':row['timestamp']})
+            for key in export_keys:
+                value=row[key]
+                if value is None: continue
+                target[key]=_merge_observation(target.get(key),value,meta[key]['kind'])
+        if len(merged)>MAX_MERGED_ROWS or len(merged)*len(keys)>MAX_CELLS:
+            raise ValueError('本批合并超过 50000 个时间点或 200 万数据格；请缩短时间范围。')
+        export_id=_digest({'keys':export_keys,'rows':rows,'metadata':descriptions})
+        batches.append({'export_id':export_id,'source':source,'origin':origin,'captured_at':when,'page_url':url,
+                        'channel_keys':export_keys,'row_count':len(rows),'window':{'start':rows[0]['timestamp'],'end':rows[-1]['timestamp']}})
+    if max(item['window']['start'] for item in batches)>min(item['window']['end'] for item in batches):
+        raise ValueError('各组导出的时间范围没有共同窗口，请选择相同时间范围后重试。')
+    rows=[{'timestamp':stamp,**{key:merged[stamp].get(key) for key in keys}} for stamp in sorted(merged)]
+    if _parse_time(rows[-1]['timestamp'])-_parse_time(rows[0]['timestamp'])>timedelta(days=366):
+        raise ValueError('一次导入的时间跨度不能超过 366 天。')
+    # Canonical key order makes repeated/reordered exports idempotent.
+    keys.sort(); meta={key:meta[key] for key in keys}
+    series_id=_digest({'machine_id':machine_id,'vin':vin,'channels':keys,'rows':rows,'metadata':meta})
+    confirmed=[key for key in keys if meta[key]['unit_status']=='confirmed']
+    record={'series_id':series_id,'machine_id':machine_id,'dataset_id':dataset_id,'import_dataset_id':dataset_id,
+            'vin':vin,'model':machine.model,'source':SOURCE,'source_asset_id':source_asset_id,'origin':origin,
+            'captured_at':captured,'page_url':page_url,'export_batches':batches,
+            'batch_id':_digest(sorted(set(item['export_id'] for item in batches))),
+            'unit_status':'confirmed_metric' if len(confirmed)==len(keys) else 'partially_confirmed' if confirmed else 'requires_confirmation',
+            'ai_available':any(meta[key]['ai_eligible'] for key in keys),
+            'binding':'用户确认属于当前设备' if origin=='user_confirmed_export' else '插件当前资产页导出上下文',
+            'raw_rows':rows,'channel_keys':keys,'channel_metadata':meta,**_derive(keys,rows,meta),'ai_analysis':None}
     with LOCK:
-        if _path(series_id).exists():
-            existing = _read(series_id, machine_id, dataset_id)
-            record['ai_analysis'] = existing.get('ai_analysis')
-        _write(_path(series_id), record)
-        _write(_pointer(machine_id, vin), {'series_id': series_id})
-    return _public(record, dataset_id)
+        path=_path(series_id); existing=None
+        if path.exists():
+            existing=_read(series_id,machine_id,dataset_id); record['ai_analysis']=existing.get('ai_analysis')
+        _write(path,record)
+        try: _write(_pointer(machine_id,vin),{'series_id':series_id})
+        except Exception:
+            if existing is None: path.unlink(missing_ok=True)
+            else: _write(path,existing)
+            raise
+    return _public(record,dataset_id)
+
+
+def import_series(machine_id,dataset_id,csv_text,source,source_asset_id,
+                  origin='user_confirmed_export',captured_at=None,page_url=None,units=None,channel_metadata=None):
+    return import_batch(machine_id,dataset_id,[{'csv_text':csv_text,'units':units,'channel_metadata':channel_metadata}],
+                        source,source_asset_id,origin,captured_at,page_url)
 
 
 def _read(series_id, machine_id, dataset_id):
@@ -362,7 +526,12 @@ def _read(series_id, machine_id, dataset_id):
     if record.get('series_id') != series_id or record.get('machine_id') != machine_id or record.get('vin') != vin:
         raise ValueError('连续传感器数据与当前设备 VIN 不匹配。')
     if record.get('evidence_version') != EVIDENCE_VERSION:
-        record.update(_derive(record['channel_keys'], record['raw_rows']))
+        if not record.get('channel_metadata'):
+            keys=record['channel_keys']
+            units={key:CHANNELS[key][1] for key in keys} if record.get('unit_status')=='confirmed_metric' else None
+            record['channel_metadata']=_metadata(keys,[CHANNELS[key][0] for key in keys],units)
+            record['ai_available']=any(item['ai_eligible'] for item in record['channel_metadata'].values())
+        record.update(_derive(record['channel_keys'], record['raw_rows'],record.get('channel_metadata')))
     return record
 
 
@@ -419,7 +588,9 @@ def _condition_only(record):
                 item['id'] == 'running_cooling_trend' and item.get('rate_per_minute', 0) > 0 or
                 item['id'] == 'running_oil_pressure_kpa_trend' and item.get('rate_per_minute', 0) < 0):
             return False
-    return True
+    # Directional evidence from newly imported physical channels is available
+    # to the model without forcing every unfamiliar system into routine.
+    return not any(item['id'].startswith('observed_can_') and item.get('r_squared',0)>=0.5 and abs(item.get('rate_per_minute',0))>1e-9 for item in record['evidence'])
 
 
 def _validate_directions(prose, evidence):
@@ -468,7 +639,8 @@ def _validate_analysis(raw, record):
 
 def _cached_analysis(record):
     saved = record.get('ai_analysis')
-    if not isinstance(saved, dict) or saved.get('analysis_version') != ANALYSIS_VERSION:
+    if (not isinstance(saved, dict) or saved.get('analysis_version') != ANALYSIS_VERSION
+        or saved.get('evidence_version') != record.get('evidence_version')):
         return None
     try:
         checked = _validate_analysis(json.dumps({key: saved[key] for key in ('summary', 'hypotheses')}, ensure_ascii=False), record)
@@ -479,17 +651,17 @@ def _cached_analysis(record):
 
 def analyze(series_id, machine_id, dataset_id):
     record = _read(series_id, machine_id, dataset_id)
-    if record.get('unit_status') != 'confirmed_metric':
+    if not record.get('ai_available',record.get('unit_status')=='confirmed_metric'):
         raise ValueError('CSV 未标注单位，请核对页面单位后重新导入再进行 AI 分析。')
     if _cached_analysis(record) is not None:
         return _public(record, dataset_id)
     evidence = {'model': record['model'], 'window': record['window'], 'sample_count': record['sample_count'],
-                'channels': record['channels'], 'quality': record['quality'],
+                'channels': [channel for channel in record['channels'] if channel.get('ai_eligible',True)], 'quality': record['quality'],
                 'evidence': record['evidence'], 'prediction': record['prediction'],
                 'conditional_monitoring_only': _condition_only(record)}
     instructions = ('你是工程机械连续工况的风险分析助手。根据给定同机 Advanced Sensors 导出序列的统计和趋势，'
         '分析可能发生的故障方向、演变机制、观察优先级，并给出 XGSS 备件图册的部件检索词。'
-        '必须结合多个通道解释，不要只重新排列检查事项。根据实际证据可明确说尚未发现持续恶化，'
+        '连续量按分段趋势解释；状态量只作上下文，编码没有厂家定义时不能推断严重程度；累计量不按瞬时变化外推。未知单位和打包故障报文已排除，不能补测量或解码。新增通道的方向性趋势不自动等于异常，不确定时仍用routine。必须结合多个通道解释，不要只重新排列检查事项。根据实际证据可明确说尚未发现持续恶化，'
         '不能为了凑预警捏造异常。温度升高可为暖机或负载改变；停机零油压不是故障，'
         '转速>0同时零油压也需排除启停过渡。导出有长缺口且未声明聚合方式。'
         '给出的数值范围只是观测范围，不是厂家限值。没有厂家阈值、故障标签或维修结果，'
@@ -508,7 +680,8 @@ def analyze(series_id, machine_id, dataset_id):
         {'role': 'user', 'content': json.dumps(evidence, ensure_ascii=False)}], Analysis.model_json_schema(), timeout_seconds=60)
     output = _validate_analysis(raw, record)
     output.update(generated_at=datetime.now(timezone.utc).isoformat(), model=get_deepseek_model(),
-                  observed_window=record['window'], status='unvalidated_hypotheses', analysis_version=ANALYSIS_VERSION)
+                  observed_window=record['window'], status='unvalidated_hypotheses', analysis_version=ANALYSIS_VERSION,
+                  evidence_version=record['evidence_version'])
     if record.get('ai_analysis'):
         record['analysis_history'] = (record.get('analysis_history', []) + [record['ai_analysis']])[-3:]
     record['ai_analysis'] = output
@@ -536,6 +709,6 @@ def parts_handoff(series_id, machine_id, dataset_id, hypothesis_index):
     if len(symptom) > 3000:
         symptom = symptom[:2990] + '（证据见连续资料）'
     return {'series_id': series_id, 'machine_id': machine_id, 'dataset_id': dataset_id,
-            'vin': record['vin'], 'hypothesis_index': hypothesis_index,
+            'vin': record['vin'], 'hypothesis_index': hypothesis_index, 'hypothesis': choice,
             'evidence_ids': choice['evidence_ids'], 'symptom_source': 'user_question',
             'symptom': symptom, 'search_terms': choice['search_terms'], 'window': record['window']}

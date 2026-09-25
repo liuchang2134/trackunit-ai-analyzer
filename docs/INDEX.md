@@ -1,5 +1,7 @@
 # 文档索引
 
+当前产品范围以 [PRODUCT_SCOPE.md](PRODUCT_SCOPE.md) 为准：故障事件 → 同机 XGSS → AI 维修与备件建议 → 邮件准备通知，以及工况行为驱动的故障风险与时间窗口预测。两条主线各环节需分别验收，不能把局部演示写成全部完成。下方早期提案、演示路径和模块说明用于追溯实现，不能直接作为当前功能清单。
+
 这个目录此前同时存放九个版本的参赛材料、七套演示稿与十一份发布说明，**没有任何一处说明哪一份是当前的**。本页是那个缺失的入口。
 
 ## 先看这几份
@@ -7,15 +9,19 @@
 | 想了解 | 看这里 |
 |---|---|
 | **接手这个项目** | [交接文档.md](交接文档.md)：环境、目录、坑与禁区、下一步 |
+| **当前产品范围与完成标准** | [PRODUCT_SCOPE.md](PRODUCT_SCOPE.md)：两条主线与做减法要求 |
+| **哪些公开数据能用于预测验证** | [OPEN_DATASETS.md](OPEN_DATASETS.md)：官方来源、许可与适用范围 |
 | **两页读懂项目、AI 做了什么、怎么自己复核** | [参赛说明.md](参赛说明.md) |
-| **照着走一遍演示（约 8 分钟）** | [演示路径.md](演示路径.md)；演示前先跑 `scripts/demo_preflight.py` 预检 |
+| **照着走一遍当前演示** | [演示路径.md](演示路径.md)：启动检查、设备关联、AI 排查、XGSS 资料与备件核对 |
 | **答辩怎么讲、PPT 每页放什么** | [答辩演示稿大纲.md](答辩演示稿大纲.md)（12 页逐页大纲） |
 | 项目现在到什么程度、哪些没验收 | [PROJECT_ACCEPTANCE_STATUS.md](PROJECT_ACCEPTANCE_STATUS.md) |
 | 怎么启动、怎么跑测试、怎么复核 AI 依据 | [../README.md](../README.md) |
 | 核心排查流程的目标与验收标准 | [CORE_WORKFLOW_PLAN.md](CORE_WORKFLOW_PLAN.md) |
 | 参考过哪些开源项目、借鉴了什么 | [OPEN_SOURCE_REFERENCES.md](OPEN_SOURCE_REFERENCES.md) |
 
-## 当前参赛材料
+## 早期参赛材料（尚未按本次展示范围重制）
+
+**本机已另行制作当前截图版讲解材料（2026-09-21）：** [11 页讲解 PPT](../../创业大赛/交付物/机联智检_项目讲解_20260921/成品/机联智检_项目讲解.pptx)与[6 页 PDF 介绍](../../创业大赛/交付物/机联智检_项目讲解_20260921/成品/机联智检_项目介绍.pdf)，保存在相邻的任务工作区，未加入本仓库。材料按设备关联、AI 排查、XGSS 图文核对和条件性备件建议讲解，不展示已暂缓模块；产品状态为 0.9.7 时的截图快照，明确区分模拟现象与真实资料。这两份是本机讲解成品，下表保留早期材料记录。
 
 | 文件 | 说明 |
 |---|---|
@@ -30,7 +36,7 @@
 
 仍需注意：**同名 `.docx` 与 `.pdf` 是更正前的导出件，未同步重新生成**；答辩演示稿 `.pptx` 内的文字也仍是更正前的内容。以 Markdown 与 `PROJECT_ACCEPTANCE_STATUS.md` 为准。
 
-## 功能说明
+## 实现资料（含未展示模块，不作为参赛功能清单）
 
 | 文件 | 覆盖范围 |
 |---|---|
@@ -48,6 +54,7 @@
 | 图册标注验证（真实 DOM） | `node scripts/xgss_marking_probe.mjs`：在 `https://xgss.xcmg.com` 的本地夹具上验证 AI 检索词只标注该标的行（9 项检查） |
 | 侧栏 AI 面板验证 | `node scripts/sidebar_guidance_probe.mjs --report .tmp/g.json`：面板连通、状态落定、无建议时给指引；并记录"工作区只接受扩展来源"这条边界（6 项检查） |
 | [TV12U_FAULT_REFERENCE.md](TV12U_FAULT_REFERENCE.md) | 演示用故障码定义 |
+| [CEB_FAULT_REFERENCES.md](CEB_FAULT_REFERENCES.md) | 515 欧五、503 T4F 与 2605 故障资料的本机归档和适用范围 |
 | [SYNTHETIC_DATA_GUIDE.md](SYNTHETIC_DATA_GUIDE.md) | 合成数据的生成与边界 |
 | [WORK_STATE_MODEL.md](WORK_STATE_MODEL.md)、[COOLING_WARNING.md](COOLING_WARNING.md) | 工况识别与冷却预警两个实验模块 |
 

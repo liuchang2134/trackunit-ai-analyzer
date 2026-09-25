@@ -142,13 +142,14 @@ def test_historical_or_processed_component_observation_cannot_prepare_parts(hist
 
 
 @pytest.mark.parametrize('status',['RESOLVED','CLEARED','INACTIVE','CLOSED'])
-def test_resolved_selected_event_keeps_manual_mapping_as_inspection_only(status):
+def test_resolved_selected_event_keeps_manual_mapping_as_historical_reference(status):
     quote='E4030 总线故障：检查风扇。'
     row=part('风扇');row.update(support='manual_mapping',support_source_id='m1',support_quote=quote)
     result=check(row,symptom='E4030 总线通讯故障',manuals=[{'source_id':'m1','text':quote}],
                  fault_context={'trackunit_event':{'code':'E4030','status':status}})
     assert not result['parts']
-    assert result['inspection_targets'][0]['name']=='风扇'
+    assert result['historical_candidates'][0]['name']=='风扇'
+    assert not result['inspection_targets']
 
 
 def test_two_character_component_observation_is_not_dropped():
@@ -176,3 +177,84 @@ def test_negative_and_conditional_replacement_wording_is_preserved(text):
     result=gate.qualify(advice,{'symptom':'SPN639/FMI9 总线通讯异常','symptom_source':'trackunit_page'},[])
     assert result['summary']==text
     assert not result['parts']
+
+
+@pytest.mark.parametrize('name', [
+    'XC948.00 轮胎式装载机', 'XC948U Wheel Loader', 'XE55U 液压挖掘机',
+    '轮胎式装载机', '整机', '整车总成', 'complete machine',
+])
+@pytest.mark.parametrize('status', ['OPEN', 'CLOSED'])
+def test_equipment_directory_is_never_a_fault_part_even_under_transmission_path(name, status):
+    row = part(name)
+    row.update(part_number='253700330', assembly_path=['XC948 轮胎式装载机-美国',
+               'XC948.00 轮胎式装载机', '双变系统', '变速箱总成(国产)'])
+    result = check(row, fault_context={'trackunit_page': {'status': status,
+                   'description': 'Transmission - Abnormal Update Rate'}})
+    assert result['parts'] == result['inspection_targets'] == result['historical_candidates'] == []
+
+
+@pytest.mark.parametrize('name', [
+    '变速箱总成(国产)', '变速箱左支架', '装载机驾驶室', 'XC948U 装载机用变速箱总成',
+    '整机线束', 'XC948.00 轮胎式装载机线缆', 'Wheel loader harness',
+])
+def test_real_components_survive_equipment_ancestors_and_equipment_words_in_name(name):
+    row = part(name, assembly_path=['XC948.00 轮胎式装载机', '双变系统'])
+    result = check(row, fault_context={'trackunit_page': {'status': 'CLOSED',
+                   'description': 'Transmission - Abnormal Update Rate'}})
+    assert result['historical_candidates'][0]['name'] == name
+
+
+def history_record():
+    return {'symptom': 'Transmission - Abnormal Update Rate', 'symptom_source': 'trackunit_page',
+            'fault_context': {'trackunit_page': {'status': 'CLOSED',
+                              'description': 'Transmission - Abnormal Update Rate'}}}
+
+
+def test_historical_same_part_keeps_each_source_and_its_conditions_for_ui_grouping():
+    first = part('变速箱线缆'); first.update(source_id='first', capture_id='a',
+        part_number='TEST-CABLE', assembly_path=['双变系统'], figure_ref='1')
+    second = {**first, 'source_id': 'second', 'capture_id': 'b', 'figure_ref': '2',
+              'replacement_condition': '先排除供电与接地，再确认线缆故障。'}
+    advice = {'summary': '历史参考', 'parts': [first, second], 'repair_steps': []}
+    before = json.dumps(advice, ensure_ascii=False)
+    result = gate.qualify(advice, history_record(), [])
+    assert len(result['historical_candidates']) == 2
+    kept = result['historical_candidates'][0]
+    assert (kept['source_id'], kept['capture_id'], kept['figure_ref']) == ('first', 'a', '1')
+    assert kept['reason'] == first['reason']
+    assert kept['replacement_condition'] == kept['preparation_condition'] == first['replacement_condition']
+    assert result['historical_candidates'][1]['preparation_condition'] == second['replacement_condition']
+    assert json.dumps(advice, ensure_ascii=False) == before
+
+
+def test_historical_same_number_different_version_or_configuration_is_not_merged():
+    names = ['变速箱总成(国产)', '变速箱总成(进口)', '变速箱总成 V2']
+    rows = [dict(part(name), source_id=str(index), capture_id=str(index)) for index, name in enumerate(names)]
+    result = gate.qualify({'summary': '历史参考', 'parts': rows, 'repair_steps': []}, history_record(), [])
+    assert [row['name'] for row in result['historical_candidates']] == names
+
+
+def test_missing_part_code_still_fails_catalog_schema():
+    from app.xgss_catalog_context import CatalogRow
+    for value in [None, '', '   ']:
+        with pytest.raises(ValueError):
+            CatalogRow.model_validate({'name': '变速箱线缆', 'part_number': value})
+
+
+def test_restoring_current_quality_cache_removes_roots_and_preserves_sources_without_model(monkeypatch):
+    root = dict(part('XC948.00 轮胎式装载机'), source_id='root', part_number='253700330')
+    first = dict(part('变速箱线缆'), source_id='cable-a', capture_id='a', part_number='TEST-CABLE')
+    second = {**first, 'source_id': 'cable-b', 'capture_id': 'b'}
+    cached = {'summary': '历史故障参考', 'parts': [], 'inspection_targets': [],
+              'historical_candidates': [root, first, second], 'analysis_scope': 'historical',
+              'missing_evidence': [], 'repair_steps': [{'instruction': '先检查通信线路。',
+              'basis': 'ai_inspection_suggestion', 'source_id': None, 'source_quote': ''}]}
+    record = {**history_record(), 'revision': 3, 'analysis_revision': 3,
+              'advice_quality_version': gate.VERSION, 'advice': cached}
+    before = json.dumps(record, ensure_ascii=False)
+    monkeypatch.setattr(ai, 'research_evidence', lambda value: {'parts': [root, first, second], 'manuals': []})
+    monkeypatch.setattr(ai, 'generate_structured_with_deepseek', lambda *a, **kw: pytest.fail('No model call during restore'))
+    restored = ai.normalize_cached_advice(record)
+    assert [row['part_number'] for row in restored['advice']['historical_candidates']] == ['TEST-CABLE', 'TEST-CABLE']
+    assert restored['advice']['historical_candidates'][0]['source_id'] == 'cable-a'
+    assert json.dumps(record, ensure_ascii=False) == before

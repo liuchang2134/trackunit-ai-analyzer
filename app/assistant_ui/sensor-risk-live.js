@@ -3,7 +3,7 @@
   const byId = id => document.getElementById(id);
   const live = byId('risk-live');
   if (!live) return;
-  let request = 0;
+  let request = 0, snapshotRequest = 0;
   const stamp = value => {
     const date = new Date(value);
     return Number.isFinite(date.getTime()) ? date.toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '时间未知';
@@ -15,6 +15,7 @@
     return node;
   };
   const chosen = () => typeof selected === 'function' ? selected() : null;
+  const selectionScope = machine => JSON.stringify([machine?.machine_id,machine?.dataset_id,machine?.selection_id,machine?.serial_number]);
   const url = (path, machine) => `${path}?machine_id=${encodeURIComponent(machine.machine_id)}&dataset_id=${encodeURIComponent(machine.dataset_id)}`;
   const clear = (message) => {
     byId('risk-sensor-grid').replaceChildren();
@@ -66,6 +67,7 @@
   async function load() {
     const ticket = ++request;
     const machine = chosen();
+    const scope = selectionScope(machine);
     if (!machine?.dataset_id || !/^Trackunit\b/i.test(machine.source_document || '')) {
       clear('请选择当前 Trackunit 设备，然后读取最新快照。');
       return;
@@ -73,10 +75,10 @@
     byId('risk-status').textContent = '正在读取该设备的实测传感器数据…';
     try {
       const report = await api(url('/assistant/risk-overview',machine));
-      if (ticket !== request || chosen()?.selection_id !== machine.selection_id) return;
+      if (ticket !== request || selectionScope(chosen()) !== scope) return;
       render(report);
     } catch (error) {
-      if (ticket !== request) return;
+      if (ticket !== request || selectionScope(chosen()) !== scope) return;
       clear(error.message);
     }
   }
@@ -94,8 +96,10 @@
     } finally { button.disabled = false; }
   };
   byId('risk-snapshot-refresh').onclick = async () => {
-    const machine = chosen();
+    const machine = chosen() ? {...chosen()} : null;
     if (!machine?.machine_id || !/^[0-9a-f-]{36}$/.test(machine.machine_id)) return;
+    const ticket = ++snapshotRequest, scope = selectionScope(machine);
+    const sameSelection = () => ticket === snapshotRequest && selectionScope(chosen()) === scope;
     const button = byId('risk-snapshot-refresh');
     button.disabled = true;
     byId('risk-status').textContent = '正在从 Trackunit 读取当前设备的扩展快照…';
@@ -103,13 +107,21 @@
       const hint = typeof getPlatformEquipmentHint === 'function' ? getPlatformEquipmentHint(machine.machine_id)?.value : null;
       const options = hint ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({equipment_id_hint:hint})} : {method:'POST'};
       const result = await api(`/assistant/platform-asset/${machine.machine_id}/load`,options);
+      if (!sameSelection()) return;
       if (result.state !== 'loaded' || !result.dataset_id) throw new Error(result.message || '快照未返回有效样本。');
       await refresh();
+      // refresh may itself select this returned dataset. Any other selection,
+      // or an intervening user navigation, belongs to a different operation.
+      if (ticket !== snapshotRequest || !sameSelection() &&
+        !(chosen()?.machine_id === machine.machine_id && chosen()?.dataset_id === result.dataset_id)) return;
       const updated = machines.find(row => row.dataset_id === result.dataset_id && row.machine_id === machine.machine_id);
       if (updated) { byId('machine').value = updated.selection_id; selectMachine(); }
       await load();
-    } catch (error) { byId('risk-status').textContent = error.message; }
-    finally { button.disabled = false; }
+    } catch (error) { if (sameSelection()) byId('risk-status').textContent = error.message; }
+    finally { if (ticket === snapshotRequest) button.disabled = false; }
   };
+  const invalidateSnapshotRefresh = () => { snapshotRequest++; request++; byId('risk-snapshot-refresh').disabled = false; };
+  byId('machine')?.addEventListener('change',invalidateSnapshotRefresh);
+  window.addEventListener('hashchange',invalidateSnapshotRefresh);
   window.renderRiskDemo = load;
 })();

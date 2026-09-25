@@ -3,6 +3,7 @@ import asyncio
 import json
 import threading
 import logging
+from queue import SimpleQueue,Empty
 from typing import Literal
 from fastapi import APIRouter,HTTPException,Request
 from fastapi.responses import JSONResponse,StreamingResponse,Response
@@ -12,7 +13,9 @@ from app import xgss_research_images as images
 from app.api.routes_xgss_context import _verify_machine,HEADERS
 from app import xgss_research_ai as ai
 from app import xgss_research_handoff as handoff_context
+from app import trackunit_page_context as page_context
 from app import xgss_auto_fault as auto_fault
+from app import xgss_direct_collection as direct_collection
 from app.local_datasets import load_dataset
 from app.services.machine_service import find_machine,find_telemetry,find_faults
 from app.xgss_machine_context import build_context
@@ -36,6 +39,14 @@ class PlanRequest(Identity,ai.Symptom):
     source_report_id:str|None=Field(default=None,pattern=r'^[a-f0-9]{64}$')
     manual_fault:handoff_context.ManualFault|None=None
     engineering_fault:handoff_context.EngineeringFault|None=None
+    page_fault:page_context.PageFault|None=None
+
+    @model_validator(mode='after')
+    def sufficient_phenomenon(self):
+        if self.page_fault is not None:
+            page_context.validate_request(self)
+            return self
+        return super().sufficient_phenomenon()
 
     @model_validator(mode='before')
     @classmethod
@@ -66,11 +77,14 @@ def handoff(body:HandoffRequest):
         raise HTTPException(422,'原分析不能接续，请核对设备、数据版本和故障适用范围。',headers=HEADERS) from None
 
 
-def model_stream(request,call,message):
+def model_stream(request,call,message,*,progress_events=False):
     cancelled=threading.Event()
+    progress_queue=SimpleQueue()
+    def progress(value):
+        if not cancelled.is_set():progress_queue.put(str(value)[:250])
     def worker():
         token=cancellation_scope(cancelled.is_set)
-        try:return call()
+        try:return call(progress) if progress_events else call()
         finally:reset_cancellation_scope(token)
     def event(value):return 'data: '+json.dumps(value,ensure_ascii=False)+'\n\n'
     async def stream():
@@ -81,6 +95,10 @@ def model_stream(request,call,message):
             while not task.done():
                 if await request.is_disconnected():cancelled.set();return
                 await asyncio.wait({task},timeout=1)
+                if progress_events:
+                    while not progress_queue.empty():
+                        try:yield event({'type':'progress','message':progress_queue.get_nowait()})
+                        except Empty:break
                 if not task.done():yield ': heartbeat\n\n'
             record=await task
             if not cancelled.is_set():yield event({'type':'result','record':{**record,'evidence':ai.research_evidence(record)}})
@@ -90,11 +108,13 @@ def model_stream(request,call,message):
             yield event({'type':'error','message':str(exc),'kind':exc.kind})
         except DeepSeekError as exc:
             yield event({'type':'error','message':str(exc),'kind':exc.kind})
+        except direct_collection.DirectCollectionError as exc:
+            yield event({'type':'error','message':exc.message,'kind':exc.kind,'retryable':exc.retryable})
         except ValidationError as exc:
             # Log schema paths/types only, never provider text or source contents.
             issues=[{'loc':e['loc'],'type':e['type']} for e in exc.errors()]
             logging.getLogger(__name__).warning('XGSS AI schema validation: %s',issues)
-            yield event({'type':'error','message':'AI 返回的结构不完整，未保存建议；请重新生成。','kind':'schema_validation'})
+            yield event({'type':'error','message':'本次分析暂未完成。已读取的资料仍保留，请重试。','kind':'schema_validation'})
         except ai.ModelOutputValidationError as exc:
             logging.getLogger(__name__).warning('XGSS AI evidence validation: %s',exc.kind)
             yield event({'type':'error','message':str(exc),'kind':exc.kind})
@@ -131,7 +151,7 @@ async def plan(body:PlanRequest,request:Request):
             **{key:continuation[key] for key in ('source_report_id','manual_fault','engineering_fault','handoff_context','fault_context','catalog_fault_code')})
     if body.automatic:
         def automatic_plan():
-            record=auto_fault.plan(body,lambda:fault_plan(handoff_context.plan_context(body,machine.model)))
+            record=auto_fault.plan(body,lambda:fault_plan(handoff_context.plan_context(body,machine.model,machine=machine)))
             try:
                 return ai.normalize_cached_advice(record)
             except (ValueError,TypeError,KeyError):
@@ -146,7 +166,7 @@ async def plan(body:PlanRequest,request:Request):
         return model_stream(request,lambda:ai.plan(body.machine_id,body.dataset_id,body.vin,machine.model,symptom,
             machine_context=context,analysis_mode='maintenance',machine_type=getattr(machine,'machine_type','')),'AI 正在结合机型与工时查找保养件和易损件…')
     try:
-        continuation=handoff_context.plan_context(body,machine.model)
+        continuation=handoff_context.plan_context(body,machine.model,machine=machine)
     except (ValueError,KeyError,TypeError):
         raise HTTPException(422,'故障或原分析上下文未通过核验；请核对机型、配置、原问题及来源。',headers=HEADERS) from None
     return model_stream(request,lambda:fault_plan(continuation),
@@ -215,6 +235,17 @@ async def analyze(research_id:str,request:Request):
     return model_stream(request,lambda:ai.analyze(research_id),'XCMG AI 正在结合图册和维修资料生成建议…')
 
 
+@router.post('/{research_id}/collect-direct')
+async def collect_direct(research_id:str,body:direct_collection.CollectRequest,request:Request):
+    checked(research_id)
+    def verify(record):
+        try:_verify_machine(record['machine_id'],record['dataset_id'],record['vin'])
+        except HTTPException:
+            raise direct_collection.DirectCollectionError('direct_scope_mismatch','设备或数据版本已变化，未保存本次读取结果。') from None
+    return model_stream(request,lambda progress:normalized_record(direct_collection.collect(research_id,body,
+        progress=progress,verify_identity=verify)),'正在直接读取同 VIN 的 XGSS 图册资料…',progress_events=True)
+
+
 def checked(research_id):
     try:
         record=store.read(research_id)
@@ -224,12 +255,17 @@ def checked(research_id):
     return record
 
 
-def result(record):
+def normalized_record(record):
     try:
         record=ai.normalize_cached_advice(record)
     except (ValueError,TypeError,KeyError):
         record={k:v for k,v in record.items() if k not in ('advice','analysis_revision','analyzed_at')}
         record['advice_error']='历史建议未通过来源校验，已隐藏；原始资料仍保留。请重新生成排查计划。'
+    return record
+
+
+def result(record):
+    record=normalized_record(record)
     return JSONResponse({**record,'evidence':ai.research_evidence(record)},headers=HEADERS)
 
 
@@ -250,6 +286,8 @@ def read(research_id:str):
 @router.post('/{research_id}/pages')
 def append(research_id:str,body:store.PageCapture):
     checked(research_id)
+    if body.source!='xgss_rendered_page':
+        raise HTTPException(422,'API 图册资料只能由后端直读流程保存。',headers=HEADERS)
     try:
         return result(store.append(research_id,body))
     except store.EvidenceLimitError as exc:

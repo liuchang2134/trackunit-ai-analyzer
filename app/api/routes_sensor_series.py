@@ -16,14 +16,36 @@ class Identity(BaseModel):
     dataset_id: str = Field(pattern=r'^[a-f0-9]{64}$')
 
 
-class ImportRequest(Identity):
+class ChannelMetadata(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    label: str | None = Field(default=None, min_length=1, max_length=180)
+    unit: str | None = Field(default=None, min_length=1, max_length=24)
+    kind: Literal['continuous', 'state', 'code', 'counter'] | None = None
+
+
+class ExportInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     csv_text: str = Field(min_length=1, max_length=series.MAX_BYTES)
+    units: dict[str, str] | None = Field(default=None, max_length=series.MAX_CHANNELS)
+    channel_metadata: dict[str, ChannelMetadata] | None = Field(default=None, max_length=series.MAX_CHANNELS)
+    captured_at: str | None = Field(default=None, max_length=50)
+    page_url: str | None = Field(default=None, max_length=500)
+
+
+class SourceIdentity(Identity):
     source: Literal['trackunit_advanced_sensors_export']
     source_asset_id: str = Field(min_length=1, max_length=200)
     origin: Literal['user_confirmed_export', 'browser_export_capture'] = 'user_confirmed_export'
     captured_at: str | None = Field(default=None, max_length=50)
     page_url: str | None = Field(default=None, max_length=500)
-    units: dict[str, str] | None = Field(default=None, max_length=4)
+
+
+class ImportRequest(SourceIdentity, ExportInput):
+    pass
+
+
+class BatchImportRequest(SourceIdentity):
+    exports: list[ExportInput] = Field(min_length=1, max_length=series.MAX_EXPORTS)
 
 
 class PartsHandoffRequest(Identity):
@@ -43,7 +65,12 @@ def _result(call, missing=False):
 
 @router.post('/import')
 def import_csv(body: ImportRequest):
-    return _result(lambda: series.import_series(**body.model_dump()))
+    return _result(lambda: series.import_series(**body.model_dump(exclude_none=True)))
+
+
+@router.post('/import-batch')
+def import_batch(body: BatchImportRequest):
+    return _result(lambda: series.import_batch(**body.model_dump(exclude_none=True)))
 
 
 @router.get('/latest')

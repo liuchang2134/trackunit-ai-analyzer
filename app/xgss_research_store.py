@@ -49,18 +49,21 @@ class ManualSection(BaseModel):
 
 class PageCapture(BaseModel):
     model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
-    source: Literal['xgss_rendered_page']
+    source: Literal['xgss_rendered_page','xgss_api_catalog']
     source_url: Literal['https://xgss.xcmg.com/']
     vin: str = Field(pattern=r'^[A-Z0-9]{8,32}$')
     title: str = Field(min_length=1, max_length=200)
     assembly_path: list[str] = Field(default_factory=list, max_length=12)
     items: list[CatalogRow] = Field(default_factory=list, max_length=200)
     manual_sections: list[ManualSection] = Field(default_factory=list, max_length=12)
-    coverage: Literal['rendered_content_only']
+    coverage: Literal['rendered_content_only','api_selected_categories']
     illustrations: list[images.IllustrationCapture] = Field(default_factory=list, max_length=1)
 
     @model_validator(mode='after')
     def content_is_bounded(self):
+        expected={'xgss_rendered_page':'rendered_content_only','xgss_api_catalog':'api_selected_categories'}
+        if self.coverage!=expected[self.source]:
+            raise ValueError('资料来源与采集范围不一致。')
         if not self.items and not self.manual_sections:
             raise ValueError('页面没有可提取的零件或手册内容。')
         if any(not p.strip() or len(p)>160 for p in self.assembly_path):
@@ -292,6 +295,65 @@ def read_image(record,image_id):
             if illustration['image_id']==image_id:
                 return images.read_blob(STORE/'images',illustration)
     raise images.ImageCaptureError('当前设备资料中没有这张图册图片。')
+
+
+def append_batch(research_id,pages,*,check_current,direct_collection):
+    """Commit one bounded API collection atomically; retain all older evidence."""
+    pages=[PageCapture.model_validate(page) for page in pages]
+    if not pages:
+        raise ValueError('没有可保存的图册资料。')
+    with LOCK:
+        record=read(research_id)
+        check_current(record)
+        pending={}
+        changed_text=False
+        for page in pages:
+            if record['vin']!=page.vin:
+                raise ValueError('XGSS 页面 VIN 与排查设备不一致，未导入。')
+            content=canonical_content(page)
+            capture_id=_digest(content)
+            target=next((item for item in record['pages'] if item['capture_id']==capture_id),None)
+            if target is None:
+                target={'capture_id':capture_id,'captured_at':_now(),'content':content}
+                record['pages'].append(target)
+                record['revision']+=1
+                changed_text=True
+            if page.illustrations:
+                metadata=[]
+                for data,item in (images.prepare(capture) for capture in page.illustrations):
+                    previous=next((old for old in target.get('illustrations',[])
+                                   if all(old.get(key)==value for key,value in item.items())),None)
+                    metadata.append(previous or {**item,'captured_at':_now()})
+                    pending[item['image_id']]=data
+                target['illustrations']=metadata
+        validate_analysis_capacity(record['pages'])
+        retained={}
+        for page in record['pages']:
+            for image in page.get('illustrations',[]):
+                image_id=image['image_id']
+                if image_id not in retained:
+                    retained[image_id]=pending.get(image_id)
+                    if retained[image_id] is None:
+                        retained[image_id]=images.read_blob(STORE/'images',image)
+        if sum(len(data) for data in retained.values())>images.MAX_RESEARCH_IMAGE_BYTES:
+            raise images.ImageCaptureError('本次图册图片总量超过 8 MiB，未保存本次资料。请缩小检索分类并新建排查计划。')
+        if changed_text:
+            for field in ('advice','analysis_revision','analyzed_at'):record.pop(field,None)
+        record['direct_collection']={**direct_collection,'revision':record['revision']}
+        created=[]
+        try:
+            # Re-read the disk record for optimistic concurrency, not the staged revision.
+            check_current(read(research_id))
+            for image_id,data in pending.items():
+                if image_id in retained and images.write_blob(STORE/'images',image_id,data):created.append(image_id)
+            check_current(read(research_id))
+            _write(record)
+        except Exception:
+            for image_id in created:
+                try:images.path_for(STORE/'images',image_id).unlink()
+                except OSError:pass
+            raise
+        return record
 
 
 def evidence(record):

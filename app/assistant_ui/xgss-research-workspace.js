@@ -1,6 +1,7 @@
 /* Device-scoped two-pass research. Credentials stay on the local backend. */
 (() => {
   const workspace=document.getElementById('work-view');if(!workspace)return;
+  const partsFocus=document.documentElement?.classList?.contains?.('fault-parts-focus')===true;
   const focused=document.documentElement?.classList?.contains?.('competition-focus')===true;
   const host=workspace.querySelector?.('.output')||workspace;
   const el=(tag,text)=>{const e=document.createElement(tag);if(text)e.textContent=text;return e;};
@@ -23,17 +24,20 @@
     return value;
   }
   const card=el('section');card.className='card';card.id='xgss-research';
-  card.append(el('h2','AI 设备服务'));
+  card.append(el('h2',partsFocus?'故障配件':'AI 设备服务'));
+  const faultPicker=el('section');faultPicker.id='fault-parts-picker';faultPicker.hidden=!partsFocus;
+  const estimateView=el('section');estimateView.id='fault-parts-estimates';estimateView.hidden=true;
+  let estimateHandle=null,estimateKey=null,faultFocusTab='current',faultGroupResearchId=null;
   const modeLabel=el('label','分析方式'),mode=el('select');mode.id='research-analysis-mode';modeLabel.htmlFor=mode.id;
   for(const [value,label] of [['maintenance','AI 工时保养'],['fault','AI 故障排查']]){const option=el('option',label);option.value=value;mode.append(option);}
   const aiBrief=el('p');aiBrief.id='research-ai-brief';aiBrief.className='research-ai-brief';
   const maintenanceView=el('div');maintenanceView.id='research-maintenance-context';maintenanceView.className='research-maintenance-context';
   const identity=el('p');
   const demoGate=el('section');demoGate.id='research-demo-gate';demoGate.hidden=true;
-  const demoLive=el('button','切换正式模式');demoLive.type='button';demoLive.className='primary-button';
+  const demoLive=el('button','关联当前设备');demoLive.type='button';demoLive.className='primary-button';
   demoLive.onclick=()=>window.JilianDataMode?.switchTo('live');
-  demoGate.append(el('h3','演示数据与真实备件隔离'),
-    el('p','当前模拟设备没有可核对的同 VIN XGSS 图册，因此不生成备件料号。正式模式可查看已关联设备的 AI 与 XGSS 结果；风险预警可展示独立模拟模型。'),demoLive);
+  demoGate.append(el('h3','请关联 Trackunit 设备'),
+    el('p','读取当前设备后，按故障码匹配该设备适用的 XGSS 图册和配件。'),demoLive);
   const faultAlert=el('section');faultAlert.id='research-page-fault-banner';faultAlert.hidden=true;
   const resultHero=el('section');resultHero.id='research-result-hero';resultHero.hidden=true;
   resultHero.setAttribute('aria-label','当前 AI 分析结果');
@@ -80,11 +84,22 @@
   if(focused)for(const id of ['engineering-fault-panel','fault-reference-panel','manual-fault-linked']){const node=document.getElementById(id);if(node)references.append(node);}
   const inputPanel=disclosure('故障与补充说明',true);inputPanel.id='research-input-panel';
   let inputPanelOutcome;
-  inputPanel.append(modeLabel,mode,aiBrief,maintenanceView,eventLabel,eventSelect,eventPageRead,eventNote,eventTools,
-    continuationView,unlinkContext,symptomLabel,symptom,sourceLabel,source,references,actions,captureState,status,options);
-  // Keep parts and repair advice ahead of editable inputs and raw evidence.
-  card.append(identity,demoGate,faultAlert,vinBox,resultHero,adviceView,preliminaryView,inputPanel,
-    coverage,contextView,usedContextView,planView,results,galleryView);
+  if(partsFocus){
+    inputPanel.replaceChildren(el('summary','补充故障信息（选填）'),symptomLabel,symptom,references,unlinkContext);
+    inputPanel.open=false;inputPanel.className='fault-parts-supplement';
+    const refreshTools=el('div');refreshTools.className='fault-parts-refresh';refreshTools.append(eventPageRead,eventTools);
+    card.append(identity,demoGate,faultPicker,refreshTools,continuationView,vinBox,inputPanel,actions,status,captureState,
+      preliminaryView,resultHero,estimateView,adviceView);
+    // Legacy tools remain available to the shared workflow, outside the main UI.
+    const deferred=el('div');deferred.hidden=true;deferred.id='fault-parts-deferred';
+    deferred.append(modeLabel,mode,aiBrief,maintenanceView,eventLabel,eventSelect,eventNote,sourceLabel,source,
+      options,coverage,contextView,usedContextView,planView,results,galleryView);card.append(deferred);
+  }else{
+    inputPanel.append(modeLabel,mode,aiBrief,maintenanceView,eventLabel,eventSelect,eventPageRead,eventNote,eventTools,
+      continuationView,unlinkContext,symptomLabel,symptom,sourceLabel,source,references,actions,captureState,status,options);
+    card.append(identity,demoGate,faultAlert,vinBox,resultHero,adviceView,preliminaryView,inputPanel,
+      coverage,contextView,usedContextView,planView,results,galleryView);
+  }
   if(focused&&host.prepend)host.prepend(card);else host.append(card);
   const handoff=el('button','继续查找备件');handoff.type='button';handoff.id='research-handoff';handoff.className='primary-button';
   document.getElementById('result')?.append(handoff);
@@ -98,9 +113,9 @@
   let imageDialog=null;
   let galleryGeneration=0,entryNote='';
   let activeResearchId=null,activeLookup=0,handoffBusy=false,handoffSeed=null,linkedFaults=null,inputsEdited=false,pendingFaultKey=null;
-  let modeChoice=null;
+  let modeChoice=null,modelFailure=null;
   let sensorHandoffScope=null;
-  let faultEventId=null,faultEvents=[],pageFaults=[],pageServices=[],pageFault=null,pageObservedAt=null,pageCaptureIssue='',pageReadPending=false,pageReadTimer=null,pageReadTicket=0,apiEventNote='',eventRequest=0,eventBusy=false,emailTicket=0,emailPreview=null;
+  let faultEventId=null,faultEvents=[],pageFaults=[],pageServices=[],pageFault=null,pageObservation=null,pageObservedAt=null,pageSourceUrl='',pageCaptureIssue='',pageReadPending=false,pageReadTimer=null,pageReadTicket=0,apiEventNote='',eventRequest=0,eventBusy=false,emailTicket=0,emailPreview=null;
   let faultState=null,activeResolvedScope=null,automaticFault=null;
   const faultPollInterval=1800000;
   let faultPoll=null,eventLastAttempt=0;
@@ -112,13 +127,34 @@
     engineering_fault:typeof getEngineeringFault==='function'?getEngineeringFault():null};
   const faultKey=f=>JSON.stringify([f?.manual_fault?[f.manual_fault.code,f.manual_fault.model,f.manual_fault.version,f.manual_fault.applicability_confirmed]:null,
     f?.engineering_fault?[f.engineering_fault.code,f.engineering_fault.model,f.engineering_fault.configuration||'unknown',f.engineering_fault.source]:null]);
-  const analysisMode=()=>modeChoice||(faultEventId||currentFaults()?.manual_fault||currentFaults()?.engineering_fault||symptom.value.trim()?'fault':'maintenance');
+  const analysisMode=()=>partsFocus?'fault':modeChoice||(faultEventId||currentFaults()?.manual_fault||currentFaults()?.engineering_fault||symptom.value.trim()?'fault':'maintenance');
+  const isHistoricalFault=item=>['CLOSED','RESOLVED','CLEARED'].includes(String(item?.status||'').toUpperCase());
+  const selectedHistorical=()=>isHistoricalFault(pageFault)||isHistoricalFault(faultEvents.find(item=>item.event_id===faultEventId))||Boolean(planMatchesInput()&&record?.advice?.analysis_scope==='historical');
+  const selectionMatchesFaultTab=()=>!partsFocus||faultFocusTab===(selectedHistorical()?'historical':'current');
   const recordMode=data=>data?.analysis_mode==='maintenance'?'maintenance':'fault';
+  const codedSymptom=value=>/\bSPN\s*[:：]?\s*\d+[\s\S]*?\bFMI\s*[:：]?\s*\d+|故障码\s*[:：]?\s*[A-Z][A-Z0-9._-]{1,30}\b/i.test(String(value||''));
+  const isFaultResearch=data=>Boolean(data&&recordMode(data)==='fault'&&(data.fault_event_id||data.fault_context?.trackunit_page||data.manual_fault||data.manual_fault_reference||data.engineering_fault||
+    ['trackunit_page','operator_report'].includes(data.symptom_source)&&codedSymptom(data.symptom)));
+  const selectedFaultReady=()=>Boolean(faultEventId||pageFault||currentFaults()?.manual_fault||currentFaults()?.engineering_fault||
+    source.value==='operator_report'&&codedSymptom(symptom.value)||record&&isFaultResearch(record)&&planMatchesInput());
+  function destroyEstimates(){estimateHandle?.destroy?.();estimateHandle=null;estimateKey=null;estimateView.replaceChildren();estimateView.hidden=true;}
+  function mountEstimates(data,parts){
+    const identity=JSON.stringify([data.research_id,data.analysis_revision,data.machine_id,data.dataset_id,data.vin,data.advice.analysis_scope]);
+    if(estimateKey===identity&&estimateHandle){estimateView.hidden=false;return;}
+    destroyEstimates();if(!parts.length)return;
+    const unique=[...new Map(parts.map(part=>[JSON.stringify([part.part_number,part.capture_id||part.source_id]),part])).values()];
+    estimateView.hidden=false;estimateKey=identity;
+    if(window.JilianPartEstimates?.mount)estimateHandle=window.JilianPartEstimates.mount(estimateView,{researchId:data.research_id,machineId:data.machine_id,vin:data.vin,datasetId:data.dataset_id||null,scope:data.advice.analysis_scope==='historical'?'historical':'current',parts:unique});
+    else estimateView.append(el('p','参考估价：待询价'));
+  }
   const inputSource=()=>analysisMode()==='maintenance'?'user_question':source.value;
   const defaultMaintenanceQuestion='请结合当前机型与已载入工时，在同机 XGSS 资料中筛选保养件和易损件，说明检查优先级、推荐理由及考虑更换的条件。';
-  const recordInput=data=>recordMode(data)==='maintenance'&&data?.symptom===defaultMaintenanceQuestion?'':data?.fault_event_id?(data.fault_context?.operator_supplement||''):data?.symptom;
+  const recordInput=data=>recordMode(data)==='maintenance'&&data?.symptom===defaultMaintenanceQuestion?'':data?.fault_event_id||data?.fault_context?.trackunit_page?(data.fault_context?.operator_supplement||''):data?.symptom;
+  const pageObservationInput=value=>value?Object.fromEntries(['asset_id','source_url','observed_at','description','code','spn','fmi','sa','status','occurred_at','cleared_at','page_event_id'].filter(name=>value[name]!==undefined).map(name=>[name,value[name]])):null;
   function recordFaultLabel(data){
     // Scope the result to its saved input, never to another currently visible card.
+    const observation=data?.fault_context?.trackunit_page;
+    if(observation)return {label:observation.code||observation.description||'历史故障记录',description:observation.description||''};
     const text=String(data?.symptom||'').replace(/\s+/g,' ').trim();
     const values=name=>[...new Set([...text.matchAll(new RegExp('\\b'+name+'\\s*[:：]?\\s*(\\d{1,7})\\b','gi'))].map(match=>match[1]))];
     const spn=values('SPN'),fmi=values('FMI'),sa=values('SA');
@@ -129,9 +165,26 @@
     return {label:multiple?'已保存的多项故障现象':tuple||oem||'已保存的故障现象',
       description:(description||(!tuple&&!oem?text:'')).slice(0,120)};
   }
+  const pageObservationKey=value=>value?JSON.stringify([value.asset_id,value.source_url,value.observed_at,value.description,value.code||'',value.spn??null,value.fmi??null,value.sa??null,value.status||'UNKNOWN',value.occurred_at||'',value.cleared_at||'',value.page_event_id||null]):null;
+  const modelInputKey=()=>JSON.stringify([key(selected()),analysisMode(),inputSource(),symptom.value.trim(),
+    faultEventId,pageObservationKey(pageObservation),faultKey(currentFaults()),handoffSeed?.source_report_id||null]);
   const planMatchesInput=()=>Boolean(record?.plan&&recordScope===key(selected())&&recordInput(record)===symptom.value.trim()&&record.symptom_source===inputSource()&&recordMode(record)===analysisMode()&&
     (record.source_report_id||null)===(handoffSeed?.source_report_id||null)&&(record.fault_event_id||null)===faultEventId&&faultKey(record)===faultKey(currentFaults())&&
+    (!record?.fault_context?.trackunit_page||pageObservationKey(record.fault_context.trackunit_page)===pageObservationKey(pageObservation))&&
     (!activeResearchId||record.research_id===activeResearchId));
+  // The extension marks the currently displayed, device-bound AI plan. Never
+  // fall back to an older report after its input or selected fault changes.
+  window.currentXGSSResearchSearchSource=()=>{
+    if(!record)return null;
+    const m=selected();
+    if(!m||record.machine_id!==m.machine_id||(record.dataset_id||null)!==(m.dataset_id||null)||
+      record.vin!==m.serial_number||!planMatchesInput()||!selectionMatchesFaultTab())
+      return {component_hypotheses:[],has_report:false};
+    return {has_report:true,engineering_fault:{code:record.catalog_fault_code||record.engineering_fault?.code||record.manual_fault?.code||null},
+      component_hypotheses:(Array.isArray(record.plan.directions)?record.plan.directions:[]).map(direction=>({
+        component:direction.component,rationale:direction.reason,
+        search_terms:Array.isArray(direction.search_terms)?direction.search_terms.slice():[]}))};
+  };
   window.currentXGSSResearchProgress=()=>{
     const current=record&&recordScope===key(selected());
     if(!current&&!symptom.value.trim()&&!controller&&!job&&!preparing)return null;
@@ -149,9 +202,130 @@
   const post=data=>{if(embedded)window.parent.postMessage({protocol:1,connection_id:connection,...data},origin);};
   const matches=()=>job && job.scope===key(selected()) && job.asset===PlatformContext.asset(location.hash);
   const realDevice=m=>Boolean(m&&(m.dataset_id?m.provenance==='user_supplied':defaultSource==='trackunit_cache'));
-  function captureAvailability(){captureState.textContent=!embedded?'自动采集入口在 Chrome 助手侧栏。':
-    !available?'资料采集尚未连接，请在插件“设置”中点“重新连接”。':!realDevice(selected())?'选择真实设备后可采集图册。':'资料采集已就绪。';}
+  function captureAvailability(){captureState.textContent=!realDevice(selected())?'选择真实设备后可读取图册。':
+    available?'XGSS 直读已启用，插件可作为备用读取。':'可直接读取 XGSS 图册，无需连接 Chrome 插件。';}
   function touch(){clearTimeout(watchdog);watchdog=setTimeout(()=>cancel('插件未继续回应，已停止等待；已提取资料仍保留。'),25000);}
+  function compactFaultPicker(busy){
+    faultPicker.hidden=false;faultPicker.replaceChildren();
+    const entries=[...faultEvents.map(item=>({item,source:'API',choose:()=>selectFaultEvent(item),selected:item.event_id===faultEventId})),
+      ...pageFaults.map(item=>({item,source:'页面观察',choose:()=>selectPageFault(item),selected:item===pageFault}))];
+    if(pageFault&&!pageFaults.includes(pageFault))entries.push({item:pageFault,source:'已保存页面观察',choose:()=>selectPageFault(pageFault),selected:true});
+    if(record&&isFaultResearch(record)&&planMatchesInput()&&!entries.some(entry=>entry.selected)){
+      const saved=record.fault_context?.trackunit_event||record.fault_context?.trackunit_page||{};
+      entries.push({item:{...saved,code:record.manual_fault?.code||record.manual_fault_reference?.code||record.engineering_fault?.code||recordFaultLabel(record).label,description:recordFaultLabel(record).description,
+        status:record.advice?.analysis_scope==='historical'?'CLOSED':saved.status||'UNKNOWN'},source:record.symptom_source==='trackunit_event'?'API 记录':record.symptom_source==='trackunit_page'?'已保存页面观察':'人工补充',selected:true,choose:()=>{}});
+    }
+    const current=entries.filter(entry=>String(entry.item.status||'').toUpperCase()==='OPEN'),historical=entries.filter(entry=>isHistoricalFault(entry.item));
+    const unknown=entries.filter(entry=>!current.includes(entry)&&!historical.includes(entry));
+    const tabs=el('div');tabs.className='fault-parts-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','故障记录范围');
+    for(const [value,label,list] of [['current','当前故障',current],['historical','历史故障',historical]]){
+      const button=el('button',`${label} ${list.length}`);button.type='button';button.disabled=busy;button.setAttribute('role','tab');
+      button.setAttribute('aria-selected',String(faultFocusTab===value));button.onclick=()=>{faultFocusTab=value;status.textContent='';controls(busy);};tabs.append(button);
+    }
+    faultPicker.append(tabs);const list=el('div');list.className='fault-parts-faults';list.setAttribute('role','tabpanel');faultPicker.append(list);
+    const appendEntry=(target,entry)=>{
+      const item=entry.item,button=el('button');button.type='button';button.className='fault-parts-fault';button.disabled=busy;
+      button.setAttribute('aria-pressed',String(entry.selected));
+      const title=item.code||(/transmission.*abnormal update rate/i.test(item.description||'')?'变速箱通信异常':item.description||'故障码未显示');
+      button.append(el('strong',`${title}${item.sa!==null&&item.sa!==undefined?' · SA '+item.sa:''}`));
+      if(item.description&&item.description!==title)button.append(el('span',item.description));
+      const state=isHistoricalFault(item)?'已解除':String(item.status||'').toUpperCase()==='OPEN'?'未解除':'状态待核实';
+      const time=item.displayed_at||item.occurred_at||item.event_time;
+      const meta=el('small',`${state} · ${entry.source}${time?' · '+time:''}`);button.append(meta);
+      button.onclick=()=>{entry.choose();renderEventOptions();if(!busy)planStart.focus?.();};target.append(button);
+    };
+    const shown=faultFocusTab==='historical'?historical:current;
+    for(const entry of shown)appendEntry(list,entry);
+    if(!shown.length)list.append(el('p',faultFocusTab==='historical'?'尚未读取已解除的历史故障。':'尚未读取状态明确的未解除故障。'));
+    if(unknown.length&&faultFocusTab==='current'){
+      const details=disclosure(`状态待核实 · ${unknown.length} 条`,unknown.some(entry=>entry.selected));details.className='fault-parts-unknown';
+      for(const entry of unknown)appendEntry(details,entry);faultPicker.append(details);
+    }
+    if(!entries.length)faultPicker.append(el('p','在 Trackunit Events 页读取故障，或在下方补充明确的故障码。'));
+  }
+  function compactControls(busy,real,changed){
+    compactFaultPicker(busy);
+    const eligible=record&&isFaultResearch(record),matching=eligible&&planMatchesInput();
+    const valid=matching&&record.advice&&record.analysis_revision===record.revision;
+    const resultInGroup=Boolean(valid&&faultFocusTab===(record.advice.analysis_scope==='historical'?'historical':'current'));
+    for(const node of [modeLabel,mode,aiBrief,maintenanceView,eventLabel,eventSelect,eventNote,sourceLabel,source,analyze,
+      faultAlert,options,coverage,contextView,usedContextView,planView,results,galleryView,handoff])node.hidden=true;
+    inputPanel.hidden=!real;
+    // Keep manual context available without opening the form after each result.
+    inputPanel.querySelector?.('summary')?.replaceChildren(document.createTextNode('补充故障信息（选填）'));
+    symptomLabel.textContent='故障码或补充现象';symptom.placeholder='例如：SPN 444 / FMI 1；或补充已选择故障的发生工况。';
+    references.hidden=false;eventTools.hidden=false;eventFacts.hidden=false;
+    eventPageRead.textContent='刷新页面故障';eventRefresh.textContent='刷新接口故障';
+    eventPageRead.hidden=!embedded||!real;eventPageRead.className=eventRefresh.className='fault-parts-refresh-button';
+    eventTools.open=false;
+    eventFacts.textContent=pageCaptureIssue||`页面观察与 API 记录分别标注；仅覆盖已读取的故障。${apiEventNote?' '+apiEventNote:''}`;
+    const pending=matching&&!hasComponentSources(record);
+    planStart.hidden=false;planStart.className='primary-button';
+    planStart.disabled=busy||!real||!selectedFaultReady()||!selectionMatchesFaultTab();
+    planStart.textContent=busy?'正在生成配件推荐…':pending?'继续读取 XGSS 并推荐配件':valid?'更新配件推荐':'生成配件推荐';
+    resultHero.hidden=!resultInGroup;adviceView.hidden=!resultInGroup;
+    if(changed||!valid){destroyEstimates();}
+    else estimateView.hidden=!resultInGroup||!estimateKey;
+    if(!eligible)preliminaryView.hidden=true;
+    captureState.hidden=true;
+    if(!eligible&&!busy&&!selectedFaultReady())status.textContent='选择故障后，查看对应配件、图示和参考估价。';
+    else if(!busy&&!selectionMatchesFaultTab())status.textContent='请选择本组故障，生成对应配件推荐。';
+  }
+  function compactPartGroups(data,entries){
+    // Repeated captures are evidence, not extra units to buy. Keep each source's
+    // conditions, and bind the displayed figure/reference to that exact source.
+    const groups=new Map(),normalize=value=>String(value||'').trim().replace(/\s+/g,'').toUpperCase();
+    for(const entry of entries){
+      const {part}=entry;
+      const id=JSON.stringify([normalize(part.part_number),normalize(part.name)]);
+      const existing=groups.get(id);
+      const diagram=part.capture_id?diagramsFor(data,part.capture_id)[0]:null;
+      if(!existing){groups.set(id,{...entry,diagram,sources:[entry]});continue;}
+      existing.sources.push(entry);
+      if(!existing.diagram&&diagram){existing.part=part;existing.diagram=diagram;existing.kind=entry.kind;}
+    }
+    return [...groups.values()];
+  }
+  function showCompactAdvice(data){
+    const historical=data.advice.analysis_scope==='historical';
+    const inspectionOnly=part=>part?.evidence_level==='inspection_only'||part?.status==='inspection_only';
+    const entries=historical?(data.advice.historical_candidates||[]).map(part=>({part,kind:'historical'})):
+      [...(data.advice.parts||[]).map(part=>({part,kind:inspectionOnly(part)?'inspection':'candidate'})),
+        ...(data.advice.inspection_targets||[]).map(part=>({part,kind:'inspection'}))];
+    const unique=compactPartGroups(data,entries);
+    const overview=el('div');overview.className='fault-parts-result-title';
+    const sourceName=data.symptom_source==='trackunit_event'?'API 记录':data.symptom_source==='trackunit_page'?'页面观察':'人工补充';
+    const faultLabel=data.manual_fault?.code||data.manual_fault_reference?.code||data.engineering_fault?.code||recordFaultLabel(data).label;
+    overview.append(el('h3',`${historical?'历史故障配件参考':'故障相关配件'} · ${unique.length} 项`),
+      el('strong',`${historical?'历史 · 已解除':String((data.fault_context?.trackunit_event||data.fault_context?.trackunit_page)?.status||'').toUpperCase()==='OPEN'?'当前 · 未解除':sourceName+' · 状态待核实'} · ${faultLabel}`),
+      el('p',historical?'历史故障已解除，供复发备库参考。':'按故障相关性推荐；核查适配与更换条件后再决定备件。'));
+    resultHero.append(overview);resultHero.hidden=false;
+    const list=el('div');list.className='fault-parts-grid';adviceView.append(list);
+    for(const {part,kind,diagram,sources} of unique){
+      const item=el('article');item.className='fault-parts-card';
+      if(diagram)item.append(diagramFigure(data,diagram,part));
+      else{const placeholder=el('div','该分类尚未采集图示');placeholder.className='fault-parts-image-empty';item.append(placeholder);}
+      const body=el('div');body.className='fault-parts-card-body';
+      body.append(el('h4',part.name));const number=el('p',part.part_number);number.className='research-part-number';body.append(number);
+      const label=el('small',kind==='historical'?'历史备库参考':kind==='inspection'?'待核查适配与原因':'条件性备件');label.className='fault-parts-kind';body.append(label);
+      const reason=el('p',readable(part.reason,data));reason.className='fault-parts-reason';body.append(reason);
+      const details=disclosure('查看依据');details.className='fault-parts-basis';
+      details.append(el('p',readable(part.reason,data)),el('strong',kind==='historical'?'备库条件':kind==='inspection'?'核查条件':'更换条件'),
+        el('p',readable(kind==='historical'?(part.preparation_condition||part.replacement_condition):part.replacement_condition,data)));
+      details.append(el('p',`XGSS 来源：${part.page_title||part.assembly_path?.join(' / ')||'同 VIN 图册'}${part.figure_ref?' · 图中序号 '+part.figure_ref:''}${part.captured_at?' · '+part.captured_at:''}`));
+      const seenSources=new Set([part.source_id||part.capture_id]);
+      for(const entry of sources){
+        const other=entry.part,id=other.source_id||other.capture_id;
+        if(seenSources.has(id))continue;seenSources.add(id);
+        details.append(el('strong','补充图册依据'),el('p',readable(other.reason,data)),
+          el('p',readable(other.preparation_condition||other.replacement_condition,data)),
+          el('p',`XGSS 来源：${other.assembly_path?.join(' / ')||other.page_title||'同 VIN 图册'}${other.figure_ref?' · 图中序号 '+other.figure_ref:''}${other.captured_at?' · '+other.captured_at:''}`));
+      }
+      body.append(details);item.append(body);list.append(item);
+    }
+    if(!unique.length)adviceView.append(el('p','暂未匹配到可核对料号的配件，补充故障信息或继续读取 XGSS 图册。'));
+    mountEstimates(data,unique.map(entry=>({...entry.part,evidence_level:entry.part.evidence_level||(entry.kind==='historical'?'historical_reference':entry.kind==='inspection'?'inspection_only':'conditional_candidate')})));
+  }
   function controls(busy){
     busy=busy||handoffBusy||vinBusy;
     vinInput.disabled=vinConfirmed.disabled=vinSave.disabled=busy;
@@ -166,19 +340,20 @@
     }
     const changed=Boolean(record?.plan&&!planMatchesInput());
     renderPageFaultBanner();
-    if(changed)closeImage();
+    if(changed){closeImage();if(partsFocus)destroyEstimates();}
     planView.hidden=adviceView.hidden=usedContextView.hidden=changed;
     // A new symptom invalidates the association between the previous XGSS
     // captures and this investigation, even though the raw record is retained.
     galleryView.hidden=results.hidden=coverage.hidden=changed;
     resultHero.hidden=changed||!record?.advice||record.analysis_revision!==record.revision;
-    start.disabled=busy||!available||!real;planStart.disabled=busy||!real;analyze.disabled=busy||!planMatchesInput()||!record?.pages?.length;
+    start.disabled=busy||!real;planStart.disabled=busy||!real;analyze.disabled=busy||!planMatchesInput()||!record?.pages?.length;
     analyze.hidden=!record?.plan||!record?.pages?.length||Boolean(record.advice&&record.analysis_revision===record.revision);
     replan.hidden=!record?.plan;replan.disabled=busy||!real;
     handoff.disabled=busy||!real;
     input.disabled=symptom.disabled=source.disabled=useAI.disabled=busy;stop.hidden=!busy;
     eventSelect.disabled=busy||eventBusy;eventRefresh.disabled=busy||eventBusy||!real;
-    eventPageRead.hidden=!embedded||!real||Boolean(pageFaults.length&&!pageCaptureIssue);
+    eventPageRead.hidden=!embedded||!real;
+    eventPageRead.textContent=pageObservedAt?'刷新当前页故障与历史记录':'读取当前 Events 页故障';
     eventPageRead.disabled=busy||pageReadPending;
     source.disabled=busy||Boolean(faultEventId)||Boolean(pageFault);
     const maintenance=analysisMode()==='maintenance';mode.value=analysisMode();mode.disabled=busy;
@@ -196,7 +371,7 @@
     symptom.placeholder=maintenance?'如有已知保养记录或需要关注的部件，可在此补充。':'补充异常表现、发生工况或已确认的现场现象。';
     aiBrief.textContent=maintenance?'AI 结合设备工时检索 XGSS，筛选保养件与易损件，并解释推荐原因。':'AI 结合故障与工况检索 XGSS，分析维修方向并核对备件料号。';
     maintenanceView.hidden=!maintenance||changed;
-    if(focused){
+    if(focused&&!partsFocus){
       const currentAdvice=planMatchesInput()&&record?.advice&&record.analysis_revision===record.revision;
       const pendingSources=planMatchesInput()&&!record?.advice&&!hasComponentSources(record);
       const readyForAdvice=planMatchesInput()&&!record?.advice_error&&hasComponentSources(record)&&!currentAdvice;
@@ -205,10 +380,10 @@
       inputPanel.querySelector?.('summary')?.replaceChildren(document.createTextNode(currentAdvice?'调整故障与重新分析':'选择故障并推荐备件'));
       planStart.textContent=busy?'正在查询与分析…':currentAdvice?'更新备件建议':
         readyForAdvice?'生成备件与维修建议':
-        !embedded&&pendingSources?'在 Chrome 助手侧栏继续查图册':
         pendingSources?'查询 XGSS 并推荐备件':
         !embedded?'分析故障并查找备件':maintenance?'AI 推荐保养与易损件':'分析故障并推荐备件';
-      planStart.hidden=Boolean(currentAdvice&&!available)||Boolean(!embedded&&pendingSources);
+      if(!busy&&!maintenance&&selectedHistorical())planStart.textContent='历史故障备件参考';
+      planStart.hidden=false;
       captureState.hidden=available;
     }
     else{planStart.hidden=false;planStart.textContent=busy?'AI 分析中…':'查找备件与维修资料';}
@@ -216,18 +391,23 @@
     localEvidence.disabled=busy||evidenceBusy||!real;captureAvailability();
     unlinkContext.disabled=busy;
     unlinkContext.hidden=continuationView.hidden;
-    showPreliminary();refreshFlow();
+    showPreliminary();if(partsFocus)compactControls(busy,real,changed);
+    if(modelFailure&&modelFailure.inputKey!==modelInputKey())modelFailure=null;
+    if(!busy&&modelFailure&&(!partsFocus||selectionMatchesFaultTab())){
+      planStart.hidden=false;planStart.textContent=modelFailure.phase==='plan'?'重试配件推荐':'重试配件分析';
+    }
+    refreshFlow();
   }
   function cancel(message){automaticFault=null;generation++;preparing=false;handoffBusy=false;pendingFaultKey=null;controller?.abort();controller=null;if(job)post({type:'jilian:research-cancel',request_id:job.id});job=null;clearTimeout(watchdog);controls(false);status.textContent=message;}
   window.syncXGSSResearch=()=>{
     const m=selected(),next=key(m);
-    if(scope!==next){sensorHandoffScope=null;pinnedResearchScope=null;faultState=null;activeResolvedScope=null;clearTimeout(faultPoll);faultPoll=null;eventLastAttempt=0;}
+    if(scope!==next){if(partsFocus){destroyEstimates();faultFocusTab='current';faultGroupResearchId=null;}sensorHandoffScope=null;pinnedResearchScope=null;faultState=null;activeResolvedScope=null;clearTimeout(faultPoll);faultPoll=null;eventLastAttempt=0;}
     if(job&&!matches()){cancel('设备已切换，资料收集已停止。');results.replaceChildren();}
-    if(scope!==next){catalogIdentity=null;vinTicket++;vinBusy=false;vinInput.value='';vinConfirmed.checked=false;vinFeedback.textContent='';vinBox.hidden=true;preliminaryView.replaceChildren();preliminaryView.hidden=true;closeImage();galleryGeneration++;galleryView.replaceChildren();scope=next;record=null;recordScope=null;preferredTerms=null;activeResearchId=null;activeLookup++;handoffBusy=false;handoffSeed=null;linkedFaults=null;inputsEdited=false;modeChoice=null;faultEventId=null;faultEvents=[];pageFaults=[];pageServices=[];pageFault=null;pageObservedAt=null;pageCaptureIssue='';window.syncVisibleTrackunitEvents?.(null);clearTimeout(pageReadTimer);pageReadTimer=null;pageReadPending=false;pageReadTicket++;apiEventNote='';eventRequest++;eventBusy=false;emailTicket++;emailPreview=null;continuationView.hidden=true;evidenceRequest++;evidenceBusy=false;contextView.replaceChildren();maintenanceView.replaceChildren();usedContextView.replaceChildren();resultHero.replaceChildren();resultHero.hidden=true;symptom.value='';source.value=focused?'operator_report':'simulation';cancel('');results.replaceChildren();planView.replaceChildren();adviceView.replaceChildren();input.value='';coverage.textContent='';loadDeviceDiagrams(m,galleryGeneration);loadActiveResearch();loadFaultEvents();loadCatalogIdentity(m);}
+    if(scope!==next){catalogIdentity=null;vinTicket++;vinBusy=false;vinInput.value='';vinConfirmed.checked=false;vinFeedback.textContent='';vinBox.hidden=true;preliminaryView.replaceChildren();preliminaryView.hidden=true;closeImage();galleryGeneration++;galleryView.replaceChildren();scope=next;record=null;recordScope=null;preferredTerms=null;activeResearchId=null;activeLookup++;handoffBusy=false;handoffSeed=null;linkedFaults=null;inputsEdited=false;modeChoice=null;faultEventId=null;faultEvents=[];pageFaults=[];pageServices=[];pageFault=null;pageObservation=null;pageObservedAt=null;pageSourceUrl='';pageCaptureIssue='';window.syncVisibleTrackunitEvents?.(null);clearTimeout(pageReadTimer);pageReadTimer=null;pageReadPending=false;pageReadTicket++;apiEventNote='';eventRequest++;eventBusy=false;emailTicket++;emailPreview=null;continuationView.hidden=true;evidenceRequest++;evidenceBusy=false;contextView.replaceChildren();maintenanceView.replaceChildren();usedContextView.replaceChildren();resultHero.replaceChildren();resultHero.hidden=true;symptom.value='';source.value=focused?'operator_report':'simulation';cancel('');results.replaceChildren();planView.replaceChildren();adviceView.replaceChildren();input.value='';coverage.textContent='';loadDeviceDiagrams(m,galleryGeneration);loadActiveResearch();loadFaultEvents();loadCatalogIdentity(m);}
     identity.textContent=m?`${typeof displayMachineModel==='function'?displayMachineModel(m.model):m.model} · ${m.serial_number}`:'请选择设备';
     const risk=document.getElementById('risk-device');if(risk)risk.textContent=m?`当前设备：${m.model} · ${m.serial_number}。尚未发布此设备的风险时间窗口。`:'请先选择设备。';
     const real=realDevice(m);captureAvailability();
-    start.disabled=Boolean(job)||Boolean(controller)||preparing||!available||!real;planStart.disabled=Boolean(job)||Boolean(controller)||preparing||!real;
+    start.disabled=Boolean(job)||Boolean(controller)||preparing||!real;planStart.disabled=Boolean(job)||Boolean(controller)||preparing||!real;
     localEvidence.disabled=Boolean(job)||Boolean(controller)||preparing||evidenceBusy||!real;
     if(!job&&!controller&&!preparing&&record?.plan&&!planMatchesInput())status.textContent=changedContextNote;
     controls(Boolean(job)||Boolean(controller)||preparing);
@@ -244,25 +424,29 @@
     preliminaryView.replaceChildren();preliminaryView.hidden=true;
     if(!record?.plan||recordScope!==key(selected())||!planMatchesInput()||record.advice||hasComponentSources(record)||(!focused&&!needsVin()))return;
     preliminaryView.hidden=false;
+    if(partsFocus){
+      preliminaryView.append(el('p',needsVin()?'核对整机 VIN 后，继续读取本机 XGSS 图册。':'AI 已确定检索方向。点击“继续读取 XGSS 并推荐配件”取得图示与料号。'));
+      return;
+    }
     preliminaryView.append(el('h3','等待同 VIN XGSS 图册'),
       el('p','AI 已生成检索方向，但尚未读取该设备适用的零件或手册；目前不能推荐具体料号或维修步骤。'));
     if(needsVin())preliminaryView.append(el('p','先核对上方整机 VIN / PIN，再继续查找图册。'));
-    else if(available){
+    else{
       const continueButton=el('button','继续读取 XGSS 并生成备件建议');continueButton.type='button';
       continueButton.className='primary-button';continueButton.onclick=()=>collect(record);
       preliminaryView.append(continueButton);
-    }else preliminaryView.append(el('p','在当前设备的 Trackunit 页面打开 Chrome 助手侧栏，继续读取 XGSS 图册。'));
+    }
     const directions=disclosure(recordMode(record)==='maintenance'?'AI 初步保养方向':'AI 初步排查方向');
     directions.append(el('p',readable(record.plan.summary,record)));
     for(const d of record.plan.directions){const item=el('article');item.append(el('strong',d.component),el('p',readable(d.reason,record)));directions.append(item);}
     preliminaryView.append(directions);
   }
   function continueActivePlan(){
-    if(!focused||!embedded||!available||!realDevice(selected())||needsVin()||controller||job||preparing||
+    if(partsFocus||!focused||!embedded||!available||!realDevice(selected())||needsVin()||controller||job||preparing||
       !record?.plan||record?.pages?.length||record.advice||!planMatchesInput()||continuedPlans.has(record.research_id))return;
     continuedPlans.add(record.research_id);
     status.textContent='正在连接同 VIN XGSS 图册，查找故障相关备件…';
-    void collect(record);
+    void collect(record,{analyzeAfter:false});
   }
   async function selectCorrectedDataset(m,datasetId,draft=null){
     if(!/^[a-f0-9]{64}$/.test(datasetId||'')||typeof refresh!=='function'||key(m)!==key(selected()))return false;
@@ -315,18 +499,26 @@
   };
   function rememberContext(data){
     modeChoice=recordMode(data);mode.value=modeChoice;
+    if(partsFocus&&data.research_id&&data.research_id!==faultGroupResearchId){
+      faultFocusTab=data.advice?.analysis_scope==='historical'||isHistoricalFault(data.fault_context?.trackunit_page)||isHistoricalFault(data.fault_context?.trackunit_event)?'historical':'current';
+      faultGroupResearchId=data.research_id;
+    }
     handoffSeed=data.source_report_id?{source_report_id:data.source_report_id,symptom:data.symptom,symptom_source:data.symptom_source}:null;
     linkedFaults={manual_fault:data.manual_fault||null,engineering_fault:data.engineering_fault||null};
-    faultEventId=data.fault_event_id||null;renderEventOptions();
+    faultEventId=data.fault_event_id||null;
+    pageObservation=pageObservationInput(data.fault_context?.trackunit_page);
+    if(pageObservation)pageFault={...pageObservation,displayed_at:pageObservation.occurred_at||'',code:pageObservation.code||null};
+    else if(data.symptom_source!=='trackunit_page')pageFault=null;
+    renderEventOptions();
     const code=linkedFaults.manual_fault?.code||linkedFaults.engineering_fault?.code;
-    continuationView.textContent=(handoffSeed?'已沿用上一步的原始问题与分析依据。':'')+(code?' 已关联故障码 '+code+'。':'')+(faultEventId?' 已关联 Trackunit 故障事件。':'');
+    continuationView.textContent=(handoffSeed?'已沿用上一步的原始问题与分析依据。':'')+(code?' 已关联故障码 '+code+'。':'')+(faultEventId?' 已关联 Trackunit 故障事件。':'')+(pageObservation?`${isHistoricalFault(pageObservation)?'历史 · 已解除':'页面观察'} · ${pageObservation.description} · ${pageObservation.occurred_at||'时间待核实'}`:'');
     continuationView.hidden=!continuationView.textContent;
     unlinkContext.hidden=continuationView.hidden;
   }
   unlinkContext.onclick=()=>{
     if(controller||job||preparing||handoffBusy)return;
     automaticFault=null;sensorHandoffScope=null;
-    handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};faultEventId=null;pageFault=null;renderEventOptions();if(['trackunit_event','trackunit_page'].includes(source.value))source.value='operator_report';inputsEdited=true;activeLookup++;emailTicket++;emailPreview=null;
+    handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};faultEventId=null;pageFault=null;pageObservation=null;renderEventOptions();if(['trackunit_event','trackunit_page'].includes(source.value))source.value='operator_report';inputsEdited=true;activeLookup++;emailTicket++;emailPreview=null;
     continuationView.hidden=unlinkContext.hidden=true;controls(false);status.textContent='已取消带入的分析与故障关联，原始问题仍保留。';
   };
   window.syncXGSSResearchFaults=()=>{
@@ -337,7 +529,7 @@
     if(faultKey(next)===(pendingFaultKey||faultKey(linkedFaults)))return;
     automaticFault=null;
     if(controller||job||preparing||handoffBusy)cancel('故障关联已改变，请重新查找资料。');
-    modeChoice='fault';faultEventId=null;pageFault=null;if(['trackunit_event','trackunit_page'].includes(source.value))source.value='operator_report';
+    modeChoice='fault';faultEventId=null;pageFault=null;pageObservation=null;if(['trackunit_event','trackunit_page'].includes(source.value))source.value='operator_report';
     sensorHandoffScope=null;handoffSeed=null;linkedFaults=next;inputsEdited=true;activeLookup++;
     rememberContext({...next});controls(false);
   };
@@ -347,26 +539,33 @@
     if(code&&!symptom.value.trim()){symptom.value=`分析故障码 ${code}，核对可能原因、维修方向和适用备件。`;source.value='user_question';inputsEdited=true;activeLookup++;}
     window.syncXGSSResearchFaults();inputPanel.open=true;card.scrollIntoView?.({block:'start',behavior:'smooth'});symptom.focus?.({preventScroll:true});
   };
+  function validPageSourceUrl(value,asset){
+    try{const url=new URL(value);return url.protocol==='https:'&&['new.manager.trackunit.com','manager.trackunit.com'].includes(url.hostname)&&!url.port&&!url.username&&!url.password&&url.pathname.replace(/\/$/,'')===`/assets/${asset}/events`?url.origin+url.pathname:'';}catch{return ''; }
+  }
   function renderEventOptions(){
     eventSelect.replaceChildren();const none=el('option','选择故障事件，或补充人工现象');none.value='';eventSelect.append(none);
-    for(const item of faultEvents){const option=el('option',`${item.code||'未提供故障码'} · ${item.occurred_at||item.event_time||'时间待核实'} · ${item.status||'UNKNOWN'}`);option.value=item.event_id;eventSelect.append(option);}
-    for(const [index,item] of pageFaults.entries()){const option=el('option',`当前页 · ${item.code||'未显示故障码'} · ${item.displayed_at||'时间待核实'}`);option.value='page:'+index;eventSelect.append(option);}
+    for(const item of faultEvents){const option=el('option',`${item.code||'未提供故障码'} · ${item.occurred_at||item.event_time||'时间待核实'} · ${isHistoricalFault(item)?'历史 · 已解除':item.status||'状态未核验'}`);option.value=item.event_id;eventSelect.append(option);}
+    for(const [index,item] of pageFaults.entries()){const option=el('option',`${isHistoricalFault(item)?'历史 · 已解除':'页面记录'} · ${item.code||item.description||'未显示故障码'} · ${item.displayed_at||'时间待核实'}`);option.value='page:'+index;eventSelect.append(option);}
     if(faultEventId&&!faultEvents.some(e=>e.event_id===faultEventId)){const option=el('option','当前处理已保存的 Trackunit 故障事件');option.value=faultEventId;eventSelect.append(option);}
-    eventSelect.value=faultEventId||(pageFault?'page:'+pageFaults.findIndex(item=>item===pageFault):'');
+    if(pageFault&&!pageFaults.includes(pageFault)){const option=el('option',`${isHistoricalFault(pageFault)?'历史 · 已解除':'已保存页面记录'} · ${pageFault.code||pageFault.description||'故障记录'}`);option.value='page:saved';eventSelect.append(option);}
+    eventSelect.value=faultEventId||(pageFault?(pageFaults.includes(pageFault)?'page:'+pageFaults.indexOf(pageFault):'page:saved'):'');
     if(eventSelect.value==='page:-1')eventSelect.value='';
   }
-  function pageFaultNote(){return [pageObservedAt?`Trackunit 当前页：${pageFaults.length} 条故障、${pageServices.length} 条保养提醒；只覆盖页面已显示的活动事件。`:'',
+  function pageFaultNote(){return [pageObservedAt?`Trackunit 当前页：${pageFaults.length} 条故障、${pageServices.length} 条保养提醒；含 ${pageFaults.filter(isHistoricalFault).length} 条已解除历史故障，仅覆盖已显示记录。`:'',
     pageFault&&(!record||!planMatchesInput())?'已带入当前页故障；页面记录尚未由故障 API 核验。点击 AI 分析故障继续。':'',pageCaptureIssue].filter(Boolean).join(' ');}
-  const pageFaultKey=item=>JSON.stringify([item?.code,item?.spn,item?.fmi,item?.sa,item?.description,item?.displayed_at]);
+  const pageFaultKey=item=>JSON.stringify([item?.code,item?.spn,item?.fmi,item?.sa,item?.description,item?.displayed_at,item?.status,item?.page_event_id]);
   function showFaultSources(){eventNote.textContent=[apiEventNote,pageFaultNote()].filter(Boolean).join(' ');}
   function selectPageFault(item){
     if(!item)return;
+    if(partsFocus){destroyEstimates();faultFocusTab=isHistoricalFault(item)?'historical':'current';}
     automaticFault=null;if(controller||job||preparing)cancel('故障记录已改变，原分析已停止。');
-    pageFault=item;faultEventId=null;modeChoice='fault';handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};
+    pageFault=item;faultEventId=null;
+    pageObservation=pageSourceUrl?{asset_id:selected().machine_id,source_url:pageSourceUrl,observed_at:pageObservedAt,description:item.description||'',code:item.code||'',spn:item.spn??null,fmi:item.fmi??null,sa:item.sa??null,status:item.status||'UNKNOWN',occurred_at:item.displayed_at||'',cleared_at:item.cleared_at||'',page_event_id:item.page_event_id||null}:null;modeChoice='fault';handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};
     inputsEdited=true;activeLookup++;emailTicket++;emailPreview=null;
     source.value='trackunit_page';
-    symptom.value=`Trackunit 当前 Events 页可见故障：${item.code||'未显示故障码'}${item.sa!==null?`，SA ${item.sa}`:''}；描述：${item.description||'页面未显示描述'}；页面显示时间：${item.displayed_at||'未显示'}。该卡片为页面局部观察，事件状态及完整历史尚未通过故障 API 核验。`;
-    continuationView.textContent=`当前页观察 · ${item.code||'未显示故障码'} · ${item.description||''}`;
+    symptom.value=`Trackunit 当前 Events 页${isHistoricalFault(item)?'历史已解除':'可见'}故障：${item.code||'未显示故障码'}${item.sa!==null?`，SA ${item.sa}`:''}；描述：${item.description||'页面未显示描述'}；页面显示时间：${item.displayed_at||'未显示'}。${isHistoricalFault(item)?'页面状态：已解除（历史记录），请生成历史故障备件参考与复发时的核查和备库条件，不代表当前需要换件。':'该卡片为页面局部观察，事件状态及完整历史尚未通过故障 API 核验。'}`;
+    if(pageObservation)symptom.value='';
+    continuationView.textContent=`${isHistoricalFault(item)?'历史故障备件参考 · 已解除':'当前页观察'} · ${item.code||'未显示故障码'} · ${item.description||''} · ${item.displayed_at||'时间待核实'}`;
     continuationView.hidden=false;controls(false);
   }
   window.selectVisibleTrackunitFault=index=>{
@@ -376,7 +575,7 @@
   };
   function selectPageService(item){
     if(controller||job||preparing)cancel('已切换为保养分析。');
-    automaticFault=null;pageFault=null;faultEventId=null;modeChoice='maintenance';
+    automaticFault=null;pageFault=null;pageObservation=null;faultEventId=null;modeChoice='maintenance';
     handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};
     source.value='user_question';
     symptom.value=`Trackunit 当前 Events 页显示${item.kind==='overdue'?'逾期':'即将'}保养：${item.plan||'保养计划'}${item.target_hours!==null?`，计划工时 ${item.target_hours} h`:''}${item.hours_offset!==null?`，页面提示 ${item.hours_offset} h ${item.kind==='overdue'?'逾期':'剩余'}`:''}。请结合当前设备工时和同 VIN 的 XGSS 图册，推荐待检查的保养件与易损件；保养记录和适配需核对。`;
@@ -384,21 +583,23 @@
     card.scrollIntoView?.({block:'start',behavior:'smooth'});planStart.focus?.();
   }
   function renderPageFaultBanner(){
-    faultAlert.replaceChildren();
+    faultAlert.replaceChildren();if(partsFocus){faultAlert.hidden=true;return;}
     faultAlert.hidden=!embedded||!realDevice(selected())||!pageObservedAt||!pageFaults.length&&!pageServices.length;
     if(faultAlert.hidden)return;
-    faultAlert.append(el('strong',`Trackunit 当前页：${pageFaults.length} 条故障 · ${pageServices.length} 条保养提醒`),
+    faultAlert.append(el('strong',`Trackunit 当前页：${pageFaults.length} 条故障${pageFaults.some(isHistoricalFault)?`（历史 ${pageFaults.filter(isHistoricalFault).length} 条）`:''} · ${pageServices.length} 条保养提醒`),
       el('p','选择故障码后，AI 对照同 VIN 的 XGSS 资料推荐检查和备件；页面事件尚未经故障接口核验。'));
     if(record?.plan&&!pageFault&&record.symptom_source==='operator_report')
       faultAlert.append(el('p','下方已保存结果基于此前人工报告，尚未与这些页面故障码绑定。'));
     if(record?.plan&&!pageFault&&record.symptom_source==='trackunit_page')
       faultAlert.append(el('p',`下方已保存结果仅针对 ${recordFaultLabel(record).label}。分析其他故障，请先选择对应故障码。`));
     const list=el('div');list.className='research-page-fault-actions';
-    for(const item of pageFaults.slice(0,3)){
+    const quickFaults=[...pageFaults.filter(item=>!isHistoricalFault(item)).slice(0,2),...pageFaults.filter(isHistoricalFault).slice(0,1)];
+    if(!quickFaults.some(isHistoricalFault))quickFaults.push(...pageFaults.filter(item=>!quickFaults.includes(item)).slice(0,3-quickFaults.length));
+    for(const item of quickFaults){
       const button=el('button');
       button.type='button';button.disabled=pageFault===item;
       button.title=`${item.code||'无故障码'}${item.sa!==null?' · SA '+item.sa:''} · ${item.description||'页面未显示描述'}`;
-      button.append(el('strong',`${item.code||'无故障码'}${item.sa!==null?' · SA '+item.sa:''}`),
+      button.append(el('strong',`${isHistoricalFault(item)?'历史 · 已解除 · ':''}${item.code||'故障码未显示'}${item.sa!==null?' · SA '+item.sa:''}`),
         el('span',item.description||'页面未显示描述'));
       button.onclick=()=>{selectPageFault(item);renderEventOptions();planStart.scrollIntoView?.({block:'center',behavior:'smooth'});planStart.focus?.();};
       list.append(button);
@@ -420,7 +621,7 @@
     // captured for this machine; never silently start a model request.
     if(!focused||!embedded||activeResolvedScope!==key(selected())||record||activeResearchId||
       inputsEdited||modeChoice!==null||faultEventId||pageFault||symptom.value.trim()||
-      controller||job||preparing||handoffBusy||vinBusy||pageFaults.length!==1||faultEvents.length||
+      controller||job||preparing||handoffBusy||vinBusy||pageFaults.length!==1||isHistoricalFault(pageFaults[0])||faultEvents.length||
       !['unauthorized','forbidden','rate_limited','unavailable','schema_error'].includes(faultState?.status))return false;
     const age=Date.now()-Date.parse(pageObservedAt);
     if(!Number.isFinite(age)||age<0||age>120000)return false;
@@ -431,7 +632,7 @@
   function associateCurrentFault(){
     // Wait for both local reads: an existing investigation or a user's input
     // takes precedence over a default choice, regardless of response order.
-    if(!focused||activeResolvedScope!==key(selected())||pinnedResearchScope===key(selected())||
+    if(partsFocus||!focused||activeResolvedScope!==key(selected())||pinnedResearchScope===key(selected())||
       record||activeResearchId||inputsEdited||modeChoice!==null||faultEventId||symptom.value.trim()||
       controller||job||preparing||handoffBusy||vinBusy||handoffSeed||
       currentFaults()?.manual_fault||currentFaults()?.engineering_fault)return;
@@ -512,13 +713,14 @@
   };
   function finishPageRead(){clearTimeout(pageReadTimer);pageReadTimer=null;pageReadTicket++;pageReadPending=false;}
   function selectFaultEvent(event){
+    if(partsFocus){destroyEstimates();faultFocusTab=isHistoricalFault(event)?'historical':'current';}
     automaticFault=null;
     if(controller||job||preparing)cancel('故障事件已改变，原分析已停止。');
     const nextEventId=event?.event_id||null;
     // A supplement belongs to one event. Never carry a visible-page fault or
     // another event's observations into the newly selected official event.
     if(pageFault||faultEventId!==nextEventId)symptom.value='';
-    pageFault=null;faultEventId=nextEventId;modeChoice=faultEventId?'fault':null;
+    pageFault=null;pageObservation=null;faultEventId=nextEventId;modeChoice=faultEventId?'fault':null;
     handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};inputsEdited=true;activeLookup++;emailTicket++;emailPreview=null;
     source.value=faultEventId?'trackunit_event':'operator_report';continuationView.textContent=event?`${event.code||'故障码未提供'} · ${event.description||''}`:'';continuationView.hidden=!event;controls(false);
   }
@@ -549,10 +751,19 @@
       const data=await response.json();
       if(mine!==activeLookup||machineScope!==key(selected())||controller||job||preparing||handoffBusy||inputsEdited||inputAtStart!==JSON.stringify([symptom.value,source.value,record?.research_id]))return;
       if(data.machine_id!==m.machine_id||(data.dataset_id||null)!==(m.dataset_id||null)||data.vin!==m.serial_number||!data.plan||!/^[a-f0-9]{32}$/.test(data.research_id||'')||(link&&data.research_id!==link))throw new Error('当前排查与设备不一致，未载入。');
+      if(partsFocus&&!isFaultResearch(data)){
+        pinnedResearchScope=null;record=null;recordScope=null;
+        symptom.value='';source.value='operator_report';destroyEstimates();updateResearchLink(null);
+        // A shared link is not the server's active pointer. Resolve the real
+        // active record before retaining a compare-and-swap ID for a new plan.
+        if(link){controls(false);await loadActiveResearch();return;}
+        activeResearchId=data.research_id;activeResolvedScope=machineScope;
+        controls(false);status.textContent='选择当前或历史故障，生成对应配件推荐。';return;
+      }
       record=data;recordScope=machineScope;activeResearchId=data.research_id;symptom.value=recordInput(data);source.value=data.symptom_source;
       rememberContext(data);showPlan(data);render(data);updateResearchLink(activeResearchId);
       status.textContent=data.advice_error||(data.advice?'已载入备件与维修建议。':data.pages?.length?'已载入 XGSS 资料，可继续生成备件建议。':
-        embedded?'已接续 AI 排查，等待读取同 VIN XGSS 图册。':'已生成 AI 排查方向；请在 Trackunit 的 Chrome 助手侧栏继续读取同 VIN XGSS 图册。');
+        '已接续 AI 排查，可继续读取同 VIN XGSS 图册。');
       continueActivePlan();
     }catch(error){if(mine===activeLookup&&machineScope===key(selected())&&!inputsEdited&&!controller&&!job)status.textContent=error.message;}
   }
@@ -576,9 +787,24 @@
     document.getElementById(id)?.addEventListener('click',window.syncXGSSResearchFaults);
   for(const id of ['engineering-code','engineering-source','engineering-configuration'])
     document.getElementById(id)?.addEventListener('input',window.syncXGSSResearchFaults);
+  function reportModelFailure(error,phase){
+    if(error.name==='AbortError'){cancel('分析已停止。');return;}
+    if(error.kind!=='schema_validation'){cancel(error.message);return;}
+    // Retain the typed failure for retry logic, but do not expose internal schema details.
+    modelFailure={error,phase,inputKey:modelInputKey()};
+    const matching=planMatchesInput(),hasSources=matching&&record?.pages?.length;
+    const previous=matching&&record?.advice&&record.analysis_revision===record.revision;
+    cancel((phase==='plan'?'检索方向暂未生成。':'本次配件分析暂未完成。')+
+      (hasSources?'已选故障和已读取的 XGSS 资料仍保留。':'已选故障与补充信息仍保留。')+
+      (previous?'下方仍为上次建议，尚未更新。':'')+'请点击重试。');
+  }
   async function modelRequest(url,body,signal){
     const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,signal});
-    if(!response.ok){const problem=await response.json().catch(()=>({}));throw new Error(typeof problem.detail==='string'?problem.detail:'AI 请求失败。');}
+    if(!response.ok){
+      const problem=await response.json().catch(()=>({})),detail=problem.detail;
+      const error=new Error(typeof detail==='string'?detail:detail?.message||problem.message||'请求未完成，请重试。');
+      error.kind=detail?.kind||detail?.code||problem.kind||problem.code;throw error;
+    }
     const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='',result=null;
     try{while(true){const chunk=await reader.read();if(chunk.done)break;buffer+=decoder.decode(chunk.value,{stream:true}).replace(/\r/g,'');
       let end;while((end=buffer.indexOf('\n\n'))>=0){const block=buffer.slice(0,end);buffer=buffer.slice(end+2);if(!block.startsWith('data: '))continue;
@@ -620,48 +846,56 @@
   }
   function showAdvice(data){
     emailTicket++;emailPreview=null;adviceView.replaceChildren();resultHero.replaceChildren();resultHero.hidden=true;const advice=data.advice;
-    const valid=Boolean(advice&&data.analysis_revision===data.revision);if(planDetails)planDetails.open=!focused&&!valid;if(!valid)return;
-    const maintenance=recordMode(data)==='maintenance';
+    const valid=Boolean(advice&&data.analysis_revision===data.revision&&(!partsFocus||isFaultResearch(data)));if(planDetails)planDetails.open=!focused&&!valid;if(!valid)return;
+    if(partsFocus){showCompactAdvice(data);return;}
+    const maintenance=recordMode(data)==='maintenance',historical=!maintenance&&advice.analysis_scope==='historical';
+    const historicalCandidates=historical&&Array.isArray(advice.historical_candidates)?advice.historical_candidates:[];
     const inspectionOnly=part=>part?.evidence_level==='inspection_only'||part?.status==='inspection_only';
-    const parts=maintenance?advice.parts:advice.parts.filter(part=>!inspectionOnly(part));
+    const parts=historical?[]:maintenance?advice.parts:advice.parts.filter(part=>!inspectionOnly(part));
     const inspectionTargets=maintenance?[]:[...(Array.isArray(advice.inspection_targets)?advice.inspection_targets:[]),...advice.parts.filter(inspectionOnly)];
     const classified=Array.isArray(advice.inspection_targets)||inspectionTargets.length>0;
     const overview=el('div');overview.className='research-result-overview';
-    const badge=el('span',maintenance?'AI 工时保养 · XGSS 图册依据':data.symptom_source==='simulation'?'模拟排查 · 真实图册资料':'AI 备件与维修建议');badge.className='research-result-badge';
+    const badge=el('span',historical?'历史故障备件参考':maintenance?'AI 工时保养 · XGSS 图册依据':data.symptom_source==='simulation'?'模拟排查 · 真实图册资料':'AI 备件与维修建议');badge.className='research-result-badge';
     overview.append(badge);
     if(!maintenance){
       const fault=recordFaultLabel(data),scopeLabel=el('p');scopeLabel.className='research-fault-facts';
-      scopeLabel.append(el('strong',`本次故障：${fault.label}`));overview.append(scopeLabel);
+      scopeLabel.append(el('strong',`${historical?'历史故障 · 已解除':'本次故障'}：${fault.label}`));overview.append(scopeLabel);
       if(fault.description)overview.append(el('p',fault.description));
     }
-    const countLabel=maintenance?`${parts.length} 项保养与易损件推荐`:classified?`${inspectionTargets.length} 项优先核查 · ${parts.length} 项条件性备件`:`${parts.length} 项备件候选`;
-    overview.append(el('h3',countLabel),el('p',maintenance?'按 AI 推荐理由安排检查，核对保养记录与适配后准备备件。':inspectionTargets.length&&!parts.length?'先按检查顺序定位原因，核查对象暂不列入备件准备。':'需经现场检查确认，再核对适配与更换条件。'));
+    const countLabel=historical?`${historicalCandidates.length} 项历史备件候选`:maintenance?`${parts.length} 项保养与易损件推荐`:classified?`${inspectionTargets.length} 项优先核查 · ${parts.length} 项条件性备件`:`${parts.length} 项备件候选`;
+    overview.append(el('h3',countLabel),el('p',historical?'用于复发准备；核对相关回路或部件与适配后，再决定备库或更换，不代表当前需要换件。':maintenance?'按 AI 推荐理由安排检查，核对保养记录与适配后准备备件。':inspectionTargets.length&&!parts.length?'先按检查顺序定位原因，核查对象暂不列入备件准备。':'需经现场检查确认，再核对适配与更换条件。'));
     const imageCount=data.pages.reduce((count,page)=>count+(page.illustrations||[]).length,0);
     const meta=el('p',`${data.pages.length} 页来源 · ${data.evidence.parts.length} 条零件 · ${imageCount} 张图纸 · ${data.evidence.manuals.length} 项手册摘录`);meta.className='muted';overview.append(meta);
     if(data.symptom_source==='operator_report')overview.append(el('p','故障现象来自人工报告，Trackunit 故障接口尚未核验。'));
     if(!data.evidence.manuals.length)overview.append(el('p','尚未读取维修手册；以下检查方向由 AI 提供。'));
     if(focused){
-      const preview=el('p',[...parts,...inspectionTargets].slice(0,2).map(part=>`${part.name} · ${part.part_number}`).join('  /  '));
+      const preview=el('p',[...historicalCandidates,...parts,...inspectionTargets].slice(0,2).map(part=>`${part.name} · ${part.part_number}`).join('  /  '));
       preview.className='research-result-preview';
-      const jump=el('button',inspectionTargets.length&&!parts.length?'查看核查部件、图册与检查建议':'查看备件、依据与维修建议');jump.type='button';jump.className='primary-button';
+      const jump=el('button',historical?'查看历史备件、图册与备库条件':inspectionTargets.length&&!parts.length?'查看核查部件、图册与检查建议':'查看备件、依据与维修建议');jump.type='button';jump.className='primary-button';
       jump.onclick=()=>adviceView.scrollIntoView?.({block:'start',behavior:'smooth'});
       resultHero.append(overview);
       if(preview.textContent)resultHero.append(preview);
       resultHero.append(jump);resultHero.hidden=false;
     }else adviceView.append(overview);
     const reasoning=disclosure(maintenance?'AI 推荐依据':'AI 判断与依据',!focused);reasoning.append(el('p',readable(advice.summary,data)));
-    if(!parts.length&&!inspectionTargets.length)adviceView.append(el('p','本次没有足够依据推荐具体料号。'));
-    function partCard(part,inspection=false){const item=el('article');item.className='engineering-hypothesis';
+    if(!parts.length&&!inspectionTargets.length&&!historicalCandidates.length)adviceView.append(el('p','本次没有足够依据推荐具体料号。'));
+    function partCard(part,inspection=false,history=false){const item=el('article');item.className='engineering-hypothesis';
       const diagram=part.capture_id?diagramsFor(data,part.capture_id)[0]:null;
       if(!maintenance&&diagram)item.append(diagramFigure(data,diagram,part));
       item.append(el('h4',part.name));
+      if(history)item.append(el('strong','历史备件候选 · 复发核查后备库'));
       if(inspection)item.append(el('strong','先检查，暂不列入备件准备'));
       if(maintenance){const role=el('span',{maintenance:'保养件',wear:'易损件',repair:'待核对部件'}[part.part_role]||'待核对部件');role.className='research-part-role';item.append(role);}const code=el('p',part.part_number);code.className='research-part-number';item.append(code);
       if(part.figure_ref){const position=el('p',`图中序号 ${part.figure_ref} · ${part.assembly_path?.at(-1)||'所属图册'}`);position.className='research-part-position';item.append(position);}
       if(!maintenance){const reason=el('p',`AI 匹配依据：${readable(part.reason,data)}`);reason.className='research-part-reason';item.append(reason);}
-      const rationale=disclosure(inspection?'核查后再决定':maintenance?'AI 推荐理由与检查条件':'匹配理由与更换条件',maintenance||inspection);if(!inspection)rationale.append(el('p',readable(part.reason,data)));rationale.append(el('strong',inspection?'需核实的条件':maintenance?'保养与更换条件':'考虑更换的条件'),el('p',readable(part.replacement_condition,data)));item.append(rationale);
+      const rationale=disclosure(history?'推荐依据与备库条件':inspection?'核查后再决定':maintenance?'AI 推荐理由与检查条件':'匹配理由与更换条件',maintenance||inspection||history);if(!inspection)rationale.append(el('p',readable(part.reason,data)));rationale.append(el('strong',history?'备库与更换条件':inspection?'需核实的条件':maintenance?'保养与更换条件':'考虑更换的条件'),el('p',readable(history?(part.preparation_condition||part.replacement_condition):part.replacement_condition,data)));item.append(rationale);
       if(maintenance){if(diagram)item.append(diagramFigure(data,diagram,part));else item.append(el('p','当前分类尚未取得 XGSS 图示。'));}
       const cite=el('button','查看图册依据');cite.type='button';cite.onclick=()=>openSource(part.source_id);item.append(cite);return item;
+    }
+    if(historicalCandidates.length){
+      adviceView.append(el('h3','历史故障备件候选'));
+      const candidates=el('div');candidates.className='research-part-list';adviceView.append(candidates);
+      for(const part of historicalCandidates)candidates.append(partCard(part,false,true));
     }
     if(parts.length){
       if(classified&&!maintenance)adviceView.append(el('h3','条件性备件'));
@@ -740,7 +974,7 @@
     closeImage();
     const dialog=el('dialog');imageDialog=dialog;dialog.className='research-image-dialog';dialog.setAttribute('aria-label','XGSS 图册图示');
     const header=el('div');header.className='research-image-header';
-    const title=el('h2',diagram.image.title||diagram.page.content?.assembly_path?.at(-1)||'XGSS 图册图示');
+    const title=el('h2',part?part.name+' · 图册图示':diagram.image.title||diagram.page.content?.assembly_path?.at(-1)||'XGSS 图册图示');
     const close=el('button','关闭');close.type='button';close.onclick=closeImage;header.append(title,close);
     const toolbar=el('div');toolbar.className='research-image-toolbar';
     const smaller=el('button','缩小'),larger=el('button','放大'),reset=el('button','适合窗口'),zoomLabel=el('span','100%');
@@ -765,7 +999,7 @@
   function diagramFigure(data,diagram,part=null){
     const figure=el('figure');figure.className='research-diagram';
     const button=el('button');button.type='button';button.className='research-diagram-open';
-    const title=diagram.image.title||diagram.page.content?.assembly_path?.at(-1)||'XGSS 图册图示';
+    const title=part?part.name+' · 图册图示':diagram.image.title||diagram.page.content?.assembly_path?.at(-1)||'XGSS 图册图示';
     button.setAttribute('aria-label',`放大图示：${title}${part?.figure_ref?'，图中序号 '+part.figure_ref:''}`);
     const image=el('img');image.src=diagram.url;image.alt=`${title} · XGSS 原图`;image.loading='lazy';image.decoding='async';
     button.append(image,el('span','查看大图'));button.onclick=()=>openImage(data,diagram,part,button);
@@ -830,14 +1064,16 @@
   planStart.onclick=async({force=false,automatic=false}={})=>{
     const m=selected();if(!m||controller||job||preparing||handoffBusy)return;
     automaticFault=null;
+    if(partsFocus&&(!selectedFaultReady()||!selectionMatchesFaultTab())){status.textContent='请先选择本组故障记录，或补充明确的故障码。';return;}
     const maintenance=analysisMode()==='maintenance';
-    if(!maintenance&&!faultEventId&&symptom.value.trim().length<(source.value==='user_question'?1:5)){status.textContent='请选择故障事件，或补充故障现象。';return;}
+    if(!maintenance&&!faultEventId&&!pageObservation&&symptom.value.trim().length<(source.value==='user_question'?1:5)){status.textContent='请选择故障事件，或补充故障现象。';return;}
     // Continuing an unchanged investigation reuses its plan; a new symptom must
     // create a fresh plan before any old source can be analyzed again.
+    force=force||Boolean(modelFailure?.phase==='plan'&&modelFailure.inputKey===modelInputKey());
     if(!force&&planMatchesInput()&&!record.advice_error){
       inputsEdited=false;
-      if(focused&&hasComponentSources(record)&&(!record.advice||record.analysis_revision!==record.revision)){await analyzeRecord();return;}
-      if(available)await collect(record);else status.textContent='检索方向已生成；读取图册请使用 Chrome 助手侧栏。';return;
+      if(focused&&hasComponentSources(record)&&(partsFocus||!record.advice||record.analysis_revision!==record.revision)){await analyzeRecord();return;}
+      await collect(record);return;
     }
     const {manual_fault:manualFault,engineering_fault:engineeringFault}=maintenance?{}:currentFaults();
     if(manualFault&&engineeringFault){status.textContent='请只保留当前设备适用的一套故障资料。';return;}
@@ -845,16 +1081,17 @@
     // Ordinary user questions and edited handoffs must still confirm fault scope.
     const sensorQuestion=sensorHandoffScope?.scope===key(m)&&sensorHandoffScope.symptom===symptom.value.trim()&&
       source.value==='user_question'&&!manualFault&&!engineeringFault&&!faultEventId&&!pageFault;
-    if(!maintenance&&!faultEventId&&!manualFault&&!sensorQuestion&&typeof getManualFaultDraftReference==='function'&&getManualFaultDraftReference()){
+    if(!maintenance&&!faultEventId&&!pageObservation&&!manualFault&&!sensorQuestion&&typeof getManualFaultDraftReference==='function'&&getManualFaultDraftReference()){
       status.textContent='故障码尚未确认适用范围，请先核对并带入，或移除该代码。';return;
     }
     const parentId=!maintenance&&handoffSeed&&handoffSeed.symptom===symptom.value.trim()&&handoffSeed.symptom_source===source.value?handoffSeed.source_report_id:null;
-    const mine=++generation,machineScope=key(m),expectedActive=activeResearchId;pendingFaultKey=faultKey({manual_fault:manualFault,engineering_fault:engineeringFault});controller=new AbortController();const signal=controller.signal;controls(true);adviceView.replaceChildren();status.textContent=maintenance?'AI 正在结合工时筛选保养与易损件方向…':'AI 正在分析故障并生成检索方向…';
+    const mine=++generation,machineScope=key(m),expectedActive=activeResearchId;pendingFaultKey=faultKey({manual_fault:manualFault,engineering_fault:engineeringFault});controller=new AbortController();const signal=controller.signal;modelFailure=null;controls(true);if(!planMatchesInput())adviceView.replaceChildren();status.textContent=maintenance?'AI 正在结合工时筛选保养与易损件方向…':'AI 正在分析故障并生成检索方向…';
     let activating=false;
     try{
       const created=await modelRequest('/assistant/xgss/research/plan',{machine_id:m.machine_id,dataset_id:m.dataset_id||null,vin:m.serial_number,
         analysis_mode:maintenance?'maintenance':'fault',symptom:symptom.value.trim(),symptom_source:inputSource(),
         ...(automatic?{automatic:true}:{}),
+        ...(!maintenance&&pageObservation?{page_fault:pageObservation}:{}),
         ...(!maintenance&&faultEventId?{fault_event_id:faultEventId}:{}),...(parentId?{source_report_id:parentId}:{}),...(manualFault?{manual_fault:manualFault}:{}),...(engineeringFault?{engineering_fault:engineeringFault}:{})},signal);
       if(mine!==generation||machineScope!==key(selected()))return;
       activating=true;
@@ -867,20 +1104,20 @@
       controller=null;pendingFaultKey=null;controls(false);
       if(automatic&&record.advice&&record.analysis_revision===record.revision){render(record);status.textContent='已载入该故障的备件与维修建议。';return;}
       if(automatic&&hasComponentSources(record)&&!record.advice){await analyzeRecord();return;}
-      if(available)await collect(record);else status.textContent='AI 计划已生成；在 Chrome 助手侧栏可继续查找同 VIN 资料。';
+      await collect(record);
     }catch(error){
       if(mine===generation&&activating&&error.name!=='AbortError')await refreshActiveIdentity(m,mine);
       if(mine===generation&&automatic&&['auto_fault_pending','auto_fault_active'].includes(error.kind))inputsEdited=false;
-      if(mine===generation)cancel(error.name==='AbortError'?'分析已停止。':error.message);
+      if(mine===generation)reportModelFailure(error,'plan');
     }
   };
   replan.onclick=()=>planStart.onclick({force:true});
   async function analyzeRecord(){
     if(!record?.pages?.length||!planMatchesInput()||controller||job)return;
-    const mine=++generation,id=record.research_id;controller=new AbortController();controls(true);
+    const mine=++generation,id=record.research_id;controller=new AbortController();modelFailure=null;controls(true);
     try{const updated=await modelRequest('/assistant/xgss/research/'+id+'/analyze',null,controller.signal);
       if(mine!==generation||recordScope!==key(selected()))return;record=updated;controller=null;render(record);if(!resultHero.hidden)resultHero.scrollIntoView?.({block:'start'});status.textContent=recordMode(record)==='maintenance'?'已生成 AI 保养建议，可逐条查看原始资料。':'已生成备件与维修建议，可逐条查看原始资料。';
-    }catch(error){if(mine===generation)cancel(error.name==='AbortError'?'分析已停止。':error.message);}
+    }catch(error){if(mine===generation)reportModelFailure(error,'analyze');}
   }
   analyze.onclick=analyzeRecord;
   localEvidence.onclick=async()=>{
@@ -900,6 +1137,7 @@
     try{
       const restored=await api('/assistant/xgss/research/latest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({machine_id:m.machine_id,dataset_id:m.dataset_id||null,vin:m.serial_number})});
       if(mine!==generation||machineScope!==key(selected()))return;
+      if(partsFocus&&!isFaultResearch(restored)){preparing=false;controls(false);status.textContent='选择当前或历史故障，生成对应配件推荐。';return;}
       record=restored;recordScope=machineScope;preparing=false;symptom.value=recordInput(record);source.value=record.symptom_source;rememberContext(record);
       showPlan(record);render(record);status.textContent=record.advice_error||'已恢复上次资料排查，可继续读取资料或查看建议。';
     }catch(error){if(mine===generation)cancel(error.message);}
@@ -920,7 +1158,7 @@
     if(controller||job||preparing||handoffBusy)return;
     automaticFault=null;
     sensorHandoffScope=null;modeChoice=mode.value==='maintenance'?'maintenance':'fault';
-    handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};faultEventId=null;pageFault=null;
+    handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};faultEventId=null;pageFault=null;pageObservation=null;
     symptom.value='';source.value=modeChoice==='maintenance'?'user_question':'operator_report';
     inputsEdited=true;activeLookup++;emailTicket++;emailPreview=null;preferredTerms=null;
     continuationView.hidden=unlinkContext.hidden=true;renderEventOptions();controls(false);
@@ -958,6 +1196,7 @@
   // An explicit risk-card action starts a new, server-verified question. The
   // existing fault investigation stays saved and is never relabelled as a trend.
   window.openSensorSeriesParts=async request=>{
+    if(partsFocus)return false;
     const m=selected();
     if(!m||m.machine_id!==request?.machine_id||(m.dataset_id||null)!==request?.dataset_id)
       throw new Error('设备已切换，请在当前设备重新选择风险方向。');
@@ -972,7 +1211,7 @@
         seed.vin!==m.serial_number||seed.symptom_source!=='user_question'||!seed.symptom||!Array.isArray(seed.search_terms))
         throw new Error('风险资料与当前设备不一致，未开始图册查询。');
       automaticFault=null;handoffSeed=null;linkedFaults={manual_fault:null,engineering_fault:null};
-      faultEventId=null;pageFault=null;modeChoice='fault';mode.value='fault';
+      faultEventId=null;pageFault=null;pageObservation=null;modeChoice='fault';mode.value='fault';
       symptom.value=seed.symptom;source.value='user_question';inputsEdited=true;activeLookup++;
       sensorHandoffScope={scope:machineScope,symptom:seed.symptom.trim()};
       emailTicket++;emailPreview=null;preferredTerms={scope:machineScope,terms:seed.search_terms};
@@ -985,35 +1224,66 @@
     }
     if(mine===generation&&machineScope===key(selected()))await planStart.onclick({force:true});
   };
-  async function collect(planned=null){
+  async function collect(planned=null,{analyzeAfter=true}={}){
     const m=selected(),enteredTerms=[...new Set(input.value.split(/[、,，;；\n]/).map(t=>t.trim()).filter(Boolean))],terms=catalogSearchTerms(enteredTerms);
-    if(!m||!available||job||controller||preparing)return;
+    if(!m||job||controller||preparing)return;
     if(needsVin()){status.textContent='AI 初步方向已保留；补充整机 VIN/PIN 后继续核对图册与料号。';showPreliminary();return;}
     if(!enteredTerms.length||enteredTerms.length>12||enteredTerms.some(t=>t.length<2||t.length>40)){status.textContent='请输入 1–12 个部件检索词，每个 2–40 字。';return;}
     const current=++generation,currentScope=key(m);preparing=true;controls(true);
-    status.textContent='正在建立资料收集并连接同 VIN 图册…';coverage.textContent='';entryNote='';
+    status.textContent='正在从 XGSS 读取同 VIN 图册与部件资料…';coverage.textContent='';entryNote='';
     try{
       const collected=planned||await api('/assistant/xgss/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({machine_id:m.machine_id,dataset_id:m.dataset_id||null,vin:m.serial_number})});
       if(current!==generation||currentScope!==key(selected()))return;
       record=collected;recordScope=currentScope;
+      try{
+        // A loaded version is required for the backend's atomic evidence update.
+        if(!Number.isInteger(collected.revision)||collected.revision<0)
+          throw Object.assign(new Error('资料版本尚未确认，请重新读取当前排查。'),{kind:'direct_unavailable'});
+        controller=new AbortController();
+        const updated=await modelRequest('/assistant/xgss/research/'+collected.research_id+'/collect-direct',
+          {expected_revision:collected.revision,terms},controller.signal);
+        if(current!==generation||currentScope!==key(selected()))return;
+        if(updated?.research_id!==collected.research_id||updated.machine_id!==m.machine_id||
+          (updated.dataset_id||null)!==(m.dataset_id||null)||updated.vin!==m.serial_number||
+          !Number.isInteger(updated.revision)||updated.revision<collected.revision)
+          throw Object.assign(new Error('返回资料与当前排查不一致，未载入。'),{kind:'direct_identity'});
+        const direct=updated.direct_collection;
+        if(!direct||!['completed','partial','cached'].includes(direct.status)||!updated.pages?.length)
+          throw Object.assign(new Error('XGSS 未返回完整的资料读取结果。'),{kind:'direct_schema'});
+        record=updated;controller=null;preparing=false;render(record);
+        const unmatched=Array.isArray(direct.unmatched_terms)?direct.unmatched_terms:[];
+        const unresolved=Array.isArray(direct.unresolved)?direct.unresolved:[];
+        coverage.textContent=(direct.status==='partial'?'已读取可用图册，部分分类尚未匹配。':'已读取 XGSS 图册。')+
+          (unmatched.length?' 尚未匹配：'+unmatched.join('、')+'。':'')+(unresolved.length?' 未完成：'+unresolved.join('、')+'。':'');
+        status.textContent=hasComponentSources(record)?'XGSS 资料已读取，可生成配件建议。':'已读取图册目录，尚未取得可核对的部件，请继续读取。';
+        if(analyzeAfter&&record.plan&&hasComponentSources(record)&&planMatchesInput())await analyzeRecord();
+        return;
+      }catch(error){
+        if(current!==generation||currentScope!==key(selected()))return;
+        if(controller?.signal.aborted||error.name==='AbortError')throw error;
+        controller=null;
+        if(!['direct_unavailable','direct_auth','direct_schema','direct_no_match'].includes(error.kind))throw error;
+        if(!available)throw new Error('XGSS 暂未完成读取。已保存资料仍保留，请稍后重试；也可连接 Chrome 助手使用备用读取。');
+        entryNote='直读暂未完成，正在通过插件读取同 VIN 图册。';status.textContent=entryNote;
+      }
       const openBody={...identityBody(m),vin_confirmed:true,language:'zh'},code=collected.catalog_fault_code||null;
       let faultReady=false;
       if(code){
         try{faultReady=(await api('/assistant/xgss/status')).fault_ready===true;}catch{/* The general catalog remains usable when fault lookup is unavailable. */}
         if(current!==generation||currentScope!==key(selected()))return;
-        if(!faultReady)entryNote='故障资料入口暂不可用，改为读取同 VIN 图册；故障背景仍保留。';
+        if(!faultReady)entryNote+='故障资料入口暂不可用，改为读取同 VIN 图册；故障背景仍保留。';
       }
       let page;
       try{page=await api('/assistant/xgss/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...openBody,...(faultReady?{fault_code:code}:{})})});}
       catch(error){
         if(!faultReady)throw error;
         if(current!==generation||currentScope!==key(selected()))return;
-        entryNote='故障资料未能打开，改为读取同 VIN 图册；尚未取得该故障的官方手册。';
+        entryNote+='故障资料未能打开，改为读取同 VIN 图册；尚未取得该故障的官方手册。';
         page=await api('/assistant/xgss/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(openBody)});
       }
       if(current!==generation||currentScope!==key(selected()))return;
       coverage.textContent=entryNote;
-      job={id:collected.research_id,scope:currentScope,asset:m.machine_id,dataset:m.dataset_id||null};
+      job={id:collected.research_id,scope:currentScope,asset:m.machine_id,dataset:m.dataset_id||null,analyzeAfter};
       preparing=false;
       controls(true);
       results.replaceChildren();touch();
@@ -1022,7 +1292,7 @@
       if(error.code==='vin_required'||error.code==='vin_not_found'||/VIN\/PIN.*不存在/.test(error.message)){
         catalogIdentity={needs_verification:true};showVinRepair(error.message);
       }
-      cancel(error.message);showPreliminary();
+      cancel(error.name==='AbortError'?'资料读取已停止；已保存内容仍保留。':error.message);showPreliminary();
     }}
   };
   start.onclick=()=>{
@@ -1060,12 +1330,15 @@
       const valid=capture.faults.every(item=>item&&typeof item.description==='string'&&item.description.length<=500&&
         (item.code===null||typeof item.code==='string'&&item.code.length<=40)&&
         (item.spn===null||Number.isInteger(item.spn))&&(item.fmi===null||Number.isInteger(item.fmi))&&
-        (item.sa===null||Number.isInteger(item.sa))&&typeof item.displayed_at==='string'&&item.displayed_at.length<=100);
+        (item.sa===null||Number.isInteger(item.sa))&&typeof item.displayed_at==='string'&&item.displayed_at.length<=100&&
+        (item.status===undefined||['OPEN','CLOSED','UNKNOWN'].includes(item.status))&&
+        (item.cleared_at===undefined||typeof item.cleared_at==='string'&&item.cleared_at.length<=100)&&
+        (item.page_event_id==null||typeof item.page_event_id==='string'&&item.page_event_id.length<=150));
       if(!valid)return;
       const chosen=pageFault? pageFaultKey(pageFault):null;
       pageFaults=capture.faults;pageServices=services;window.syncVisibleTrackunitEvents?.(capture);
-      pageFault=chosen?pageFaults.find(item=>pageFaultKey(item)===chosen)||null:null;
-      pageObservedAt=capture.observed_at;finishPageRead();pageCaptureIssue='';
+      pageFault=chosen?pageFaults.find(item=>pageFaultKey(item)===chosen)||pageFault:null;
+      pageObservedAt=capture.observed_at;pageSourceUrl=validPageSourceUrl(capture.source_url,m.machine_id);finishPageRead();pageCaptureIssue='';
       // Page faults are actionable only if the fault selector is visible. Do
       // not silently pick one when several cards belong to the same machine.
       if(!associateVisiblePageFault()&&pageFaults.length>1&&modeChoice===null&&!record&&!activeResearchId&&!inputsEdited&&
@@ -1088,9 +1361,9 @@
       const unresolved=Array.isArray(d.result?.unresolved)?d.result.unresolved.filter(t=>typeof t==='string').slice(0,12):[];
       coverage.textContent=entryNote+'本次仅覆盖已展开并读取的资料。'+(unmatched.length?' 尚未命中的检索词：'+unmatched.join('、')+'。':'')+
         (unresolved.length?' 未完成读取：'+unresolved.join('、')+'。':'');
-      const usable=hasComponentSources(record);
+      const usable=hasComponentSources(record),analyzeAfter=job.analyzeAfter!==false;
       cancel(!usable?'尚未读到部件或手册内容，请重试以继续读取分类。':d.result?.status==='completed'?'资料收集完成。':'已收集可读取的资料；部分分类未展开或尚未匹配。');
-      if(record?.plan&&usable)await analyzeRecord();
+      if(analyzeAfter&&record?.plan&&usable)await analyzeRecord();
     }
     if(d.type==='jilian:research-error')cancel(String(d.message||'资料收集失败。').slice(0,250));
   });

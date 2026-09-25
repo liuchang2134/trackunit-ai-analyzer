@@ -4,6 +4,7 @@
 var XGSSResearch = (() => {
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
   const normal = value => clean(value).toLocaleLowerCase();
+  const navigations = new WeakMap();
   function rank(labels, terms) {
     const keywords = [...new Set((terms || []).filter(x => typeof x === 'string' && x.trim().length >= 2 && x.length <= 40).map(normal))];
     return labels.map((label, index) => ({label, index,
@@ -65,12 +66,19 @@ var XGSSResearch = (() => {
     // Wait for the table's own heading to agree, otherwise rows get the wrong source.
     const selected=doc.querySelector('.ivu-tree-title-selected');
     const tableHeading=doc.querySelector('#printDiv img[title="转至上一级"]')?.previousElementSibling;
-    if (selected && tableHeading && !clean(tableHeading.innerText).endsWith(clean(selected.innerText))) {
+    const selectedLabel=selected&&visible(selected,view)?clean(selected.innerText):'';
+    const headingLabel=tableHeading&&visible(tableHeading,view)?clean(tableHeading.innerText):'';
+    const categoryConfirmed=Boolean(selectedLabel&&headingLabel&&headingLabel.endsWith(selectedLabel));
+    const busy=[...doc.querySelectorAll('.ivu-spin-show,.ivu-spin-fix,.el-loading-mask,[aria-busy="true"]')].some(node=>visible(node,view));
+    if (busy || (selected || tableHeading) && !categoryConfirmed && (catalog.items.length || selectedLabel&&headingLabel)) {
       return {status:'loading',vin:catalog.vin,tree_signature};
     }
     const manuals=manualSections(doc,view);
     const title=clean(doc.querySelector('h1,h2,[role="heading"]')?.innerText || doc.title || 'XGSS 官方资料').slice(0,200);
-    return {status:'ready',vin:catalog.vin,tree_signature,can_expand_root:rootExpansion(doc,view).status==='expandable',targets:rank(labels,terms),
+    const diagram=illustrationContext(doc,view);
+    return {status:'ready',vin:catalog.vin,tree_signature,category_label:selectedLabel||undefined,
+      category_confirmed:categoryConfirmed,diagram_ref:diagram.document_ref||null,
+      can_expand_root:rootExpansion(doc,view).status==='expandable',targets:rank(labels,terms),
       capture:catalog.items.length || manuals.length ? {source:'xgss_rendered_page',source_url:'https://xgss.xcmg.com/',
         vin:catalog.vin,title,assembly_path:catalog.assembly_path,items:catalog.items,
         manual_sections:manuals,coverage:'rendered_content_only'} : null};
@@ -155,9 +163,25 @@ var XGSSResearch = (() => {
   async function captureWithIllustration(terms=[], doc=document, view=window) {
     const before=inspect(terms,doc,view);
     if(before.status!=='ready' || !before.capture)return before;
-    const initial=illustrationContext(doc,view);
+    let initial=illustrationContext(doc,view);
+    const navigation=navigations.get(doc),textFingerprint=JSON.stringify(before.capture);
+    // Rows can settle before the asynchronously replaced embed. A previous
+    // category's picture is never reused merely because its src still exists.
+    const waitingForImage=()=>navigation&&navigation.vin===before.vin&&
+      normal(navigation.label)===normal(before.category_label)&&
+      (!initial.embed&&!initial.issue || initial.src&&initial.src===navigation.previousImage);
+    if(waitingForImage()){
+      for(let attempt=0;attempt<6&&waitingForImage();attempt++){
+        await new Promise(resolve=>view.setTimeout(resolve,250));
+        const current=inspect(terms,doc,view);
+        if(current.status!=='ready'||current.vin!==before.vin||JSON.stringify(current.capture)!==textFingerprint)
+          return {status:'loading',vin:current.vin,illustration_issue:'资料已变化，请重新读取当前分类。'};
+        initial=illustrationContext(doc,view);
+      }
+      if(initial.src&&initial.src===navigation.previousImage)
+        return {...before,illustration_issue:'本分类图示尚未确认更新，保留文字资料。'};
+    }
     if(!initial.embed)return initial.issue?{...before,illustration_issue:initial.issue}:before;
-    const textFingerprint=JSON.stringify(before.capture);
     const image=await rasterizeIllustration(initial.src,doc,view);
     const after=inspect(terms,doc,view),current=illustrationContext(doc,view);
     if(after.status!=='ready' || after.vin!==before.vin || JSON.stringify(after.capture)!==textFingerprint ||
@@ -176,6 +200,7 @@ var XGSSResearch = (() => {
     const targets=treeLabels(doc,view).filter(el=>clean(el.innerText)===label);
     if (targets.length!==1) return {status:targets.length?'ambiguous_target':'target_missing'};
     // A model can supply labels, never arbitrary selectors, scripts or URLs.
+    navigations.set(doc,{vin,label,previousImage:illustrationContext(doc,view).src||null});
     targets[0].click();
     return {status:'selected',label};
   }

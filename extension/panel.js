@@ -532,20 +532,21 @@ async function markOpenCatalogTab() {
   const current = () => ticket === markTicket && matchesPanelScope(scope);
   button.disabled = true;
   try {
-    // Reuse the guidance already shown in this panel; ask again only when there
-    // is nothing to mark, so a click never waits twice for the same answer.
-    if (!matchesPanelScope(aiGuidanceScope) || !aiGuidance.terms.length) {
-      if (!await requestAIGuidance()) return;
-    }
+    // The selected fault or AI plan can change without changing the device.
+    // Refresh this small local-frame payload before using any cached terms.
+    if (!await requestAIGuidance()) return;
     if (!current()) return;
     const guidance = aiGuidance;
+    if (!guidance.terms.length) {
+      note.textContent = '当前方向尚无 AI 检索词，请先在设备工作区完成分析。'; return;
+    }
     const [tab] = await chrome.tabs.query({active:true,currentWindow:true});
     if (!current()) return;
     if (!Number.isInteger(tab?.id) || !XGSSCatalog.isXGSS(tab.url)) {
       // The panel cannot cross the XGSS sign-in itself; the workbench owns that
       // handshake. Say exactly where to start instead of opening a bare web page.
       note.textContent = guidance.has_report
-        ? '请在工作区的当前设备区域点“XGSS 图册”打开本机对应 VIN 的官方图册，再在插件“图册”中点“标出 AI 检索条目”。'
+        ? '请切换到已登录的 XGSS 图册页，打开当前设备对应 VIN 的图册，再在插件“设置 → 图册维护”中点“标出 AI 检索条目”。'
         : '尚无 AI 建议。请先在工作区完成一次 AI 分析，再打开图册标注目标。';
       return;
     }

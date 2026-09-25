@@ -255,9 +255,10 @@ def test_route_reused_auto_plan_validates_cached_advice_against_sources(client, 
         source_url='https://xgss.xcmg.com/', vin=IDENTITY['vin'], title='合成来源',
         items=[{'name': '线束', 'part_number': 'TEST-001'}], manual_sections=[], coverage='rendered_content_only'))
     reference = store.evidence(current)['parts'][0]['source_id']
-    current.update(analysis_revision=current['revision'], advice={
+    current.update(analysis_revision=current['revision'], advice_quality_version=ai.grounding.VERSION, advice={
         'summary': '线束为待检查候选，尚未确认损坏。',
         'parts': [{'source_id': reference, 'part_number': 'FAKE-999',
+            'fault_relation': 'direct', 'support': 'catalog_only',
             'reason': '订购料号 FAKE-999。' if invented else '故障相关部件，待现场核实。',
             'replacement_condition': '检查确认损坏后再核对配置。'}],
         'repair_steps': [{'instruction': '停机后核对故障信息。', 'basis': 'ai_inspection_suggestion'}],
@@ -269,7 +270,8 @@ def test_route_reused_auto_plan_validates_cached_advice_against_sources(client, 
         assert result['type'] == 'error' and result['kind'] == 'auto_fault_cached_advice_invalid'
     else:
         assert result['type'] == 'result'
-        assert result['record']['advice']['parts'][0]['part_number'] == 'TEST-001'
+        assert result['record']['advice']['parts'] == []
+        assert result['record']['advice']['inspection_targets'][0]['part_number'] == 'TEST-001'
     assert 'FAKE-999' not in json.dumps(result)
     assert calls == ['plan'], 'Cache validation cannot cause another billed model request'
     assert store.read(first['research_id'])['advice']['parts'][0]['part_number'] == 'FAKE-999'
